@@ -183,7 +183,7 @@ function switchTab(value) {
                 </div>
                 <div class="flex flex-col">
                     <span class="font-title-sm text-title-sm text-on-surface font-semibold">
-                        {{ log.actor?.name ?? 'System' }} — {{ log.action.replace('_', ' ') }}
+                        {{ log.actor?.name ?? 'System' }} — {{ log.action.replaceAll('_', ' ') }}
                     </span>
                     <span v-if="log.description" class="font-body-sm text-body-sm text-on-surface-variant">{{ log.description }}</span>
                     <span class="font-code-tabular text-body-sm text-outline">{{ formatDate(log.created_at) }}</span>
