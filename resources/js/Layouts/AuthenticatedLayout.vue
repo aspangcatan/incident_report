@@ -31,9 +31,9 @@ const navGroups = [
     {
         label: 'Incident Management',
         items: [
-            { label: 'All Incidents', icon: 'kit-medical', href: '#', count: null },
-            { label: 'My Reports', icon: 'user', href: '#', count: null },
-            { label: 'Draft Reports', icon: 'pen-to-square', href: '#', count: null },
+            { label: 'All Incidents', icon: 'kit-medical', href: '/incidents?scope=all', count: null },
+            { label: 'My Reports', icon: 'user', href: '/incidents?scope=my-reports', count: null },
+            { label: 'Draft Reports', icon: 'pen-to-square', href: '/incidents?scope=drafts', count: null },
             { label: 'Pending Review', icon: 'hourglass-half', href: '#', count: null },
             { label: 'Under Investigation', icon: 'magnifying-glass', href: '#', count: null },
             { label: 'Corrective Actions', icon: 'square-check', href: '#', count: null },
@@ -146,13 +146,13 @@ const navGroups = [
 
         <aside class="fixed left-0 top-0 bottom-0 h-screen w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 overflow-y-auto shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
             <div class="px-space-md mb-3">
-                <a
-                    href="#"
+                <Link
+                    href="/incidents/create"
                     class="flex items-center justify-center gap-space-xs w-full py-2.5 px-space-md rounded-lg bg-secondary text-on-secondary hover:bg-on-secondary-container font-label-md text-label-md transition-all shadow-[0_1px_3px_rgba(0,106,97,0.2)]"
                 >
                     <FontAwesomeIcon icon="circle-plus" class="text-title-md" />
                     <span>Report an Incident</span>
-                </a>
+                </Link>
             </div>
 
             <nav class="flex-1 px-space-sm flex flex-col gap-0.5">
