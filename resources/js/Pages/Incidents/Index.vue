@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import Pagination from '@/Components/Pagination.vue';
 
 const props = defineProps({
     incidents: { type: Object, required: true },
@@ -78,6 +79,8 @@ function switchScope(value) {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination :paginator="incidents" />
         </div>
     </AuthenticatedLayout>
 </template>
