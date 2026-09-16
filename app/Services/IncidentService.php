@@ -16,24 +16,28 @@ class IncidentService
 
     public function createDraft(User $reporter, array $data): Incident
     {
-        $incident = new Incident($this->onlyIncidentColumns($data));
-        $incident->reporter_id = $reporter->id;
-        $incident->status = IncidentStatus::Draft;
-        $incident->save();
+        return DB::transaction(function () use ($reporter, $data) {
+            $incident = new Incident($this->onlyIncidentColumns($data));
+            $incident->reporter_id = $reporter->id;
+            $incident->status = IncidentStatus::Draft;
+            $incident->save();
 
-        $this->syncChildRecords($incident, $data);
+            $this->syncChildRecords($incident, $data);
 
-        return $incident;
+            return $incident;
+        });
     }
 
     public function updateDraft(Incident $incident, array $data): Incident
     {
-        $incident->fill($this->onlyIncidentColumns($data));
-        $incident->save();
+        return DB::transaction(function () use ($incident, $data) {
+            $incident->fill($this->onlyIncidentColumns($data));
+            $incident->save();
 
-        $this->syncChildRecords($incident, $data);
+            $this->syncChildRecords($incident, $data);
 
-        return $incident;
+            return $incident;
+        });
     }
 
     public function submit(Incident $incident): Incident
