@@ -4,6 +4,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\IncidentWorkflowController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -21,5 +22,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/incidents/{incident}', [IncidentController::class, 'show'])->name('incidents.show');
     Route::get('/incidents/{incident}/edit', [IncidentController::class, 'edit'])->name('incidents.edit');
     Route::patch('/incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
+    Route::post('/incidents/{incident}/review', [IncidentWorkflowController::class, 'review'])->name('incidents.review');
+    Route::post('/incidents/{incident}/return', [IncidentWorkflowController::class, 'returnForRevision'])->name('incidents.return');
+    Route::post('/incidents/{incident}/assign', [IncidentWorkflowController::class, 'assign'])->name('incidents.assign');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 });

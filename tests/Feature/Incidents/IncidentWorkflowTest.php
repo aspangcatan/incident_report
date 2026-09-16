@@ -300,4 +300,77 @@ class IncidentWorkflowTest extends TestCase
         $this->assertNull($incident->fresh()->department_id);
         \Illuminate\Support\Facades\Notification::assertNotSentTo($supervisor, \App\Notifications\IncidentSubmittedNotification::class);
     }
+
+    public function test_a_supervisor_can_mark_a_submitted_incident_reviewed_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $incident = $this->submittedIncident($reporter, $department);
+
+        $response = $this->actingAs($supervisor)->post("/incidents/{$incident->id}/review", [
+            'comments' => 'Looks good.',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame(IncidentStatus::Reviewed, $incident->fresh()->status);
+    }
+
+    public function test_returning_requires_comments_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $incident = $this->submittedIncident($reporter, $department);
+
+        $this->actingAs($supervisor)
+            ->post("/incidents/{$incident->id}/return", [])
+            ->assertSessionHasErrors(['comments']);
+
+        $this->assertSame(IncidentStatus::Submitted, $incident->fresh()->status);
+    }
+
+    public function test_a_supervisor_outside_the_department_cannot_review_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+        $incidentDepartment = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => Department::factory()->create()->id]);
+        $incident = $this->submittedIncident($reporter, $incidentDepartment);
+
+        $this->actingAs($supervisor)
+            ->post("/incidents/{$incident->id}/review", ['comments' => 'x'])
+            ->assertForbidden();
+    }
+
+    public function test_assigning_requires_a_user_with_the_investigator_role(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $notAnInvestigator = User::factory()->create(['role' => \App\Enums\Role::Staff]);
+        $incident = $this->submittedIncident($reporter, $department);
+        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
+
+        $this->actingAs($supervisor)
+            ->post("/incidents/{$incident->id}/assign", ['assigned_investigator_id' => $notAnInvestigator->id])
+            ->assertSessionHasErrors(['assigned_investigator_id']);
+    }
+
+    public function test_a_supervisor_can_assign_a_reviewed_incident_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $investigator = User::factory()->create(['role' => \App\Enums\Role::Investigator]);
+        $incident = $this->submittedIncident($reporter, $department);
+        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
+
+        $response = $this->actingAs($supervisor)->post("/incidents/{$incident->id}/assign", [
+            'assigned_investigator_id' => $investigator->id,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame($investigator->id, $incident->fresh()->assigned_investigator_id);
+        $this->assertSame(IncidentStatus::Assigned, $incident->fresh()->status);
+    }
 }
