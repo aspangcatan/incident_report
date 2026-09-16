@@ -216,6 +216,22 @@ class IncidentReportingTest extends TestCase
         $this->assertFalse($supervisor->can('view', $submitted->fresh()));
     }
 
+    public function test_supervisor_with_no_department_cannot_view_an_incident_with_no_department_either(): void
+    {
+        $reporter = $this->makeReporter();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+
+        $this->assertNull($supervisor->department_id);
+
+        $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
+        ]);
+        app(IncidentService::class)->submit($submitted);
+
+        $this->assertNull($submitted->fresh()->department_id);
+        $this->assertFalse($supervisor->can('view', $submitted->fresh()));
+    }
+
     public function test_quality_safety_officer_can_view_submitted_incidents_from_any_department(): void
     {
         $reporter = $this->makeReporter();
