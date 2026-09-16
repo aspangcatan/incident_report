@@ -107,6 +107,10 @@ class Incident extends Model
         }
 
         if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+            if ($user->department_id === null) {
+                return $query->whereRaw('1 = 0');
+            }
+
             return $query->where('department_id', $user->department_id);
         }
 

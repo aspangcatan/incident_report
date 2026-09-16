@@ -364,6 +364,28 @@ class IncidentReportingTest extends TestCase
         );
     }
 
+    public function test_scope_all_excludes_null_department_incidents_for_a_null_department_supervisor(): void
+    {
+        $reporter = $this->makeReporter();
+        $supervisor = User::factory()->create(['role' => Role::Supervisor]);
+
+        $this->assertNull($supervisor->department_id);
+
+        $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'no department incident',
+        ]);
+        app(IncidentService::class)->submit($submitted);
+
+        $this->assertNull($submitted->fresh()->department_id);
+
+        $response = $this->actingAs($supervisor)->get('/incidents?scope=all');
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Index')
+            ->has('incidents.data', 0)
+        );
+    }
+
     public function test_scope_all_shows_a_quality_safety_officer_incidents_from_every_department(): void
     {
         $reporter = $this->makeReporter();
