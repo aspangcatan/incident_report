@@ -281,4 +281,23 @@ class IncidentWorkflowTest extends TestCase
 
         \Illuminate\Support\Facades\Notification::assertSentTo($investigator, \App\Notifications\IncidentAssignedNotification::class);
     }
+
+    public function test_submitting_a_null_department_incident_does_not_notify_unscoped_supervisors(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $reporter = $this->makeReporter();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+        $this->assertNull($supervisor->department_id);
+
+        $incident = app(IncidentService::class)->createDraft($reporter, [
+            'occurred_at' => now(),
+            'location' => 'ER',
+            'summary' => 'Test incident with no department.',
+        ]);
+        app(IncidentService::class)->submit($incident);
+
+        $this->assertNull($incident->fresh()->department_id);
+        \Illuminate\Support\Facades\Notification::assertNotSentTo($supervisor, \App\Notifications\IncidentSubmittedNotification::class);
+    }
 }
