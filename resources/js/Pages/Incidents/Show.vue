@@ -1,9 +1,10 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import { formatDate } from '@/Utils/formatDate';
 
 const props = defineProps({
     incident: { type: Object, required: true },
@@ -25,8 +26,6 @@ function switchTab(value) {
     activeTab.value = value;
     router.get(`/incidents/${props.incident.id}`, { tab: value }, { preserveState: true, preserveScroll: true });
 }
-
-const notYetAvailable = computed(() => !['overview', 'attachments'].includes(activeTab.value));
 </script>
 
 <template>
@@ -47,11 +46,11 @@ const notYetAvailable = computed(() => !['overview', 'attachments'].includes(act
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-surface-container-low p-space-md rounded-xl">
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Incident Time</span>
-                <span class="font-code-tabular text-body-md text-on-surface font-semibold">{{ incident.occurred_at ?? '—' }}</span>
+                <span class="font-code-tabular text-body-md text-on-surface font-semibold">{{ formatDate(incident.occurred_at) }}</span>
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Reported</span>
-                <span class="font-code-tabular text-body-md text-on-surface font-semibold">{{ incident.reported_at ?? '—' }}</span>
+                <span class="font-code-tabular text-body-md text-on-surface font-semibold">{{ formatDate(incident.reported_at) }}</span>
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Clinical Unit</span>
@@ -135,7 +134,7 @@ const notYetAvailable = computed(() => !['overview', 'attachments'].includes(act
             </a>
         </div>
 
-        <div v-else-if="notYetAvailable" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm text-center">
+        <div v-else class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm text-center">
             <FontAwesomeIcon icon="circle-info" class="text-primary text-title-lg mb-2" />
             <p class="font-body-md text-body-md text-on-surface-variant">
                 This tab will be available once the corresponding module ships in a later phase.
