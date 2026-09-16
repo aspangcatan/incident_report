@@ -106,7 +106,7 @@ class Incident extends Model
 
     public function auditLogs(): MorphMany
     {
-        return $this->morphMany(AuditLog::class, 'auditable')->latest();
+        return $this->morphMany(AuditLog::class, 'auditable');
     }
 
     /**

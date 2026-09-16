@@ -11,6 +11,17 @@ class AuditLog extends Model
 {
     const UPDATED_AT = null;
 
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \RuntimeException('AuditLog entries are immutable and cannot be updated.');
+        });
+
+        static::deleting(function () {
+            throw new \RuntimeException('AuditLog entries are immutable and cannot be deleted.');
+        });
+    }
+
     protected $fillable = [
         'auditable_type', 'auditable_id', 'actor_id', 'action', 'description', 'old_values', 'new_values',
     ];
