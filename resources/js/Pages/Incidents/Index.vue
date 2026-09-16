@@ -1,45 +1,83 @@
 <script setup>
+import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import StatusBadge from '@/Components/StatusBadge.vue';
+import SeverityBadge from '@/Components/SeverityBadge.vue';
 
-defineProps({
-    incidents: Object,
-    scope: String,
+const props = defineProps({
+    incidents: { type: Object, required: true },
+    scope: { type: String, required: true },
 });
+
+const scopes = [
+    { value: 'my-reports', label: 'My Reports' },
+    { value: 'drafts', label: 'Draft Reports' },
+    { value: 'all', label: 'All Incidents' },
+];
+
+function switchScope(value) {
+    router.get('/incidents', { scope: value }, { preserveState: true });
+}
 </script>
 
 <template>
-    <Head title="Incident Reports" />
+    <Head title="Incidents" />
 
     <AuthenticatedLayout>
-        <section class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
-            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Incident Reports</h1>
-            <p class="mt-1 font-body-md text-body-md text-on-surface-variant">
-                Showing: {{ scope }}
-            </p>
-        </section>
+        <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <h1 class="font-headline-sm text-headline-sm text-on-surface">Incidents</h1>
+                <Link href="/incidents/create" class="px-4 py-2 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-semibold">
+                    + Report an Incident
+                </Link>
+            </div>
 
-        <section class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm">
-            <table class="w-full text-left font-body-sm text-body-sm">
-                <thead>
-                    <tr class="text-on-surface-variant uppercase tracking-wider font-label-sm text-label-sm">
-                        <th class="p-2">Incident #</th>
-                        <th class="p-2">Location</th>
-                        <th class="p-2">Status</th>
-                        <th class="p-2">Reporter</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="incident in incidents.data" :key="incident.id" class="border-t border-outline-variant">
-                        <td class="p-2">
-                            <Link :href="`/incidents/${incident.id}`">{{ incident.incident_number ?? `Draft #${incident.id}` }}</Link>
-                        </td>
-                        <td class="p-2">{{ incident.location }}</td>
-                        <td class="p-2">{{ incident.status }}</td>
-                        <td class="p-2">{{ incident.reporter?.name }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
+            <div class="inline-flex p-1 rounded-lg bg-surface-container-low w-fit">
+                <button
+                    v-for="option in scopes"
+                    :key="option.value"
+                    type="button"
+                    class="px-3 py-1.5 rounded-md font-label-sm text-body-sm"
+                    :class="scope === option.value ? 'bg-surface-container-lowest text-primary font-semibold shadow-sm' : 'text-outline'"
+                    @click="switchScope(option.value)"
+                >
+                    {{ option.label }}
+                </button>
+            </div>
+
+            <div v-if="incidents.data.length === 0" class="p-space-lg text-center font-body-sm text-body-sm text-outline">
+                No incidents found in this view.
+            </div>
+
+            <div v-else class="overflow-x-auto rounded-lg bg-surface-container-low">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                            <th class="p-3">Incident No.</th>
+                            <th class="p-3">Type</th>
+                            <th class="p-3">Department</th>
+                            <th class="p-3">Severity</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-surface-container">
+                        <tr v-for="incident in incidents.data" :key="incident.id" class="bg-surface-container-lowest hover:bg-surface-container-low">
+                            <td class="p-3">
+                                <Link :href="incident.status === 'draft' ? `/incidents/${incident.id}/edit` : `/incidents/${incident.id}`" class="font-code-tabular text-body-sm text-primary font-semibold">
+                                    {{ incident.incident_number ?? `Draft #${incident.id}` }}
+                                </Link>
+                            </td>
+                            <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ incident.incident_type?.name ?? '—' }}</td>
+                            <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ incident.department?.name ?? '—' }}</td>
+                            <td class="p-3">
+                                <SeverityBadge v-if="incident.severity" :severity="incident.severity" />
+                                <span v-else class="font-body-sm text-body-sm text-outline">—</span>
+                            </td>
+                            <td class="p-3"><StatusBadge :status="incident.status" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
