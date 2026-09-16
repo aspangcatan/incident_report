@@ -121,4 +121,50 @@ class IncidentReportingTest extends TestCase
         $this->assertSame("IR-{$year}-000002", $draft->fresh()->incident_number);
         $this->assertSame(IncidentStatus::Submitted, $draft->fresh()->status);
     }
+
+    public function test_owner_can_view_and_update_their_own_draft(): void
+    {
+        $reporter = $this->makeReporter();
+        $incident = app(IncidentService::class)->createDraft($reporter, ['location' => 'ER']);
+
+        $this->assertTrue($reporter->can('view', $incident));
+        $this->assertTrue($reporter->can('update', $incident));
+    }
+
+    public function test_other_staff_cannot_view_or_update_someone_elses_draft(): void
+    {
+        $reporter = $this->makeReporter();
+        $other = $this->makeReporter();
+        $incident = app(IncidentService::class)->createDraft($reporter, ['location' => 'ER']);
+
+        $this->assertFalse($other->can('view', $incident));
+        $this->assertFalse($other->can('update', $incident));
+    }
+
+    public function test_owner_cannot_update_after_submission(): void
+    {
+        $reporter = $this->makeReporter();
+        $incident = app(IncidentService::class)->createDraft($reporter, [
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
+        ]);
+        app(IncidentService::class)->submit($incident);
+
+        $this->assertFalse($reporter->can('update', $incident->fresh()));
+        $this->assertTrue($reporter->can('view', $incident->fresh()));
+    }
+
+    public function test_supervisor_can_view_submitted_incidents_from_any_department_but_not_others_drafts(): void
+    {
+        $reporter = $this->makeReporter();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+
+        $draft = app(IncidentService::class)->createDraft($reporter, ['location' => 'ER']);
+        $this->assertFalse($supervisor->can('view', $draft));
+
+        $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
+        ]);
+        app(IncidentService::class)->submit($submitted);
+        $this->assertTrue($supervisor->can('view', $submitted->fresh()));
+    }
 }
