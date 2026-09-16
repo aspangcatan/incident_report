@@ -3,8 +3,10 @@ defineProps({
     form: { type: Object, required: true },
 });
 
+let nextKey = 0;
+
 function addAction(form) {
-    form.actions_taken.push({ description: '', responsible_name: '', performed_at: '', status: 'completed' });
+    form.actions_taken.push({ _key: nextKey++, description: '', responsible_name: '', performed_at: '', status: 'completed' });
 }
 
 function removeAction(form, index) {
@@ -23,16 +25,20 @@ function removeAction(form, index) {
             No immediate actions recorded yet.
         </div>
 
-        <div v-for="(action, index) in form.actions_taken" :key="index" class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-sm">
+        <div v-for="(action, index) in form.actions_taken" :key="action._key ?? index" class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-space-sm">
             <div class="flex justify-between items-center">
                 <span class="font-label-sm text-label-sm uppercase text-outline">Action {{ index + 1 }}</span>
                 <button type="button" class="text-error font-label-sm text-body-sm" @click="removeAction(form, index)">Remove</button>
             </div>
-            <textarea v-model="action.description" placeholder="Intervention taken" rows="2" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+            <label class="sr-only" :for="'action-description-' + index">Intervention taken</label>
+            <textarea :id="'action-description-' + index" v-model="action.description" placeholder="Intervention taken" rows="2" class="p-2.5 rounded-lg bg-surface-container-lowest" />
             <div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm">
-                <input v-model="action.responsible_name" type="text" placeholder="Responsible officer" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <input v-model="action.performed_at" type="datetime-local" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <select v-model="action.status" class="p-2.5 rounded-lg bg-surface-container-lowest">
+                <label class="sr-only" :for="'action-responsible-' + index">Responsible officer</label>
+                <input :id="'action-responsible-' + index" v-model="action.responsible_name" type="text" placeholder="Responsible officer" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                <label class="sr-only" :for="'action-performed-at-' + index">Date and time performed</label>
+                <input :id="'action-performed-at-' + index" v-model="action.performed_at" type="datetime-local" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                <label class="sr-only" :for="'action-status-' + index">Status</label>
+                <select :id="'action-status-' + index" v-model="action.status" class="p-2.5 rounded-lg bg-surface-container-lowest">
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
                 </select>

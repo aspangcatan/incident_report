@@ -4,8 +4,10 @@ defineProps({
     contributingFactors: { type: Array, required: true },
 });
 
+let nextEventKey = 0;
+
 function addEvent(form) {
-    form.narrative_events.push({ occurred_at: '', description: '' });
+    form.narrative_events.push({ _key: nextEventKey++, occurred_at: '', description: '' });
 }
 
 function removeEvent(form, index) {
@@ -27,8 +29,8 @@ function removeAttachment(form, index) {
         <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 5: Description & Evidence</h2>
 
         <div class="flex flex-col gap-1.5">
-            <label class="font-label-md text-label-md text-on-surface font-semibold">Executive Narrative Summary *</label>
-            <textarea v-model="form.summary" rows="4" class="w-full p-3 rounded-lg bg-surface-container-low" />
+            <label for="summary" class="font-label-md text-label-md text-on-surface font-semibold">Executive Narrative Summary *</label>
+            <textarea id="summary" v-model="form.summary" rows="4" class="w-full p-3 rounded-lg bg-surface-container-low" />
             <span v-if="form.errors.summary" class="font-body-sm text-body-sm text-error">{{ form.errors.summary }}</span>
         </div>
 
@@ -37,9 +39,11 @@ function removeAttachment(form, index) {
                 <label class="font-label-md text-label-md text-on-surface font-semibold">Chronological Sequence of Events</label>
                 <button type="button" class="font-label-sm text-label-sm font-bold text-primary" @click="addEvent(form)">+ Add Event</button>
             </div>
-            <div v-for="(event, index) in form.narrative_events" :key="index" class="flex items-start gap-2 bg-surface-container-low p-2.5 rounded-lg">
-                <input v-model="event.occurred_at" type="text" placeholder="Time" class="w-32 p-2 rounded bg-surface-container-lowest" />
-                <input v-model="event.description" type="text" placeholder="What happened" class="flex-1 p-2 rounded bg-surface-container-lowest" />
+            <div v-for="(event, index) in form.narrative_events" :key="event._key ?? index" class="flex items-start gap-2 bg-surface-container-low p-2.5 rounded-lg">
+                <label class="sr-only" :for="'event-occurred-at-' + index">Time</label>
+                <input :id="'event-occurred-at-' + index" v-model="event.occurred_at" type="text" placeholder="Time" class="w-32 p-2 rounded bg-surface-container-lowest" />
+                <label class="sr-only" :for="'event-description-' + index">What happened</label>
+                <input :id="'event-description-' + index" v-model="event.description" type="text" placeholder="What happened" class="flex-1 p-2 rounded bg-surface-container-lowest" />
                 <button type="button" class="text-error" @click="removeEvent(form, index)">✕</button>
             </div>
         </div>
