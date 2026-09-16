@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+/** Kind of file attached to an incident, investigation, or corrective action. */
 enum AttachmentCategory: string
 {
     case Evidence = 'evidence';

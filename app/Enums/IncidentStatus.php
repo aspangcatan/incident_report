@@ -2,6 +2,11 @@
 
 namespace App\Enums;
 
+/**
+ * Incident lifecycle stage, draft through closed. Not every incident visits
+ * every stage — which stages a given severity requires lives in
+ * config/incident_workflow.php (see docs/architecture.md §3.1, §5).
+ */
 enum IncidentStatus: string
 {
     case Draft = 'draft';

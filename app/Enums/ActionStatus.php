@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+/** Status of an immediate containment action recorded against an incident. */
 enum ActionStatus: string
 {
     case Pending = 'pending';

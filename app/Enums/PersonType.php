@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+/** Category of a person recorded in an incident's "People Involved" roster. */
 enum PersonType: string
 {
     case Patient = 'patient';
