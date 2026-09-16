@@ -3,8 +3,10 @@
 namespace Tests\Feature\Incidents;
 
 use App\Enums\IncidentStatus;
+use App\Enums\Role;
 use App\Enums\Severity;
 use App\Models\Attachment;
+use App\Models\ContributingFactor;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
@@ -328,6 +330,116 @@ class IncidentReportingTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('Incidents/Index')
             ->has('incidents.data', 1)
+        );
+    }
+
+    public function test_scope_all_only_shows_a_supervisor_incidents_from_their_own_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $departmentA = Department::factory()->create();
+        $departmentB = Department::factory()->create();
+        $supervisor = User::factory()->create([
+            'role' => Role::Supervisor,
+            'department_id' => $departmentA->id,
+        ]);
+
+        $inDepartmentA = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $departmentA->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'department A incident',
+        ]);
+        app(IncidentService::class)->submit($inDepartmentA);
+
+        $inDepartmentB = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $departmentB->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'department B incident',
+        ]);
+        app(IncidentService::class)->submit($inDepartmentB);
+
+        $response = $this->actingAs($supervisor)->get('/incidents?scope=all');
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Index')
+            ->has('incidents.data', 1)
+            ->where('incidents.data.0.id', $inDepartmentA->id)
+        );
+    }
+
+    public function test_scope_all_shows_a_quality_safety_officer_incidents_from_every_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $departmentA = Department::factory()->create();
+        $departmentB = Department::factory()->create();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $inDepartmentA = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $departmentA->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'department A incident',
+        ]);
+        app(IncidentService::class)->submit($inDepartmentA);
+
+        $inDepartmentB = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $departmentB->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'department B incident',
+        ]);
+        app(IncidentService::class)->submit($inDepartmentB);
+
+        $response = $this->actingAs($qso)->get('/incidents?scope=all');
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Index')
+            ->has('incidents.data', 2)
+        );
+    }
+
+    public function test_show_renders_a_fully_populated_submitted_incident(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+        $factor = ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors', 'is_active' => true]);
+
+        $incident = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $department->id,
+            'incident_type_id' => $incidentType->id,
+            'severity' => Severity::Level2Moderate->value,
+            'occurred_at' => now(),
+            'location' => 'ICU Bed 4',
+            'summary' => 'Full incident summary.',
+            'recommendations' => 'Review staffing levels.',
+            'police_notified' => true,
+            'police_station' => 'Central Police Station',
+            'police_officer_in_charge' => 'PO1 Santos',
+            'police_blotter_no' => 'BLT-001',
+            'police_notified_at' => now(),
+            'individuals' => [
+                ['person_type' => 'patient', 'name' => 'Juan Dela Cruz', 'role_description' => 'Patient involved'],
+            ],
+            'witnesses' => [
+                ['name' => 'Maria Clara', 'statement' => 'Saw the incident happen.'],
+            ],
+            'actions_taken' => [
+                ['description' => 'Notified attending physician.', 'responsible_name' => 'Nurse Reyes', 'status' => 'completed'],
+            ],
+            'narrative_events' => [
+                ['occurred_at' => '08:00', 'description' => 'Patient found on the floor.'],
+            ],
+            'contributing_factor_ids' => [$factor->id],
+        ]);
+        app(IncidentService::class)->submit($incident);
+
+        $response = $this->actingAs($reporter)->get("/incidents/{$incident->id}");
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Show')
+            ->where('incident.id', $incident->id)
+            ->has('incident.individuals', 1)
+            ->has('incident.witnesses', 1)
+            ->has('incident.actions', 1)
+            ->has('incident.narrative_events', 1)
+            ->has('incident.contributing_factors', 1)
+            ->where('incident.police_notified', true)
+            ->where('incident.police_station', 'Central Police Station')
         );
     }
 

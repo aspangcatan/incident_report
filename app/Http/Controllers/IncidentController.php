@@ -33,7 +33,7 @@ class IncidentController extends Controller
             $query->where('reporter_id', $user->id)->where('status', IncidentStatus::Draft);
         } elseif ($scope === 'all') {
             $this->authorize('viewAny', Incident::class);
-            $query->where('status', '!=', IncidentStatus::Draft);
+            $query->where('status', '!=', IncidentStatus::Draft)->visibleTo($user);
         } else {
             $scope = 'my-reports';
             $query->where('reporter_id', $user->id)->where('status', '!=', IncidentStatus::Draft);

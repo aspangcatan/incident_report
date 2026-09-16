@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\IncidentStatus;
+use App\Enums\Role;
 use App\Enums\Severity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -92,5 +94,25 @@ class Incident extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /**
+     * Filters non-draft incidents to what the given user is allowed to see,
+     * mirroring IncidentPolicy::view() — keep these two in sync if either changes.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator, Role::Management], true)) {
+            return $query;
+        }
+
+        if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+            return $query->where('department_id', $user->department_id);
+        }
+
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('reporter_id', $user->id)
+                ->orWhere('assigned_investigator_id', $user->id);
+        });
     }
 }

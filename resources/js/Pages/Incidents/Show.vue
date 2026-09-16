@@ -36,6 +36,9 @@ function switchTab(value) {
             <div class="flex flex-wrap items-center gap-space-sm">
                 <StatusBadge :status="incident.status" />
                 <SeverityBadge v-if="incident.severity" :severity="incident.severity" />
+                <span v-if="incident.is_sentinel_event" class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">
+                    Sentinel Event
+                </span>
                 <span class="font-code-tabular text-body-sm text-outline">{{ incident.incident_number ?? `Draft #${incident.id}` }}</span>
             </div>
             <h1 class="font-headline-md text-headline-md text-primary tracking-tight">
@@ -102,6 +105,36 @@ function switchTab(value) {
                 <div v-for="witness in incident.witnesses" :key="witness.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col">
                     <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ witness.name }}</span>
                     <span class="font-body-sm text-body-sm text-on-surface-variant">{{ witness.statement }}</span>
+                </div>
+            </div>
+
+            <div v-if="incident.police_notified" class="flex flex-col gap-1">
+                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Police Notification</span>
+                <div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+                    <span class="font-body-md text-body-md text-on-surface">{{ incident.police_station || '—' }}</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">
+                        Officer: {{ incident.police_officer_in_charge || '—' }} · Blotter #: {{ incident.police_blotter_no || '—' }}
+                    </span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">
+                        Notified: {{ formatDate(incident.police_notified_at) }}
+                    </span>
+                </div>
+            </div>
+
+            <div v-if="incident.narrative_events?.length" class="flex flex-col gap-2">
+                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Sequence of Events</span>
+                <div v-for="event in incident.narrative_events" :key="event.id" class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low">
+                    <span class="font-code-tabular text-body-sm text-primary font-semibold min-w-[70px]">{{ event.occurred_at }}</span>
+                    <span class="font-body-sm text-body-sm text-on-surface">{{ event.description }}</span>
+                </div>
+            </div>
+
+            <div v-if="incident.contributing_factors?.length" class="flex flex-col gap-2">
+                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Contributing Factors</span>
+                <div class="flex flex-wrap gap-2">
+                    <span v-for="factor in incident.contributing_factors" :key="factor.id" class="px-2.5 py-0.5 rounded-full bg-surface-container-low text-on-surface font-label-sm text-body-sm">
+                        {{ factor.label }}
+                    </span>
                 </div>
             </div>
 
