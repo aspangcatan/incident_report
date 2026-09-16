@@ -51,7 +51,8 @@ class Incident extends Model
         'closed_at' => 'datetime',
         'target_closure_date' => 'date',
         'legal_attestation_at' => 'datetime',
-        'escalated_at' => 'datetime',
+        'review_escalated_at' => 'datetime',
+        'assignment_escalated_at' => 'datetime',
     ];
 
     public function reporter(): BelongsTo

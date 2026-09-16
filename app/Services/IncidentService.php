@@ -56,6 +56,7 @@ class IncidentService
                     }
                     $incident->status = IncidentStatus::Submitted;
                     $incident->reported_at = now();
+                    $incident->review_escalated_at = null;
                     $incident->legal_attestation_at = now();
                     $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
                     $incident->save();
@@ -117,6 +118,7 @@ class IncidentService
                 ?? now()->addHours(
                     config('incident_workflow.investigation_sla_hours.' . $incident->severity->value, 168)
                 );
+            $incident->assignment_escalated_at = null;
             $incident->save();
         });
 

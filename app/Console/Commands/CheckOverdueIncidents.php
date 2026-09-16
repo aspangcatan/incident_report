@@ -34,7 +34,7 @@ class CheckOverdueIncidents extends Command
 
     private function escalateOverdueReviews(Collection $recipients): void
     {
-        Incident::whereNull('escalated_at')
+        Incident::whereNull('review_escalated_at')
             ->where('status', IncidentStatus::Submitted)
             ->whereNotNull('reported_at')
             ->get()
@@ -46,20 +46,20 @@ class CheckOverdueIncidents extends Command
                 }
 
                 Notification::send($recipients, new IncidentEscalationNotification($incident, 'Review SLA breached'));
-                $incident->forceFill(['escalated_at' => now()])->save();
+                $incident->forceFill(['review_escalated_at' => now()])->save();
             });
     }
 
     private function escalateOverdueAssignments(Collection $recipients): void
     {
-        Incident::whereNull('escalated_at')
+        Incident::whereNull('assignment_escalated_at')
             ->where('status', IncidentStatus::Assigned)
             ->whereNotNull('target_closure_date')
             ->where('target_closure_date', '<', now())
             ->get()
             ->each(function (Incident $incident) use ($recipients) {
                 Notification::send($recipients, new IncidentEscalationNotification($incident, 'Assignment SLA breached'));
-                $incident->forceFill(['escalated_at' => now()])->save();
+                $incident->forceFill(['assignment_escalated_at' => now()])->save();
             });
     }
 }
