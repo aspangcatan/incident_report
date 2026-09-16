@@ -88,4 +88,37 @@ class IncidentReportingTest extends TestCase
 
         $this->assertTrue($incident->fresh()->is_sentinel_event);
     }
+
+    public function test_submit_retries_incident_number_generation_on_unique_constraint_collision(): void
+    {
+        $reporter = $this->makeReporter();
+        $year = now()->year;
+
+        // Bypass the service to plant an incident that already holds the
+        // number the service's first (colliding) attempt will try to reuse.
+        $existing = new Incident(['location' => 'Ward 1']);
+        $existing->reporter_id = $reporter->id;
+        $existing->status = IncidentStatus::Submitted;
+        $existing->incident_number = "IR-{$year}-000001";
+        $existing->save();
+
+        $service = $this->partialMock(IncidentService::class, function ($mock) use ($year) {
+            $mock->shouldAllowMockingProtectedMethods();
+            $mock->shouldReceive('generateIncidentNumber')
+                ->twice()
+                ->andReturn("IR-{$year}-000001", "IR-{$year}-000002");
+        });
+
+        $draft = $service->createDraft($reporter, [
+            'severity' => Severity::Level1Low->value,
+            'occurred_at' => now(),
+            'location' => 'Ward 2',
+            'summary' => 'Near miss with medication cart.',
+        ]);
+
+        $service->submit($draft);
+
+        $this->assertSame("IR-{$year}-000002", $draft->fresh()->incident_number);
+        $this->assertSame(IncidentStatus::Submitted, $draft->fresh()->status);
+    }
 }

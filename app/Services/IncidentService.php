@@ -7,10 +7,13 @@ use App\Enums\Severity;
 use App\Models\ContributingFactor;
 use App\Models\Incident;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 class IncidentService
 {
+    private const MAX_SUBMIT_ATTEMPTS = 5;
+
     public function createDraft(User $reporter, array $data): Incident
     {
         $incident = new Incident($this->onlyIncidentColumns($data));
@@ -35,19 +38,39 @@ class IncidentService
 
     public function submit(Incident $incident): Incident
     {
-        DB::transaction(function () use ($incident) {
-            $incident->incident_number = $this->generateIncidentNumber();
-            $incident->status = IncidentStatus::Submitted;
-            $incident->reported_at = now();
-            $incident->legal_attestation_at = now();
-            $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
-            $incident->save();
-        });
+        $attempts = 0;
 
-        return $incident;
+        while (true) {
+            try {
+                DB::transaction(function () use ($incident) {
+                    $incident->incident_number = $this->generateIncidentNumber();
+                    $incident->status = IncidentStatus::Submitted;
+                    $incident->reported_at = now();
+                    $incident->legal_attestation_at = now();
+                    $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
+                    $incident->save();
+                });
+
+                return $incident;
+            } catch (QueryException $e) {
+                $attempts++;
+
+                if ($attempts >= self::MAX_SUBMIT_ATTEMPTS || ! $this->isDuplicateIncidentNumber($e)) {
+                    throw $e;
+                }
+            }
+        }
     }
 
-    private function generateIncidentNumber(): string
+    private function isDuplicateIncidentNumber(QueryException $e): bool
+    {
+        $message = $e->getMessage();
+
+        return str_contains($message, 'incidents_incident_number_unique')
+            || str_contains($message, 'UNIQUE constraint failed: incidents.incident_number');
+    }
+
+    protected function generateIncidentNumber(): string
     {
         $year = now()->year;
         $prefix = "IR-{$year}-";
