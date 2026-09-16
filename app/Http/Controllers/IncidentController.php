@@ -125,7 +125,11 @@ class IncidentController extends Controller
             // deliberately unordered (Eloquent appends orderBy rather than replacing it,
             // so a hardcoded ->latest() on the relation would silently break any future
             // caller that tries to reorder it) - ordering is applied explicitly here instead.
-            'auditLogs' => $incident->auditLogs()->with('actor')->latest()->get(),
+            // Secondary sort by id: created_at has only second-level precision, and a single
+            // save() can trigger multiple audit log rows (e.g. assignInvestigator() writes
+            // both an "assigned" and a "status_changed" row) within the same second, so
+            // created_at alone cannot reliably order same-second rows chronologically.
+            'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
             'investigators' => $user->can('assign', $incident)
                 ? User::where('role', Role::Investigator)->where('is_active', true)->get(['id', 'name'])
                 : [],

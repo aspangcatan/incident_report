@@ -390,4 +390,35 @@ class IncidentWorkflowTest extends TestCase
             ->has('auditLogs')
         );
     }
+
+    public function test_show_orders_same_second_audit_logs_by_id_not_just_created_at(): void
+    {
+        $reporter = $this->makeReporter();
+        $incident = $this->submittedIncident($reporter);
+        $incident->auditLogs()->delete();
+
+        $sameSecond = now()->setMicroseconds(0);
+        $earlier = \App\Models\AuditLog::create([
+            'auditable_type' => Incident::class,
+            'auditable_id' => $incident->id,
+            'actor_id' => $reporter->id,
+            'action' => 'created',
+            'created_at' => $sameSecond,
+        ]);
+        $later = \App\Models\AuditLog::create([
+            'auditable_type' => Incident::class,
+            'auditable_id' => $incident->id,
+            'actor_id' => $reporter->id,
+            'action' => 'status_changed',
+            'created_at' => $sameSecond,
+        ]);
+
+        $response = $this->actingAs($reporter)->get("/incidents/{$incident->id}");
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Show')
+            ->where('auditLogs.0.id', $later->id)
+            ->where('auditLogs.1.id', $earlier->id)
+        );
+    }
 }
