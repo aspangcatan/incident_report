@@ -20,13 +20,15 @@ class IncidentWorkflowController extends Controller
     {
         $this->incidents->markReviewed($incident, $request->user(), $request->validated('comments'));
 
-        return back()->with('success', 'Incident marked as reviewed.');
+        return redirect()->route('incidents.show', $incident)->with('success', 'Incident marked as reviewed.');
     }
 
     public function returnForRevision(ReturnIncidentRequest $request, Incident $incident): RedirectResponse
     {
         $this->incidents->returnForRevision($incident, $request->user(), $request->validated('comments'));
 
+        // Once returned, status is back to Draft, which IncidentPolicy::view() hides from
+        // everyone except the reporter - so the reviewer can't be sent to incidents.show.
         return redirect()->route('incidents.index')->with('success', 'Incident returned to the reporter for revision.');
     }
 
