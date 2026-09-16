@@ -78,39 +78,39 @@ class IncidentService
 
     public function markReviewed(Incident $incident, User $reviewer, ?string $comments): Incident
     {
-        return DB::transaction(function () use ($incident, $reviewer, $comments) {
+        DB::transaction(function () use ($incident, $reviewer, $comments) {
             $incident->auditComment = $comments;
             $incident->status = IncidentStatus::Reviewed;
             $incident->supervisor_reviewed_by = $reviewer->id;
             $incident->supervisor_reviewed_at = now();
             $incident->supervisor_comments = $comments;
             $incident->save();
-
-            IncidentReviewed::dispatch($incident);
-
-            return $incident;
         });
+
+        IncidentReviewed::dispatch($incident);
+
+        return $incident;
     }
 
     public function returnForRevision(Incident $incident, User $reviewer, string $comments): Incident
     {
-        return DB::transaction(function () use ($incident, $reviewer, $comments) {
+        DB::transaction(function () use ($incident, $reviewer, $comments) {
             $incident->auditComment = $comments;
             $incident->status = IncidentStatus::Draft;
             $incident->supervisor_reviewed_by = $reviewer->id;
             $incident->supervisor_reviewed_at = now();
             $incident->supervisor_comments = $comments;
             $incident->save();
-
-            IncidentReturnedForRevision::dispatch($incident, $comments);
-
-            return $incident;
         });
+
+        IncidentReturnedForRevision::dispatch($incident, $comments);
+
+        return $incident;
     }
 
-    public function assignInvestigator(Incident $incident, User $investigator, $targetClosureDate = null): Incident
+    public function assignInvestigator(Incident $incident, User $investigator, \DateTimeInterface|string|null $targetClosureDate = null): Incident
     {
-        return DB::transaction(function () use ($incident, $investigator, $targetClosureDate) {
+        DB::transaction(function () use ($incident, $investigator, $targetClosureDate) {
             $incident->assigned_investigator_id = $investigator->id;
             $incident->status = IncidentStatus::Assigned;
             $incident->target_closure_date = $targetClosureDate
@@ -118,11 +118,11 @@ class IncidentService
                     config('incident_workflow.investigation_sla_hours.' . $incident->severity->value, 168)
                 );
             $incident->save();
-
-            IncidentAssigned::dispatch($incident);
-
-            return $incident;
         });
+
+        IncidentAssigned::dispatch($incident);
+
+        return $incident;
     }
 
     private function isDuplicateIncidentNumber(QueryException $e): bool
