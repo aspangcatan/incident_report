@@ -33,6 +33,29 @@ const steps = [
 const currentStep = ref(1);
 const showConfirm = ref(false);
 
+const STEP_FIELDS = {
+    1: ['legal_attestation'],
+    2: ['incident_type_id', 'department_id', 'occurred_at', 'location', 'severity'],
+    3: ['individuals'],
+    4: ['witnesses', 'police_notified', 'police_station', 'police_officer_in_charge', 'police_blotter_no', 'police_notified_at'],
+    5: ['summary', 'narrative_events', 'contributing_factor_ids', 'attachments'],
+    6: ['actions_taken'],
+    7: ['recommendations'],
+};
+
+function firstStepWithError() {
+    const errorFields = Object.keys(form.errors);
+    if (errorFields.length === 0) return null;
+
+    for (const [step, fields] of Object.entries(STEP_FIELDS)) {
+        if (fields.some((field) => errorFields.some((errorField) => errorField === field || errorField.startsWith(field + '.')))) {
+            return Number(step);
+        }
+    }
+
+    return 1;
+}
+
 const form = useForm({
     action: 'draft',
     incident_type_id: props.incident?.incident_type_id ?? null,
@@ -72,7 +95,14 @@ function targetUrl() {
 
 function submitAs(action) {
     form.action = action;
-    const options = { preserveScroll: true, onFinish: () => (showConfirm.value = false) };
+    const options = {
+        preserveScroll: true,
+        onFinish: () => (showConfirm.value = false),
+        onError: () => {
+            const step = firstStepWithError();
+            if (step !== null) currentStep.value = step;
+        },
+    };
 
     if (props.incident) {
         form.transform((data) => ({ ...data, _method: 'patch' })).post(targetUrl(), options);
@@ -105,6 +135,16 @@ function confirmSubmit() {
             >
                 {{ index + 1 }}. {{ step.title }}
             </button>
+        </div>
+
+        <div
+            v-if="form.hasErrors"
+            class="rounded-lg bg-error-container text-on-error-container p-space-md flex flex-col gap-1"
+        >
+            <span class="font-title-sm text-title-sm font-semibold">Please fix the following before continuing:</span>
+            <ul class="list-disc list-inside font-body-sm text-body-sm">
+                <li v-for="(message, field) in form.errors" :key="field">{{ message }}</li>
+            </ul>
         </div>
 
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
