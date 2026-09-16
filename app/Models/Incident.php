@@ -17,6 +17,13 @@ class Incident extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Optional human-readable note attached to the next audit_logs row that
+     * IncidentObserver writes for this model (e.g. a supervisor's revision
+     * reason). Not a database column — read and cleared by the observer.
+     */
+    public ?string $auditComment = null;
+
     protected $fillable = [
         'department_id',
         'incident_type_id',
@@ -44,6 +51,7 @@ class Incident extends Model
         'closed_at' => 'datetime',
         'target_closure_date' => 'date',
         'legal_attestation_at' => 'datetime',
+        'escalated_at' => 'datetime',
     ];
 
     public function reporter(): BelongsTo
@@ -94,6 +102,11 @@ class Incident extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    public function auditLogs(): MorphMany
+    {
+        return $this->morphMany(AuditLog::class, 'auditable')->latest();
     }
 
     /**
