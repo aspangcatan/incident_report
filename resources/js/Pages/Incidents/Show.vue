@@ -4,11 +4,14 @@ import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import WorkflowActionsPanel from '@/Components/Incidents/WorkflowActionsPanel.vue';
 import { formatDate } from '@/Utils/formatDate';
 
 const props = defineProps({
     incident: { type: Object, required: true },
     tab: { type: String, required: true },
+    can: { type: Object, required: true },
+    investigators: { type: Array, default: () => [] },
 });
 
 const tabs = [
@@ -72,6 +75,8 @@ function switchTab(value) {
                 <span class="font-body-md text-body-md text-on-surface font-semibold">{{ incident.incident_type?.name ?? '—' }}</span>
             </div>
         </div>
+
+        <WorkflowActionsPanel :incident="incident" :can="can" :investigators="investigators" />
 
         <div class="flex items-center gap-2 overflow-x-auto pb-1">
             <button
