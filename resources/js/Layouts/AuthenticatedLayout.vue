@@ -15,6 +15,8 @@ const initials = computed(() => {
         .toUpperCase();
 });
 
+const unreadCount = computed(() => page.props.unreadNotificationsCount ?? 0);
+
 const showUserMenu = ref(false);
 const userMenuRoot = ref(null);
 
@@ -105,9 +107,15 @@ const navGroups = [
                 </div>
 
                 <div class="flex items-center gap-space-md">
-                    <button type="button" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors">
+                    <Link href="/notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors">
                         <FontAwesomeIcon icon="bell" class="text-title-lg" />
-                    </button>
+                        <span
+                            v-if="unreadCount > 0"
+                            class="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-error text-on-error rounded-full font-label-sm text-[10px] leading-4 text-center font-bold"
+                        >
+                            {{ unreadCount > 9 ? '9+' : unreadCount }}
+                        </span>
+                    </Link>
 
                     <div ref="userMenuRoot" class="relative">
                         <button
