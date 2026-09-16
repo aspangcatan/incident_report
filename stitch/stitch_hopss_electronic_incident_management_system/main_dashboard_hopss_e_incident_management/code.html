@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary-container": "#006f66", "secondary": "#006a61", "surface-dim": "#d2d9f4", "on-tertiary-fixed-variant": "#004b73", "on-primary-container": "#90a8ff", "on-tertiary-fixed": "#001d31", "surface-container": "#eaedff", "on-secondary-fixed": "#00201d", "on-primary-fixed-variant": "#264191", "surface-container-highest": "#dae2fd", "background": "#faf8ff", "on-background": "#131b2e", "outline": "#757682", "surface-bright": "#faf8ff", "primary-fixed-dim": "#b6c4ff", "secondary-fixed": "#89f5e7", "inverse-surface": "#283044", "tertiary-fixed-dim": "#93ccff", "inverse-on-surface": "#eef0ff", "primary": "#00236f", "secondary-container": "#86f2e4", "tertiary-fixed": "#cce5ff", "tertiary": "#002d48", "tertiary-container": "#004469", "surface": "#faf8ff", "surface-container-lowest": "#ffffff", "on-primary-fixed": "#00164e", "on-secondary-fixed-variant": "#005049", "primary-fixed": "#dce1ff", "surface-container-high": "#e2e7ff", "primary-container": "#1e3a8a", "on-error-container": "#93000a", "on-error": "#ffffff", "secondary-fixed-dim": "#6bd8cb", "error-container": "#ffdad6", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", "on-tertiary-container": "#56b3f9", "inverse-primary": "#b6c4ff", "on-surface-variant": "#444651", "on-primary": "#ffffff", "surface-tint": "#4059aa", "error": "#ba1a1a", "surface-variant": "#dae2fd", "on-surface": "#131b2e", "surface-container-low": "#f2f3ff", "outline-variant": "#c5c5d3" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "margin-mobile": "1rem", "space-md": "1rem", "gutter-mobile": "1rem", "space-lg": "1.5rem", "margin": "2rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-sm": "0.5rem" }, "fontFamily": { "code-tabular": [ "Inter" ], "headline-md": [ "Plus Jakarta Sans" ], "title-md": [ "Inter" ], "headline-xl-mobile": [ "Plus Jakarta Sans" ], "headline-sm": [ "Plus Jakarta Sans" ], "headline-lg-mobile": [ "Plus Jakarta Sans" ], "headline-lg": [ "Plus Jakarta Sans" ], "headline-xl": [ "Plus Jakarta Sans" ], "label-sm": [ "Inter" ], "body-lg": [ "Inter" ], "label-md": [ "Inter" ], "body-sm": [ "Inter" ], "title-lg": [ "Inter" ], "body-md": [ "Inter" ], "title-sm": [ "Inter" ] }, "fontSize": { "code-tabular": [ "0.8125rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "500" } ], "headline-md": [ "1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "title-md": [ "1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" } ], "headline-xl-mobile": [ "1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-sm": [ "1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "headline-lg-mobile": [ "1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "headline-lg": [ "1.875rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-xl": [ "2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.025em", "fontWeight": "700" } ], "label-sm": [ "0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.05em", "fontWeight": "600" } ], "body-lg": [ "1rem", { "lineHeight": "1.625rem", "letterSpacing": "0em", "fontWeight": "400" } ], "label-md": [ "0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "500" } ], "body-sm": [ "0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0.01em", "fontWeight": "400" } ], "title-lg": [ "1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" } ], "body-md": [ "0.875rem", { "lineHeight": "1.375rem", "letterSpacing": "0em", "fontWeight": "400" } ], "title-sm": [ "0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.005em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[340px]"><img alt="HOPSS e-Incident Crest Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VGYWc5Z6O6kQFTProKIRTt20N0PQZ23mh41FudGxZ8aemmhNOgQNmEI1mKRBg-nQRzM-xOc_ikLehLRhugXmdlRiOGp2WCwg2oy9fkcLfg8niK1qMKQYpltLXNjk0EZqszX00rYRvuYsVFTs0YPlweJ4BVGOf_yfMwkHEHUtu8e-XJE_-Y8bGnWv2geTao_X4xSRQex18iuBdGY86PG8mNWHbVxXd6GTBmWoEBI7x3rK6ei51_iNlXLAx6"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-label-sm uppercase tracking-wider text-primary font-bold">PHILIPPINE NATIONAL HEALTH SYSTEM</span><span class="font-label-sm text-label-sm text-outline-variant">•</span><span class="font-label-sm text-label-sm text-secondary font-semibold">EAST METRO MEDICAL CENTER</span></div><div class="flex items-center gap-space-xs"><span class="font-title-sm text-title-sm text-on-surface font-semibold tracking-tight">HOPSS e-INCIDENT</span><span class="bg-secondary-container/50 text-on-secondary-container px-1.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold">v3.4 | DOH Form 2026-Accredited</span></div></div></div><div class="flex-1 max-w-xl hidden xl:flex items-center gap-space-sm"><div class="relative w-full flex items-center bg-surface-container-low rounded-lg px-space-md py-1.5 focus-within:ring-2 focus-within:ring-primary"><span class="material-symbols-outlined text-outline text-title-md mr-2">search</span><input class="w-full bg-transparent border-none outline-none font-body-sm text-body-sm text-on-surface placeholder:text-outline" placeholder="Search incident ID, patient, reporter, clinical unit..." type="text"/><kbd class="font-code-tabular text-body-sm bg-surface-container-lowest text-outline px-1.5 py-0.5 rounded shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-outline-variant/30">Ctrl+K</kbd></div><div class="flex items-center gap-1.5"><button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-sm text-body-sm transition-colors" type="button">Sentinel</button><button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-sm text-body-sm transition-colors" type="button">Med Error</button><button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-sm text-body-sm transition-colors" type="button">ICU</button></div></div><div class="flex items-center gap-space-md"><div class="hidden lg:flex flex-col items-end text-right"><span class="font-code-tabular text-body-sm text-on-surface font-medium">PHT / PST (UTC+8)</span><span class="font-label-sm text-body-sm text-outline flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Syncd 14:42:08</span></div><div class="hidden 2xl:flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container text-primary font-label-sm text-body-sm"><span class="material-symbols-outlined text-base">verified_user</span><span>RA 10173 DPA Compliant</span></div><button class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-title-lg">notifications</span><span class="absolute top-1 right-1 w-4 h-4 bg-error text-on-error rounded-full font-label-sm text-[10px] leading-4 text-center font-bold">4</span></button><div class="flex items-center gap-space-sm pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(15,23,42,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3ECu4wEJLi7yJNcmj-_l_1a0VBDQAQb_SXQKJKLrfQpZLe4LK2X-G4-SGAZejZXPJAMc0L6I1gMlzhKXlRfXhDKUUInChQvhGvfXuU5OC8o5FOuxPBKxXfiHaMAIPK0SOE3jxIon20v9SRBpwAYx6oHKCnRgOvX_82dAmS3kl21_OtBZnpi37wRkj-OeZ-gU0LVvGbMRQXpXL0hKOIbcpJmV6YVUV_jV_oolhRycvK5Vm78OBUc1d2w"/><div class="hidden md:flex flex-col text-left"><span class="font-title-sm text-title-sm text-on-surface leading-tight">Dr. Maria Althea Ramos</span><span class="font-label-sm text-body-sm text-outline leading-tight">Quality &amp; Safety / HOPSS Chair</span></div></div></div></div></header><aside class="fixed left-0 top-0 bottom-8 h-[calc(100vh-2rem)] w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 overflow-y-auto shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="px-space-md mb-3"><a class="flex items-center justify-center gap-space-xs w-full py-2.5 px-space-md rounded-lg bg-secondary text-on-secondary hover:bg-on-secondary-container hover:text-on-secondary font-label-md text-label-md transition-all shadow-[0_1px_3px_rgba(0,106,97,0.2)]" data-path="report-incident" href="#"><span class="material-symbols-outlined text-title-md">add_circle</span><span>+ Report an Incident</span></a></div><nav class="flex-1 px-space-sm flex flex-col gap-0.5" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]"><a aria-current="page" class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]" data-path="dashboard" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">space_dashboard</span><span class="font-body-md text-body-md">Dashboard</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Incident Management</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="all-incidents" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">emergency</span><span class="font-body-md text-body-md">All Incidents</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">142</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="my-reports" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">person</span><span class="font-body-md text-body-md">My Reports</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">6</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="draft-reports" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">edit_note</span><span class="font-body-md text-body-md">Draft Reports</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">2</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="pending-review" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">pending_actions</span><span class="font-body-md text-body-md">Pending Review</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold">5</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="under-investigation" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">manage_search</span><span class="font-body-md text-body-md">Under Investigation</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 font-bold">8</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="corrective-actions-queue" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">task_alt</span><span class="font-body-md text-body-md">Corrective Actions</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">14</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="resolved-closed" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">check_circle</span><span class="font-body-md text-body-md">Resolved / Closed</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">107</span></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Investigation Workspace</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="investigation-queue" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">clinical_notes</span><span class="font-body-md text-body-md">Investigation Queue</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="assigned-to-me" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">assignment_ind</span><span class="font-body-md text-body-md">Assigned to Me</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-bold">3</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="investigation-history-findings" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">history_edu</span><span class="font-body-md text-body-md">History &amp; Findings</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">CAPA Operations</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="open-actions" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">playlist_play</span><span class="font-body-md text-body-md">Open Actions</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="for-verification" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">verified</span><span class="font-body-md text-body-md">For Verification</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-bold">3</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="overdue-actions" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">warning</span><span class="font-body-md text-body-md">Overdue Actions</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-bold">2</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="completed-archive" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">archive</span><span class="font-body-md text-body-md">Completed Archive</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Analytics &amp; Learning</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="executive-overview-learning" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">insights</span><span class="font-body-md text-body-md">Executive Overview</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="incident-trends-sentinel" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">trending_up</span><span class="font-body-md text-body-md">Trends &amp; Sentinels</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="department-severity-heatmap" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">grid_view</span><span class="font-body-md text-body-md">Unit &amp; Severity Heatmap</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="response-resolution-times" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">timer</span><span class="font-body-md text-body-md">Resolution Times</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Administration &amp; Audit</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="workflow-escalation-engine" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">account_tree</span><span class="font-body-md text-body-md">Escalation Engine</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="hospital-departments-units" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">apartment</span><span class="font-body-md text-body-md">Departments &amp; Units</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="audit-trail-chain-of-custody" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">receipt_long</span><span class="font-body-md text-body-md">Audit Trail &amp; Custody</span></div></a></nav></aside><div class="pl-72"><main class="w-full pt-16 pb-12 px-margin min-h-[calc(100vh-2rem)]"><div class="flex flex-col w-full gap-space-lg">
+<!-- 1. Institutional Context & Strategic Header -->
+<section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
+<div class="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+<div class="absolute right-1/4 -bottom-20 h-48 w-48 rounded-full bg-secondary/5 blur-2xl pointer-events-none"></div>
+<div class="relative flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-lg">
+<div class="flex flex-col max-w-3xl">
+<div class="flex flex-wrap items-center gap-space-xs mb-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+            PHILHEALTH CQI MONITORING ACCREDITED
+          </span>
+<span class="text-outline-variant text-body-sm font-label-sm">•</span>
+<span class="font-code-tabular text-body-sm text-outline">Q1 2026 CYCLE: JAN 01 – MAR 31, 2026</span>
+<span class="text-outline-variant text-body-sm font-label-sm">•</span>
+<span class="font-label-sm text-body-sm text-primary font-semibold">DOH AO 2020-0034 COMPLIANT</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+          From Paper Incident Reporting to Complete Digital Incident Management
+        </h1>
+<p class="mt-1 font-body-md text-body-md text-on-surface-variant leading-relaxed">
+          Digital reporting improves how incidents are captured and managed. Seamlessly transition from frontline occurrence reporting to rapid clinical triage, committee root-cause investigation, corrective action plans (CAPA), and institutional safety learning.
+        </p>
+</div>
+<!-- Quick Action Toolbar -->
+<div class="flex flex-wrap items-center gap-2.5 w-full xl:w-auto self-stretch xl:self-auto justify-start xl:justify-end">
+<div class="flex items-center bg-surface-container px-3 py-2 rounded-lg text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-outline text-title-sm mr-1.5">calendar_month</span>
+<span class="text-on-surface-variant mr-1">Period:</span>
+<span class="font-semibold text-primary">Last 30 Days</span>
+<span class="material-symbols-outlined text-outline text-body-md ml-1.5">expand_more</span>
+</div>
+<button class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-surface-dim text-primary font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-title-sm">picture_as_pdf</span>
+<span>Export CQI Summary</span>
+</button>
+<button class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-title-sm">add_box</span>
+<span>+ Report Incident (IR)</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 2. Prominent Interactive Incident Lifecycle Stepper -->
+<section class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-3 px-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-title-md">alt_route</span>
+<h2 class="font-title-lg text-title-lg text-on-surface">Interactive Incident Governance Pipeline</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-code-tabular text-body-sm text-outline">76 Active Tracked</span>
+</div>
+<span class="font-label-sm text-body-sm text-outline hidden md:inline">Select stage to filter triage registry below</span>
+</div>
+<!-- Connected Horizontal Stepper Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+<!-- 1. Reported -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-surface-container-low hover:bg-primary/5 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-surface-container-highest text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-title-sm">note_add</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-on-surface">12</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Step 01</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold group-hover:text-primary">Reported</span>
+<span class="mt-1 font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+          Intake queue
+        </span>
+</button>
+<!-- 2. For Review -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-amber-50 hover:bg-amber-100/70 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-amber-200 text-amber-900 group-hover:bg-amber-800 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-title-sm">visibility</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-amber-900">5</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-amber-800 font-bold">Step 02</span>
+<span class="font-title-sm text-title-sm text-amber-950 font-semibold">For Review</span>
+<span class="mt-1 font-body-sm text-body-sm text-amber-800 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+          2 &lt; 24h SLA
+        </span>
+</button>
+<!-- 3. Investigation -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-surface-container-low hover:bg-primary/5 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-primary-fixed text-on-primary-fixed-variant group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-title-sm">manage_search</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-on-surface">8</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Step 03</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold group-hover:text-primary">Investigation</span>
+<span class="mt-1 font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          RCA &amp; Fishbone
+        </span>
+</button>
+<!-- 4. Action / CAPA -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-surface-container-low hover:bg-primary/5 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-surface-container-highest text-tertiary group-hover:bg-tertiary group-hover:text-on-tertiary transition-colors">
+<span class="material-symbols-outlined text-title-sm">build</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-on-surface">6</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Step 04</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold group-hover:text-primary">CAPA Action</span>
+<span class="mt-1 font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+          In execution
+        </span>
+</button>
+<!-- 5. Verification -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-surface-container-low hover:bg-primary/5 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-secondary-fixed text-on-secondary-fixed-variant group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+<span class="material-symbols-outlined text-title-sm">verified_user</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-on-surface">3</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Step 05</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold group-hover:text-primary">Verification</span>
+<span class="mt-1 font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          Clinical audit
+        </span>
+</button>
+<!-- 6. Closed -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100/70 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-emerald-200 text-emerald-900 group-hover:bg-emerald-800 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-title-sm">check_circle</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-emerald-900">42</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-emerald-800">Step 06</span>
+<span class="font-title-sm text-title-sm text-emerald-950 font-semibold">Closed</span>
+<span class="mt-1 font-body-sm text-body-sm text-emerald-800 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          Formal sign-off
+        </span>
+</button>
+<!-- 7. Learn & Improve -->
+<button class="group relative flex flex-col items-start p-3 rounded-lg bg-surface-container hover:bg-secondary/10 transition-all text-left" type="button">
+<div class="flex items-center justify-between w-full mb-1.5">
+<span class="flex items-center justify-center w-7 h-7 rounded-md bg-secondary text-on-secondary group-hover:bg-on-secondary-container transition-colors">
+<span class="material-symbols-outlined text-title-sm">auto_awesome</span>
+</span>
+<span class="font-code-tabular text-title-sm font-bold text-secondary">Q1</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Continuous</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold group-hover:text-secondary">Learn &amp; CQI</span>
+<span class="mt-1 font-body-sm text-body-sm text-outline flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          Safety bulletins
+        </span>
+</button>
+</div>
+</section>
+<!-- 3. Key Performance Metric Cards (6-Grid Telemetry) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-space-md">
+<!-- Card 1: Total Incidents -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-outline">Total Incidents (YTD)</span>
+<span class="p-1.5 rounded-lg bg-surface-container text-primary">
+<span class="material-symbols-outlined text-title-md">analytics</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-headline-xl text-headline-xl text-on-surface font-bold">76</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="inline-flex items-center text-secondary font-semibold font-code-tabular text-body-sm">
+<span class="material-symbols-outlined text-body-md">trending_up</span> +4.2%
+          </span>
+<span class="text-outline font-body-sm text-body-sm">vs prev quarter</span>
+</div>
+</div>
+<div class="pt-2 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2 rounded-b-xl flex items-center justify-between">
+<span class="font-label-sm text-body-sm text-secondary font-medium">Within target thresholds</span>
+<span class="material-symbols-outlined text-outline text-title-sm">chevron_right</span>
+</div>
+</div>
+<!-- Card 2: Pending Initial Review -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-outline">Pending Review</span>
+<span class="p-1.5 rounded-lg bg-amber-100 text-amber-900">
+<span class="material-symbols-outlined text-title-md">schedule</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-headline-xl text-headline-xl text-amber-900 font-bold">5</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">2 Critical SLA</span>
+<span class="text-outline font-body-sm text-body-sm">&lt; 24h</span>
+</div>
+</div>
+<div class="pt-2 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2 rounded-b-xl flex items-center justify-between">
+<span class="font-label-sm text-body-sm text-primary font-medium">Triage queue</span>
+<span class="material-symbols-outlined text-outline text-title-sm">chevron_right</span>
+</div>
+</div>
+<!-- Card 3: Under Investigation -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-outline">Active Investigations</span>
+<span class="p-1.5 rounded-lg bg-blue-100 text-blue-900">
+<span class="material-symbols-outlined text-title-md">search_insights</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-headline-xl text-headline-xl text-primary font-bold">8</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="font-code-tabular text-body-sm text-primary font-medium">3 Sentinel / RCA</span>
+<span class="text-outline font-body-sm text-body-sm">• 5 Peer team</span>
+</div>
+</div>
+<div class="pt-2 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2 rounded-b-xl flex items-center justify-between">
+<span class="font-label-sm text-body-sm text-primary font-medium">Committee boards</span>
+<span class="material-symbols-outlined text-outline text-title-sm">chevron_right</span>
+</div>
+</div>
+<!-- Card 4: Overdue Corrective Actions -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-error font-semibold">Overdue CAPA</span>
+<span class="p-1.5 rounded-lg bg-error-container text-on-error-container">
+<span class="material-symbols-outlined text-title-md">warning</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-headline-xl text-headline-xl text-error font-bold">2</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="text-error font-semibold font-code-tabular text-body-sm">Past DOH deadline</span>
+<span class="text-outline font-body-sm text-body-sm">(BioMed / Ward)</span>
+</div>
+</div>
+<div class="pt-2 bg-error/5 -mx-4 -mb-4 px-4 py-2 rounded-b-xl flex items-center justify-between">
+<span class="font-label-sm text-body-sm text-error font-semibold">Escalate immediately</span>
+<span class="material-symbols-outlined text-error text-title-sm">chevron_right</span>
+</div>
+</div>
+<!-- Card 5: High / Sentinel Events -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-outline">Sentinel Incidents</span>
+<span class="p-1.5 rounded-lg bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-title-md">crisis_alert</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-headline-xl text-headline-xl text-on-surface font-bold">4</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="text-primary font-medium font-code-tabular text-body-sm">Level 4-5 Severity</span>
+<span class="text-outline font-body-sm text-body-sm">• Med Dir Alerted</span>
+</div>
+</div>
+<div class="pt-2 bg-surface-container-low/50 -mx-4 -mb-4 px-4 py-2 rounded-b-xl flex items-center justify-between">
+<span class="font-label-sm text-body-sm text-primary font-medium">HOPSS Board log</span>
+<span class="material-symbols-outlined text-outline text-title-sm">chevron_right</span>
+</div>
+</div>
+<!-- Card 6: Closed & Verified -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-outline">Closed &amp; Verified</span>
+<span class="p-1.5 rounded-lg bg-secondary-container text-on-secondary-container">
+<span class="material-symbols-outlined text-title-md">task_alt</span>
+</span>
+</div>
+<div class="my-2">
+<div class="font-headline-xl text-headline-xl text-secondary font-bold">57</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="text-secondary font-medium font-code-tabular text-body-sm">88.4% Resolution</span>
+<span class="text-outline font-body-sm text-body-sm">rate YTD</span>
+</div>
+</div>
+<div class="pt-2 bg-secondary/5 -mx-4 -mb-4 px-4 py-2 rounded-b-xl flex items-center justify-between">
+<span class="font-label-sm text-body-sm text-secondary font-medium">View completed archives</span>
+<span class="material-symbols-outlined text-outline text-title-sm">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- 4. Attention Required / Executive Action Feed -->
+<section class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-space-sm mb-space-sm">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-title-md">notification_important</span>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface font-semibold">Immediate Attention Required • Executive Escalation Feed</h2>
+<p class="font-body-sm text-body-sm text-outline">Critical occurrences exceeding governance deadlines or classified as high-risk hospital safety threats</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold flex items-center gap-1.5 w-fit">
+<span class="w-2 h-2 rounded-full bg-error animate-ping"></span>
+        4 ACTIONABLE OVERDUE / SENTINEL ITEMS
+      </span>
+</div>
+<!-- Alert Items Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Item 1: Med Error Overdue -->
+<div class="flex flex-col justify-between p-3.5 rounded-lg bg-error-container/30 hover:bg-error-container/40 transition-colors">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-code-tabular text-body-sm font-bold text-on-error-container px-2 py-0.5 rounded bg-surface-container-lowest">IR-2026-000124</span>
+<span class="px-2 py-0.5 rounded-full bg-error text-on-error font-label-sm text-body-sm font-bold">Severity: High</span>
+</div>
+<span class="font-label-sm text-body-sm text-error font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-body-sm">timer_off</span> Overdue by 2 days
+            </span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">Medication error during shift handover in Treatment Area</h3>
+<p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Incorrect dosage calculated on IV Potassium infusion. Halted pre-administration by second RN verifier. Root cause inquiry unresolved.</p>
+</div>
+<div class="mt-3 pt-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest text-primary flex items-center justify-center font-label-sm text-body-sm font-bold">MR</div>
+<span class="font-label-sm text-body-sm text-outline">Assigned: <strong class="text-on-surface">Dr. M. Ramos (HOPSS)</strong></span>
+</div>
+<button class="px-3 py-1.5 rounded-md bg-error text-on-error hover:bg-on-error-container font-label-sm text-body-sm font-semibold transition-colors flex items-center gap-1" type="button">
+<span>Open Investigation</span>
+<span class="material-symbols-outlined text-body-md">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Equipment Malfunction NICU Sentinel -->
+<div class="flex flex-col justify-between p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-code-tabular text-body-sm font-bold text-primary px-2 py-0.5 rounded bg-surface-container-lowest">IR-2026-000131</span>
+<span class="px-2 py-0.5 rounded-full bg-error text-on-error font-label-sm text-body-sm font-bold">Sentinel Protocol</span>
+</div>
+<span class="font-label-sm text-body-sm text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-body-sm">crisis_alert</span> Board Notification Sent
+            </span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">Equipment malfunction in Neonatal ICU Infusion Pump</h3>
+<p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Sudden occlusion alarm failure on Pump Model XP-300. Infant placed on backup manual monitor; zero patient harm sustained.</p>
+</div>
+<div class="mt-3 pt-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-fixed text-on-primary-fixed-variant flex items-center justify-center font-label-sm text-body-sm font-bold">NB</div>
+<span class="font-label-sm text-body-sm text-outline">Review: <strong class="text-on-surface">Sentinel Safety Board</strong></span>
+</div>
+<button class="px-3 py-1.5 rounded-md bg-primary text-on-primary hover:bg-primary-container font-label-sm text-body-sm font-semibold transition-colors flex items-center gap-1" type="button">
+<span>Convene Board</span>
+<span class="material-symbols-outlined text-body-md">groups</span>
+</button>
+</div>
+</div>
+<!-- Item 3: CAPA Biomedical Calibration -->
+<div class="flex flex-col justify-between p-3.5 rounded-lg bg-amber-50/60 hover:bg-amber-100/60 transition-colors">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-code-tabular text-body-sm font-bold text-amber-900 px-2 py-0.5 rounded bg-surface-container-lowest">CAPA-2026-089</span>
+<span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-label-sm text-body-sm font-bold">Corrective Action</span>
+</div>
+<span class="font-label-sm text-body-sm text-amber-900 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-body-sm">alarm</span> Due Tomorrow 17:00 PST
+            </span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">Biomedical calibration of Ward 3 Defibrillators</h3>
+<p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Mandatory recalibration and joule discharge log verification following intermittent battery indicator flagging during morning shift check.</p>
+</div>
+<div class="mt-3 pt-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center font-label-sm text-body-sm font-bold">EB</div>
+<span class="font-label-sm text-body-sm text-outline">Lead: <strong class="text-on-surface">Engr. Bautista (Biomed)</strong></span>
+</div>
+<button class="px-3 py-1.5 rounded-md bg-surface-container-lowest text-on-surface hover:bg-surface-container-high font-label-sm text-body-sm font-semibold transition-colors flex items-center gap-1" type="button">
+<span>Verify Action</span>
+<span class="material-symbols-outlined text-body-md">fact_check</span>
+</button>
+</div>
+</div>
+<!-- Item 4: Clarification Fall Incident -->
+<div class="flex flex-col justify-between p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div>
+<div class="flex items-center justify-between gap-2 mb-1.5">
+<div class="flex items-center gap-2">
+<span class="font-code-tabular text-body-sm font-bold text-outline px-2 py-0.5 rounded bg-surface-container-lowest">IR-2026-000140</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-body-sm font-medium">Triage Query</span>
+</div>
+<span class="font-label-sm text-body-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-body-sm">contact_support</span> Reporter Clarification
+            </span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">Slip and fall incident near Radiology hallway</h3>
+<p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Patient escort slip on freshly mopped floor without warning cone. Missing vital signs post-fall check verification from on-duty orderly.</p>
+</div>
+<div class="mt-3 pt-2.5 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest text-outline flex items-center justify-center font-label-sm text-body-sm font-bold">HN</div>
+<span class="font-label-sm text-body-sm text-outline">Reporter: <strong class="text-on-surface">Nurse Supervisor Lim</strong></span>
+</div>
+<button class="px-3 py-1.5 rounded-md bg-surface-container-high text-primary hover:bg-surface-dim font-label-sm text-body-sm font-semibold transition-colors flex items-center gap-1" type="button">
+<span>Review Details</span>
+<span class="material-symbols-outlined text-body-md">mobile_share</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. Incident Trends & Hospital Safety Analytics (Two-Column Grid) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+<!-- Left Column: Incident Occurrence Trends & Timeline Chart (7 cols) -->
+<div class="lg:col-span-7 flex flex-col justify-between rounded-xl bg-surface-container-lowest p-space-md shadow-sm">
+<div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-space-sm">
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface font-semibold">Incident Occurrence Trends &amp; Surge Telemetry</h2>
+<p class="font-body-sm text-body-sm text-outline">Shift changeover correlation (07:00, 15:00, 23:00 PST) • Moving 14-day average</p>
+</div>
+<div class="inline-flex p-1 rounded-lg bg-surface-container-low text-body-sm">
+<button class="px-2.5 py-1 rounded font-label-sm text-body-sm bg-surface-container-lowest text-primary font-semibold shadow-sm" type="button">Daily</button>
+<button class="px-2.5 py-1 rounded font-label-sm text-body-sm text-outline hover:text-on-surface" type="button">Weekly</button>
+<button class="px-2.5 py-1 rounded font-label-sm text-body-sm text-outline hover:text-on-surface" type="button">Monthly</button>
+<button class="px-2.5 py-1 rounded font-label-sm text-body-sm text-outline hover:text-on-surface" type="button">Q-Cycle</button>
+</div>
+</div>
+<!-- Custom Inline Trend Bar & Area Chart SVG -->
+<div class="w-full mt-3 bg-surface-container-low/40 rounded-lg p-3">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1 font-label-sm text-body-sm text-primary">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary"></span>
+                Total Incident Volume
+              </span>
+<span class="flex items-center gap-1 font-label-sm text-body-sm text-secondary">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+                Handover Spike Index
+              </span>
+</div>
+<span class="font-code-tabular text-body-sm text-outline">Peak: 14 Feb (Shift 2 Handover)</span>
+</div>
+<svg class="w-full h-44 overflow-visible" preserveaspectratio="none" viewbox="0 0 600 160">
+<!-- Grid Lines -->
+<line class="text-outline-variant/30" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="600" y1="20" y2="20"></line>
+<line class="text-outline-variant/30" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="600" y1="60" y2="60"></line>
+<line class="text-outline-variant/30" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="600" y1="100" y2="100"></line>
+<line class="text-outline-variant/50" stroke="currentColor" stroke-width="1" x1="0" x2="600" y1="140" y2="140"></line>
+<!-- Bars for Daily Counts (14 days) -->
+<!-- Day 1 -->
+<rect class="fill-surface-container-highest" height="50" rx="3" width="16" x="25" y="90"></rect>
+<!-- Day 2 -->
+<rect class="fill-surface-container-highest" height="60" rx="3" width="16" x="65" y="80"></rect>
+<!-- Day 3 -->
+<rect class="fill-surface-container-highest" height="35" rx="3" width="16" x="105" y="105"></rect>
+<!-- Day 4 -->
+<rect class="fill-surface-container-highest" height="75" rx="3" width="16" x="145" y="65"></rect>
+<!-- Day 5 -->
+<rect class="fill-surface-container-highest" height="65" rx="3" width="16" x="185" y="75"></rect>
+<!-- Day 6 -->
+<rect class="fill-surface-container-highest" height="30" rx="3" width="16" x="225" y="110"></rect>
+<!-- Day 7 -->
+<rect class="fill-surface-container-highest" height="85" rx="3" width="16" x="265" y="55"></rect>
+<!-- Day 8 -->
+<rect class="fill-surface-container-highest" height="70" rx="3" width="16" x="305" y="70"></rect>
+<!-- Day 9 -->
+<rect class="fill-surface-container-highest" height="45" rx="3" width="16" x="345" y="95"></rect>
+<!-- Day 10 -->
+<rect class="fill-surface-container-highest" height="95" rx="3" width="16" x="385" y="45"></rect>
+<!-- Day 11 (Spike) -->
+<rect class="fill-primary" height="110" rx="3" width="16" x="425" y="30"></rect>
+<!-- Day 12 -->
+<rect class="fill-primary-fixed-dim" height="80" rx="3" width="16" x="465" y="60"></rect>
+<!-- Day 13 -->
+<rect class="fill-primary-fixed-dim" height="90" rx="3" width="16" x="505" y="50"></rect>
+<!-- Day 14 (Current) -->
+<rect class="fill-secondary" height="65" rx="3" width="16" x="545" y="75"></rect>
+<!-- Handover Spike Spline Wave (Moving avg / shift correlation) -->
+<path class="text-secondary" d="M 33 110 Q 73 85 113 115 T 193 90 T 273 60 T 353 85 T 433 35 T 513 65 T 553 80" fill="none" stroke="currentColor" stroke-width="2.5"></path>
+<!-- Highlight Dots -->
+<circle class="fill-secondary stroke-surface-container-lowest" cx="433" cy="35" r="4.5" stroke-width="2"></circle>
+<circle class="fill-secondary" cx="553" cy="80" r="4"></circle>
+</svg>
+<!-- Timeline Labels -->
+<div class="flex justify-between text-outline font-code-tabular text-body-sm pt-1 px-1">
+<span>01 Feb</span>
+<span>04 Feb</span>
+<span>07 Feb</span>
+<span>10 Feb</span>
+<span class="text-primary font-bold">14 Feb (Today)</span>
+</div>
+</div>
+</div>
+<!-- Quick Analysis Callout -->
+<div class="mt-3 p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-title-sm">lightbulb</span>
+<span class="font-body-sm text-body-sm text-on-surface"><strong>CQI Insight:</strong> 61% of medication errors occurred within ±45 minutes of the 15:00 Shift 2 endorsement.</span>
+</div>
+<a class="font-label-sm text-body-sm text-primary font-semibold hover:underline" href="#">View Shift Analysis →</a>
+</div>
+</div>
+<!-- Right Column: Severity & Incident Type Distribution (5 cols) -->
+<div class="lg:col-span-5 flex flex-col justify-between rounded-xl bg-surface-container-lowest p-space-md shadow-sm">
+<div>
+<div class="flex items-center justify-between pb-space-sm">
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface font-semibold">Incident Classification &amp; Severity</h2>
+<p class="font-body-sm text-body-sm text-outline">Risk Matrix Distribution for Q1 2026</p>
+</div>
+<span class="material-symbols-outlined text-outline text-title-md">pie_chart</span>
+</div>
+<!-- Severity Level Progress Stack -->
+<div class="space-y-3 mt-1">
+<div>
+<div class="flex justify-between font-label-sm text-body-sm mb-1">
+<span class="flex items-center gap-1.5 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+                Critical / Sentinel (Level 4-5)
+              </span>
+<span class="font-code-tabular font-bold text-error">4 cases (5.2%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full" style="width: 5.2%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-sm text-body-sm mb-1">
+<span class="flex items-center gap-1.5 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                Major Adverse / High Risk (Level 3)
+              </span>
+<span class="font-code-tabular font-bold text-amber-900">18 cases (23.7%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-amber-500 h-full rounded-full" style="width: 23.7%;"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-sm text-body-sm mb-1">
+<span class="flex items-center gap-1.5 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                Moderate / Low Risk (Level 1-2)
+              </span>
+<span class="font-code-tabular font-bold text-secondary">54 cases (71.1%)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 71.1%;"></div>
+</div>
+</div>
+</div>
+<!-- Categorical Breakdown Badges -->
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-4 px-4 pb-2 rounded-lg">
+<span class="font-label-sm text-body-sm uppercase tracking-wider text-outline block mb-2 font-semibold">Classification by Domain</span>
+<div class="grid grid-cols-2 gap-2 font-body-sm text-body-sm">
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest">
+<span class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-primary text-body-md">personal_injury</span>
+                Clinical Safety
+              </span>
+<span class="font-code-tabular font-bold text-primary">45%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest">
+<span class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-secondary text-body-md">medication</span>
+                Medication
+              </span>
+<span class="font-code-tabular font-bold text-secondary">22%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest">
+<span class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">domain</span>
+                Facility / BioMed
+              </span>
+<span class="font-code-tabular font-bold text-outline">18%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest">
+<span class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">health_and_safety</span>
+                Staff Safety / OSH
+              </span>
+<span class="font-code-tabular font-bold text-outline">15%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-2 text-right">
+<a class="font-label-sm text-body-sm text-primary font-semibold hover:underline inline-flex items-center gap-1" href="#">
+<span>Open Full DOH Form 2026 Matrix</span>
+<span class="material-symbols-outlined text-body-md">open_in_new</span>
+</a>
+</div>
+</div>
+</section>
+<!-- 6. Recent Incident Activity & Triage Table -->
+<section class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden">
+<!-- Table Header Toolbar -->
+<div class="p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-low/30">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-title-lg">clinical_notes</span>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface font-semibold">Incident Triage &amp; Clinical Operations Registry</h2>
+<p class="font-body-sm text-body-sm text-outline">Live operational stream updated across 24 inpatient wards and specialty clinical units</p>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<!-- Filter Pills -->
+<div class="flex items-center bg-surface-container-lowest rounded-lg px-2.5 py-1 text-body-sm">
+<span class="material-symbols-outlined text-outline text-body-md mr-1.5">filter_list</span>
+<span class="font-label-sm text-body-sm text-outline mr-1">Unit:</span>
+<span class="font-label-sm text-body-sm font-semibold text-on-surface">All Units</span>
+<span class="material-symbols-outlined text-outline text-body-md ml-1">expand_more</span>
+</div>
+<div class="flex items-center bg-surface-container-lowest rounded-lg px-2.5 py-1 text-body-sm">
+<span class="font-label-sm text-body-sm text-outline mr-1">Severity:</span>
+<span class="font-label-sm text-body-sm font-semibold text-primary">All Levels</span>
+<span class="material-symbols-outlined text-outline text-body-md ml-1">expand_more</span>
+</div>
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Reload live records" type="button">
+<span class="material-symbols-outlined text-title-sm">sync</span>
+</button>
+</div>
+</div>
+<!-- Responsive Dense Clinical Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left font-body-md text-body-md border-collapse">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<tr>
+<th class="py-3 px-4">Ref Number</th>
+<th class="py-3 px-4">Occurrence Date / Time</th>
+<th class="py-3 px-4">Incident Domain &amp; Details</th>
+<th class="py-3 px-4">Hospital Unit / Ward</th>
+<th class="py-3 px-4 text-center">Severity</th>
+<th class="py-3 px-4">Governance Stage</th>
+<th class="py-3 px-4">Assigned Personnel</th>
+<th class="py-3 px-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4 font-code-tabular text-body-sm font-bold text-primary whitespace-nowrap">
+              IR-2026-000124
+            </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="font-code-tabular text-body-sm font-medium text-on-surface">14 Feb 2026</div>
+<div class="font-code-tabular text-body-sm text-outline">09:15 PST (Shift 1)</div>
+</td>
+<td class="py-3.5 px-4 max-w-xs">
+<div class="font-title-sm text-title-sm font-semibold text-on-surface truncate">Medication dosage calculation variance</div>
+<div class="font-body-sm text-body-sm text-outline truncate">Potassium infusion formula halted pre-push during shift swap</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">local_hospital</span>
+                Emergency Dept • Treatment
+              </span>
+</td>
+<td class="py-3.5 px-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> High Risk
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-body-sm">search</span> Under Investigation
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="w-6 h-6 rounded-full bg-surface-container-highest text-primary flex items-center justify-center font-label-sm text-body-sm font-bold">JS</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Dr. J. Santos</span>
+</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<button class="px-3 py-1 rounded bg-primary text-on-primary hover:bg-primary-container font-label-sm text-body-sm font-semibold transition-colors" type="button">
+                Manage
+              </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4 font-code-tabular text-body-sm font-bold text-primary whitespace-nowrap">
+              IR-2026-000125
+            </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="font-code-tabular text-body-sm font-medium text-on-surface">14 Feb 2026</div>
+<div class="font-code-tabular text-body-sm text-outline">11:30 PST (Shift 1)</div>
+</td>
+<td class="py-3.5 px-4 max-w-xs">
+<div class="font-title-sm text-title-sm font-semibold text-on-surface truncate">Medication Dispensing - Sound-Alike Label</div>
+<div class="font-body-sm text-body-sm text-outline truncate">Cefuroxime vs Cefotaxime look-alike ampoule tagged at central rack</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">vaccines</span>
+                Pharmacy Division
+              </span>
+</td>
+<td class="py-3.5 px-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-body-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Moderate
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-900 font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-body-sm">visibility</span> Pending Review
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="w-6 h-6 rounded-full bg-surface-container-highest text-outline flex items-center justify-center font-label-sm text-body-sm font-bold">HC</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Head Nurse Cruz</span>
+</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<button class="px-3 py-1 rounded bg-surface-container-high text-primary hover:bg-surface-dim font-label-sm text-body-sm font-semibold transition-colors" type="button">
+                Triage
+              </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4 font-code-tabular text-body-sm font-bold text-primary whitespace-nowrap">
+              IR-2026-000122
+            </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="font-code-tabular text-body-sm font-medium text-on-surface">13 Feb 2026</div>
+<div class="font-code-tabular text-body-sm text-outline">16:45 PST (Shift 2)</div>
+</td>
+<td class="py-3.5 px-4 max-w-xs">
+<div class="font-title-sm text-title-sm font-semibold text-on-surface truncate">Facility Surgical Air Pressure Fluctuation</div>
+<div class="font-body-sm text-body-sm text-outline truncate">HVAC positive pressure gradient low in OR 2 during elective laparotomy</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">masks</span>
+                Operating Room Complex 2
+              </span>
+</td>
+<td class="py-3.5 px-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Critical
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-body-sm">check_circle_outline</span> CAPA Executed
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="w-6 h-6 rounded-full bg-surface-container-highest text-outline flex items-center justify-center font-label-sm text-body-sm font-bold">EB</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Engr. Bautista</span>
+</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<button class="px-3 py-1 rounded bg-secondary text-on-secondary hover:bg-on-secondary-container font-label-sm text-body-sm font-semibold transition-colors" type="button">
+                Verify
+              </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4 font-code-tabular text-body-sm font-bold text-primary whitespace-nowrap">
+              IR-2026-000119
+            </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="font-code-tabular text-body-sm font-medium text-on-surface">12 Feb 2026</div>
+<div class="font-code-tabular text-body-sm text-outline">08:20 PST (Shift 1)</div>
+</td>
+<td class="py-3.5 px-4 max-w-xs">
+<div class="font-title-sm text-title-sm font-semibold text-on-surface truncate">Staff Occupational Needlestick Exposure</div>
+<div class="font-body-sm text-body-sm text-outline truncate">Post-phlebotomy recapping puncture; PEP initiated at ER OPD unit within 1h</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">hotel</span>
+                Ward 4 - Internal Med
+              </span>
+</td>
+<td class="py-3.5 px-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-body-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Moderate
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-body-sm">fact_check</span> Verification
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="w-6 h-6 rounded-full bg-surface-container-highest text-outline flex items-center justify-center font-label-sm text-body-sm font-bold">NL</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Supv. Lim</span>
+</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<button class="px-3 py-1 rounded bg-surface-container-high text-primary hover:bg-surface-dim font-label-sm text-body-sm font-semibold transition-colors" type="button">
+                Sign-Off
+              </button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4 font-code-tabular text-body-sm font-bold text-primary whitespace-nowrap">
+              IR-2026-000115
+            </td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="font-code-tabular text-body-sm font-medium text-on-surface">11 Feb 2026</div>
+<div class="font-code-tabular text-body-sm text-outline">14:10 PST (Shift 2)</div>
+</td>
+<td class="py-3.5 px-4 max-w-xs">
+<div class="font-title-sm text-title-sm font-semibold text-on-surface truncate">Inpatient Unassisted Bedside Transfer Fall</div>
+<div class="font-body-sm text-body-sm text-outline truncate">Bed rail lowered; Morse Fall Scale reassessed from 45 to 65 with yellow band</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-outline text-body-md">accessible</span>
+                Geriatric Specialty Ward
+              </span>
+</td>
+<td class="py-3.5 px-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-body-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Low Risk
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-outline font-label-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-body-sm">check</span> Closed &amp; Archived
+              </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<div class="flex items-center gap-1.5">
+<span class="w-6 h-6 rounded-full bg-surface-container-highest text-primary flex items-center justify-center font-label-sm text-body-sm font-bold">MR</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Dr. M. Ramos</span>
+</div>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<button class="px-3 py-1 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-sm text-body-sm font-semibold transition-colors" type="button">
+                View Report
+              </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination & Audit Footer -->
+<div class="p-3.5 bg-surface-container-low/40 flex flex-col sm:flex-row items-center justify-between gap-2">
+<div class="flex items-center gap-2 text-outline font-body-sm text-body-sm">
+<span>Showing <strong class="text-on-surface font-code-tabular">1 to 5</strong> of <strong class="text-on-surface font-code-tabular">76</strong> active hospital incidents</span>
+<span>•</span>
+<span class="font-code-tabular text-body-sm">Auto-refreshes every 60s</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-outline hover:text-on-surface font-label-sm text-body-sm disabled:opacity-40" disabled="" type="button">Previous</button>
+<button class="w-7 h-7 rounded bg-primary text-on-primary font-label-sm text-body-sm font-bold" type="button">1</button>
+<button class="w-7 h-7 rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-sm text-body-sm" type="button">2</button>
+<button class="w-7 h-7 rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-sm text-body-sm" type="button">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-7 h-7 rounded bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-sm text-body-sm" type="button">16</button>
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary hover:bg-surface-container font-label-sm text-body-sm font-semibold" type="button">Next</button>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Micro-interactions for interactive lifecycle filters
+  document.querySelectorAll('button[type="button"]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      if (this.textContent.includes('Report Incident') || this.textContent.includes('+ Report New Incident')) {
+        const reportPath = document.querySelector('a[data-path="report-incident"]');
+        if (reportPath) reportPath.click();
+      }
+    });
+  });
+</script></main></div><footer class="fixed bottom-0 left-0 right-0 h-8 z-50 bg-surface-container-low/95 backdrop-blur-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)] px-space-md flex items-center justify-between font-label-sm text-body-sm text-outline"><div class="flex items-center gap-space-md"><span>Republic of the Philippines • Department of Health Health Facility Incident Reporting System</span><span class="hidden md:inline">•</span><span class="hidden md:inline">Data Privacy Act of 2012 (RA 10173) Certified</span></div><div class="flex items-center gap-space-xs font-code-tabular text-body-sm"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="text-on-surface font-medium">Live &amp; Syncing - East Metro Cloud Node 01</span></div></footer></body></html>

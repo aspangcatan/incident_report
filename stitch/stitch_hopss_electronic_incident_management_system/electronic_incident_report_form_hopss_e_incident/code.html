@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary-container": "#006f66", "secondary": "#006a61", "surface-dim": "#d2d9f4", "on-tertiary-fixed-variant": "#004b73", "on-primary-container": "#90a8ff", "on-tertiary-fixed": "#001d31", "surface-container": "#eaedff", "on-secondary-fixed": "#00201d", "on-primary-fixed-variant": "#264191", "surface-container-highest": "#dae2fd", "background": "#faf8ff", "on-background": "#131b2e", "outline": "#757682", "surface-bright": "#faf8ff", "primary-fixed-dim": "#b6c4ff", "secondary-fixed": "#89f5e7", "inverse-surface": "#283044", "tertiary-fixed-dim": "#93ccff", "inverse-on-surface": "#eef0ff", "primary": "#00236f", "secondary-container": "#86f2e4", "tertiary-fixed": "#cce5ff", "tertiary": "#002d48", "tertiary-container": "#004469", "surface": "#faf8ff", "surface-container-lowest": "#ffffff", "on-primary-fixed": "#00164e", "on-secondary-fixed-variant": "#005049", "primary-fixed": "#dce1ff", "surface-container-high": "#e2e7ff", "primary-container": "#1e3a8a", "on-error-container": "#93000a", "on-error": "#ffffff", "secondary-fixed-dim": "#6bd8cb", "error-container": "#ffdad6", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", "on-tertiary-container": "#56b3f9", "inverse-primary": "#b6c4ff", "on-surface-variant": "#444651", "on-primary": "#ffffff", "surface-tint": "#4059aa", "error": "#ba1a1a", "surface-variant": "#dae2fd", "on-surface": "#131b2e", "surface-container-low": "#f2f3ff", "outline-variant": "#c5c5d3" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "margin-mobile": "1rem", "space-md": "1rem", "gutter-mobile": "1rem", "space-lg": "1.5rem", "margin": "2rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-sm": "0.5rem" }, "fontFamily": { "code-tabular": [ "Inter" ], "headline-md": [ "Plus Jakarta Sans" ], "title-md": [ "Inter" ], "headline-xl-mobile": [ "Plus Jakarta Sans" ], "headline-sm": [ "Plus Jakarta Sans" ], "headline-lg-mobile": [ "Plus Jakarta Sans" ], "headline-lg": [ "Plus Jakarta Sans" ], "headline-xl": [ "Plus Jakarta Sans" ], "label-sm": [ "Inter" ], "body-lg": [ "Inter" ], "label-md": [ "Inter" ], "body-sm": [ "Inter" ], "title-lg": [ "Inter" ], "body-md": [ "Inter" ], "title-sm": [ "Inter" ] }, "fontSize": { "code-tabular": [ "0.8125rem", { "lineHeight": "1.125rem", "letterSpacing": "0em", "fontWeight": "500" } ], "headline-md": [ "1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "title-md": [ "1rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" } ], "headline-xl-mobile": [ "1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-sm": [ "1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "headline-lg-mobile": [ "1.5rem", { "lineHeight": "2rem", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "headline-lg": [ "1.875rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-xl": [ "2.25rem", { "lineHeight": "2.75rem", "letterSpacing": "-0.025em", "fontWeight": "700" } ], "label-sm": [ "0.75rem", { "lineHeight": "1rem", "letterSpacing": "0.05em", "fontWeight": "600" } ], "body-lg": [ "1rem", { "lineHeight": "1.625rem", "letterSpacing": "0em", "fontWeight": "400" } ], "label-md": [ "0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.01em", "fontWeight": "500" } ], "body-sm": [ "0.75rem", { "lineHeight": "1.125rem", "letterSpacing": "0.01em", "fontWeight": "400" } ], "title-lg": [ "1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "0em", "fontWeight": "600" } ], "body-md": [ "0.875rem", { "lineHeight": "1.375rem", "letterSpacing": "0em", "fontWeight": "400" } ], "title-sm": [ "0.875rem", { "lineHeight": "1.25rem", "letterSpacing": "0.005em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[340px]"><img alt="HOPSS e-Incident Crest Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VGYWc5Z6O6kQFTProKIRTt20N0PQZ23mh41FudGxZ8aemmhNOgQNmEI1mKRBg-nQRzM-xOc_ikLehLRhugXmdlRiOGp2WCwg2oy9fkcLfg8niK1qMKQYpltLXNjk0EZqszX00rYRvuYsVFTs0YPlweJ4BVGOf_yfMwkHEHUtu8e-XJE_-Y8bGnWv2geTao_X4xSRQex18iuBdGY86PG8mNWHbVxXd6GTBmWoEBI7x3rK6ei51_iNlXLAx6"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-label-sm uppercase tracking-wider text-primary font-bold">PHILIPPINE NATIONAL HEALTH SYSTEM</span><span class="font-label-sm text-label-sm text-outline-variant">•</span><span class="font-label-sm text-label-sm text-secondary font-semibold">EAST METRO MEDICAL CENTER</span></div><div class="flex items-center gap-space-xs"><span class="font-title-sm text-title-sm text-on-surface font-semibold tracking-tight">HOPSS e-INCIDENT</span><span class="bg-secondary-container/50 text-on-secondary-container px-1.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold">v3.4 | DOH Form 2026-Accredited</span></div></div></div><div class="flex-1 max-w-xl hidden xl:flex items-center gap-space-sm"><div class="relative w-full flex items-center bg-surface-container-low rounded-lg px-space-md py-1.5 focus-within:ring-2 focus-within:ring-primary"><span class="material-symbols-outlined text-outline text-title-md mr-2">search</span><input class="w-full bg-transparent border-none outline-none font-body-sm text-body-sm text-on-surface placeholder:text-outline" placeholder="Search incident ID, patient, reporter, clinical unit..." type="text"/><kbd class="font-code-tabular text-body-sm bg-surface-container-lowest text-outline px-1.5 py-0.5 rounded shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-outline-variant/30">Ctrl+K</kbd></div><div class="flex items-center gap-1.5"><button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-sm text-body-sm transition-colors" type="button">Sentinel</button><button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-sm text-body-sm transition-colors" type="button">Med Error</button><button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-sm text-body-sm transition-colors" type="button">ICU</button></div></div><div class="flex items-center gap-space-md"><div class="hidden lg:flex flex-col items-end text-right"><span class="font-code-tabular text-body-sm text-on-surface font-medium">PHT / PST (UTC+8)</span><span class="font-label-sm text-body-sm text-outline flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Syncd 14:42:08</span></div><div class="hidden 2xl:flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container text-primary font-label-sm text-body-sm"><span class="material-symbols-outlined text-base">verified_user</span><span>RA 10173 DPA Compliant</span></div><button class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-title-lg">notifications</span><span class="absolute top-1 right-1 w-4 h-4 bg-error text-on-error rounded-full font-label-sm text-[10px] leading-4 text-center font-bold">4</span></button><div class="flex items-center gap-space-sm pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(15,23,42,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3ECu4wEJLi7yJNcmj-_l_1a0VBDQAQb_SXQKJKLrfQpZLe4LK2X-G4-SGAZejZXPJAMc0L6I1gMlzhKXlRfXhDKUUInChQvhGvfXuU5OC8o5FOuxPBKxXfiHaMAIPK0SOE3jxIon20v9SRBpwAYx6oHKCnRgOvX_82dAmS3kl21_OtBZnpi37wRkj-OeZ-gU0LVvGbMRQXpXL0hKOIbcpJmV6YVUV_jV_oolhRycvK5Vm78OBUc1d2w"/><div class="hidden md:flex flex-col text-left"><span class="font-title-sm text-title-sm text-on-surface leading-tight">Dr. Maria Althea Ramos</span><span class="font-label-sm text-body-sm text-outline leading-tight">Quality &amp; Safety / HOPSS Chair</span></div></div></div></div></header><aside class="fixed left-0 top-0 bottom-8 h-[calc(100vh-2rem)] w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 overflow-y-auto shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="px-space-md mb-3"><a class="flex items-center justify-center gap-space-xs w-full py-2.5 px-space-md rounded-lg bg-secondary text-on-secondary hover:bg-on-secondary-container hover:text-on-secondary font-label-md text-label-md transition-all shadow-[0_1px_3px_rgba(0,106,97,0.2)]" data-path="report-incident" href="#"><span class="material-symbols-outlined text-title-md">add_circle</span><span>+ Report an Incident</span></a></div><nav class="flex-1 px-space-sm flex flex-col gap-0.5" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]"><a class="flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="dashboard" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">space_dashboard</span><span class="font-body-md text-body-md">Dashboard</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Incident Management</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="all-incidents" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">emergency</span><span class="font-body-md text-body-md">All Incidents</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">142</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="my-reports" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">person</span><span class="font-body-md text-body-md">My Reports</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">6</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="draft-reports" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">edit_note</span><span class="font-body-md text-body-md">Draft Reports</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">2</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="pending-review" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">pending_actions</span><span class="font-body-md text-body-md">Pending Review</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold">5</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="under-investigation" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">manage_search</span><span class="font-body-md text-body-md">Under Investigation</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 font-bold">8</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="corrective-actions-queue" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">task_alt</span><span class="font-body-md text-body-md">Corrective Actions</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">14</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="resolved-closed" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">check_circle</span><span class="font-body-md text-body-md">Resolved / Closed</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold">107</span></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Investigation Workspace</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="investigation-queue" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">clinical_notes</span><span class="font-body-md text-body-md">Investigation Queue</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="assigned-to-me" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">assignment_ind</span><span class="font-body-md text-body-md">Assigned to Me</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-bold">3</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="investigation-history-findings" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">history_edu</span><span class="font-body-md text-body-md">History &amp; Findings</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">CAPA Operations</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="open-actions" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">playlist_play</span><span class="font-body-md text-body-md">Open Actions</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="for-verification" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">verified</span><span class="font-body-md text-body-md">For Verification</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-bold">3</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="overdue-actions" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">warning</span><span class="font-body-md text-body-md">Overdue Actions</span></div><span class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-bold">2</span></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="completed-archive" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">archive</span><span class="font-body-md text-body-md">Completed Archive</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Analytics &amp; Learning</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="executive-overview-learning" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">insights</span><span class="font-body-md text-body-md">Executive Overview</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="incident-trends-sentinel" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">trending_up</span><span class="font-body-md text-body-md">Trends &amp; Sentinels</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="department-severity-heatmap" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">grid_view</span><span class="font-body-md text-body-md">Unit &amp; Severity Heatmap</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="response-resolution-times" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">timer</span><span class="font-body-md text-body-md">Resolution Times</span></div></a><div class="pt-3 pb-1 px-3"><span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">Administration &amp; Audit</span></div><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="workflow-escalation-engine" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">account_tree</span><span class="font-body-md text-body-md">Escalation Engine</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="hospital-departments-units" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">apartment</span><span class="font-body-md text-body-md">Departments &amp; Units</span></div></a><a class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="audit-trail-chain-of-custody" href="#"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-title-md">receipt_long</span><span class="font-body-md text-body-md">Audit Trail &amp; Custody</span></div></a></nav></aside><div class="pl-72"><main class="w-full pt-16 pb-12 px-margin min-h-[calc(100vh-2rem)]"><div class="flex flex-col w-full gap-space-lg pb-12">
+<!-- Top Command & Status Bar -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="flex flex-col gap-1">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold tracking-wide">
+<span class="material-symbols-outlined text-xs">verified</span> DOH FORM 2026-IR
+        </span>
+<span class="font-code-tabular text-body-sm text-on-surface-variant font-medium">Auto-Ref: IR-2026-000142</span>
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+          Draft auto-saved 1 min ago
+        </span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary font-bold tracking-tight">New Electronic Incident Report (IR)</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Hospital Operations &amp; Patient Safety System (HOPSS) • RA 10173 Clinical Privacy Safeguarded</p>
+</div>
+<!-- Top Secondary Utility Actions -->
+<div class="flex items-center gap-space-sm self-start xl:self-center">
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-title-md text-outline">help</span>
+        Guidelines
+      </button>
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-low text-error hover:bg-error-container hover:text-on-error-container font-label-md text-label-md transition-all" type="button">
+<span class="material-symbols-outlined text-title-md">delete_sweep</span>
+        Discard
+      </button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-secondary text-on-secondary hover:bg-on-secondary-container font-label-md text-label-md transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-title-md">bookmark</span>
+        Save as Draft
+      </button>
+</div>
+</div>
+<!-- 7-Stage Clinical Governance Stepper -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm overflow-x-auto">
+<div class="min-w-[940px] flex items-center justify-between relative px-space-md py-space-xs">
+<!-- Continuous Base Track -->
+<div class="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-1 bg-surface-container-high rounded-full -z-0"></div>
+<div class="absolute left-10 top-1/2 -translate-y-1/2 h-1 bg-secondary rounded-full -z-0" style="width: 28%;"></div>
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-code-tabular text-body-sm font-bold shadow-sm">
+<span class="material-symbols-outlined text-base">check</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-semibold whitespace-nowrap">1. Reporter Info</span>
+</div>
+<!-- Step 2 (Active) -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-code-tabular text-body-md font-bold shadow-md ring-4 ring-primary-fixed">
+<span>02</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold whitespace-nowrap">2. Incident Details</span>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-code-tabular text-body-sm font-semibold">
+<span>03</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium whitespace-nowrap">3. People &amp; Witnesses</span>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-code-tabular text-body-sm font-semibold">
+<span>04</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium whitespace-nowrap">4. Description &amp; Evidence</span>
+</div>
+<!-- Step 5 -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-code-tabular text-body-sm font-semibold">
+<span>05</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium whitespace-nowrap">5. Immediate Actions</span>
+</div>
+<!-- Step 6 -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-code-tabular text-body-sm font-semibold">
+<span>06</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium whitespace-nowrap">6. Preventive Measures</span>
+</div>
+<!-- Step 7 -->
+<div class="flex flex-col items-center gap-1.5 relative z-10 group cursor-pointer">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-code-tabular text-body-sm font-semibold">
+<span>07</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium whitespace-nowrap">7. Review &amp; Submit</span>
+</div>
+</div>
+</div>
+<!-- Master Layout Grid: Form Canvas & Contextual Audit Sidebar -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- Form Panels Area -->
+<div class="xl:col-span-8 flex flex-col gap-space-lg">
+<!-- SECTION 1: REPORTER INFORMATION (Pre-populated Auth State) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="px-space-lg py-space-md bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-5 rounded-full bg-secondary"></span>
+<h2 class="font-title-lg text-title-lg text-primary font-bold">Section 1: Reporter Information</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest text-secondary font-label-sm text-body-sm font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">lock</span> Authenticated Active Session
+            </span>
+</div>
+<span class="font-code-tabular text-body-sm text-outline">SEC-01/07</span>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Full Name with Verified Badge -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Reported By (Principal Clinician)</span>
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low text-on-surface font-title-sm text-title-sm font-semibold">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-title-md">check_circle</span>
+<span>Dr. Maria Althea Ramos, MD, FPCP</span>
+</div>
+<span class="font-code-tabular text-body-sm text-outline">PRC: 0098412</span>
+</div>
+</div>
+<!-- Designation -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Clinical Designation / Position</span>
+<div class="p-2.5 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md">
+                Quality &amp; Patient Safety Officer / Senior Attending Physician
+              </div>
+</div>
+<!-- Department -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Department / Administrative Office</span>
+<div class="p-2.5 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md">
+                Office of the Medical Center Chief &amp; Quality Management Division
+              </div>
+</div>
+<!-- Submission Timestamp -->
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">System Recording Date &amp; Timestamp</span>
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-on-surface font-code-tabular text-body-md">
+<span class="material-symbols-outlined text-primary text-title-sm">schedule</span>
+<span>15 Feb 2026, 09:30 AM PST (UTC+8)</span>
+</div>
+</div>
+</div>
+<!-- Legal Attestation Acknowledgment -->
+<div class="mt-2 p-space-md rounded-lg bg-surface-container-low flex items-start gap-3">
+<input checked="" class="mt-1 w-4 h-4 rounded accent-primary cursor-pointer" id="legal-attest" type="checkbox"/>
+<label class="cursor-pointer font-body-sm text-body-sm text-on-surface" for="legal-attest">
+<span class="font-semibold text-primary">Electronic Acknowledgment &amp; Legal Certification:</span>
+              I certify under penalty of administrative sanctions, the Civil Service Commission guidelines, and DOH Department Circular No. 2021-0498 that the observations and statements herein are true, factual, and based on firsthand clinical verification.
+            </label>
+</div>
+</div>
+</div>
+<!-- SECTION 2: INCIDENT DETAILS & SEVERITY CLASSIFICATION -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="px-space-lg py-space-md bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-5 rounded-full bg-primary"></span>
+<h2 class="font-title-lg text-title-lg text-primary font-bold">Section 2: Incident Details &amp; Risk Level</h2>
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-sm text-body-sm font-semibold">Active Review</span>
+</div>
+<span class="font-code-tabular text-body-sm text-outline">SEC-02/07</span>
+</div>
+<div class="p-space-lg flex flex-col gap-space-lg">
+<!-- Classification and Timing Fields -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Incident Classification Category <span class="text-error">*</span></label>
+<div class="relative">
+<select class="w-full appearance-none p-3 pr-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm">
+<option selected="">Medication Error (Infusion Rate / Dose Mismatch)</option>
+<option>Patient Safety Incident (Fall / Slippage)</option>
+<option>Sentinel Event (Unexpected Death / Serious Harm)</option>
+<option>Adverse Drug Reaction (ADR / Anaphylaxis)</option>
+<option>Occupational / Staff Needle Stick Injury</option>
+<option>Equipment / Biomedical Device Failure</option>
+<option>Security Breach / Physical Violence</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3.5 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Primary Clinical Service / Division <span class="text-error">*</span></label>
+<div class="relative">
+<select class="w-full appearance-none p-3 pr-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm">
+<option selected="">Emergency Medicine Department (ED / ER)</option>
+<option>Intensive Care Unit (ICU / CCU)</option>
+<option>Main Operating Theater Complex (OR)</option>
+<option>General Inpatient Ward (Internal Medicine)</option>
+<option>Department of Obstetrics &amp; Gynecology</option>
+<option>Biochemical &amp; Pathology Laboratory</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3.5 pointer-events-none text-outline">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Date of Incident Occurrence <span class="text-error">*</span></label>
+<div class="relative flex items-center">
+<input class="w-full p-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm" type="text" value="14 Feb 2026"/>
+<span class="material-symbols-outlined absolute left-3 text-outline text-title-md">calendar_today</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Exact Time &amp; Shift <span class="text-error">*</span></label>
+<div class="relative flex items-center">
+<input class="w-full p-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm" type="text" value="22:45 PST (Night Duty Shift 22:00-06:00)"/>
+<span class="material-symbols-outlined absolute left-3 text-outline text-title-md">alarm</span>
+</div>
+</div>
+</div>
+<!-- Exact Physical Location Area -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Precise Location &amp; Bed / Room Assignment <span class="text-error">*</span></label>
+<div class="relative flex items-center">
+<input class="w-full p-3 pl-10 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm" type="text" value="Building A - Ground Floor, Emergency Department, Trauma Treatment Bay 03"/>
+<span class="material-symbols-outlined absolute left-3 text-outline text-title-md">meeting_room</span>
+</div>
+</div>
+<!-- Clinical Severity / Risk Classification Matrix Selection -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Incident Severity &amp; Harm Level Assessment <span class="text-error">*</span></label>
+<span class="font-label-sm text-body-sm text-outline">DOH Joint Commission International (JCI) Criteria</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<!-- Low -->
+<label class="flex flex-col p-3 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors relative">
+<input class="hidden peer" name="severity-choice" type="radio"/>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-sm text-body-sm font-bold">Level I</span>
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface font-bold">Low Risk</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Near miss or minor inconvenience; no patient physical harm or treatment delay.</p>
+</label>
+<!-- Moderate -->
+<label class="flex flex-col p-3 rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors relative">
+<input class="hidden peer" name="severity-choice" type="radio"/>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-sm text-body-sm font-bold">Level II</span>
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface font-bold">Moderate Risk</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Mild temporary harm; minor bedside intervention, monitoring &lt; 24 hrs.</p>
+</label>
+<!-- High (Selected) -->
+<label class="flex flex-col p-3 rounded-lg bg-amber-50 shadow-sm cursor-pointer relative ring-2 ring-amber-500">
+<input checked="" class="hidden peer" name="severity-choice" type="radio"/>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 font-label-sm text-body-sm font-bold">Level III</span>
+<span class="w-3 h-3 rounded-full bg-amber-600 ring-2 ring-white"></span>
+</div>
+<span class="font-title-sm text-title-sm text-amber-950 font-bold">High Severity</span>
+<p class="font-body-sm text-body-sm text-amber-900 mt-1">Temporary major harm; prolonged ICU stay, corrective pharmacotherapy needed.</p>
+</label>
+<!-- Critical / Sentinel -->
+<label class="flex flex-col p-3 rounded-lg bg-surface-container-low hover:bg-error-container/40 cursor-pointer transition-colors relative">
+<input class="hidden peer" name="severity-choice" type="radio"/>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded-full bg-error text-on-error font-label-sm text-body-sm font-bold">Level IV</span>
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+</div>
+<span class="font-title-sm text-title-sm text-error font-bold">Critical / Sentinel</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Permanent loss of organ function or life danger. Immediate DOH notification.</p>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 3: PEOPLE INVOLVED, WITNESSES & POLICE NOTIFICATION -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="px-space-lg py-space-md bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-5 rounded-full bg-secondary"></span>
+<h2 class="font-title-lg text-title-lg text-primary font-bold">Section 3: People Involved &amp; Witnesses</h2>
+</div>
+<button class="inline-flex items-center gap-1 text-primary hover:text-on-primary-fixed-variant font-label-sm text-label-sm font-bold" type="button">
+<span class="material-symbols-outlined text-base">person_add</span> + Add Person
+          </button>
+</div>
+<div class="p-space-lg flex flex-col gap-space-lg">
+<!-- Roster of Individuals Table -->
+<div class="rounded-lg bg-surface-container-low overflow-hidden">
+<div class="px-space-md py-2.5 bg-surface-container flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Individuals Directly Involved</span>
+<span class="font-code-tabular text-body-sm text-outline">2 Recorded</span>
+</div>
+<div class="divide-y divide-surface-container">
+<!-- Patient Entry -->
+<div class="p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-lg">personal_injury</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Patient C.D.R.</span>
+<span class="font-code-tabular text-body-sm px-2 py-0.2 rounded bg-surface-container text-outline">HRN-902814</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-body-sm font-semibold">Patient</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Female • 64 y/o • Admitted: Bay 03 • Diagnosis: Acute Decompensated Heart Failure</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1.5 rounded-lg text-outline hover:text-primary hover:bg-surface-container" type="button"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-surface-container" type="button"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</div>
+<!-- Staff Entry -->
+<div class="p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-secondary flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-lg">medical_services</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Nurse Ronald Dela Cruz, RN</span>
+<span class="font-code-tabular text-body-sm px-2 py-0.2 rounded bg-surface-container text-outline">EMP-0842</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-body-sm font-semibold">Attending Staff Nurse</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">ER Trauma Unit • Night Shift Staff Nurse • On duty 8 hrs</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1.5 rounded-lg text-outline hover:text-primary hover:bg-surface-container" type="button"><span class="material-symbols-outlined text-base">edit</span></button>
+<button class="p-1.5 rounded-lg text-outline hover:text-error hover:bg-surface-container" type="button"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</div>
+</div>
+</div>
+<!-- Witnesses Segment -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Were there witnesses present during the incident?</span>
+<div class="flex items-center gap-1 p-1 rounded-lg bg-surface-container-low">
+<button class="px-3 py-1 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-bold shadow-sm" type="button">YES</button>
+<button class="px-3 py-1 rounded text-on-surface-variant font-label-sm text-label-sm" type="button">NO</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start justify-between">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-title-md mt-0.5">visibility</span>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">Nurse Karla Mendoza, RN</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Staff Nurse II - ER Triage (Ext: 4120)</span>
+<span class="font-code-tabular text-body-sm text-outline mt-0.5">Statement: Affirmed infusion rate change observed.</span>
+</div>
+</div>
+<button class="text-outline hover:text-error" type="button"><span class="material-symbols-outlined text-base">close</span></button>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start justify-between">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-title-md mt-0.5">security</span>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">SO M. Santos</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Hospital Security Force - Guard Post 02</span>
+<span class="font-code-tabular text-body-sm text-outline mt-0.5">Observed: Present during pharmacy delivery handoff.</span>
+</div>
+</div>
+<button class="text-outline hover:text-error" type="button"><span class="material-symbols-outlined text-base">close</span></button>
+</div>
+</div>
+</div>
+<!-- Police / PNP External Notification Segment -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-title-md">local_police</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Was the Philippine National Police (PNP) or external agency notified?</span>
+</div>
+<div class="flex items-center gap-1 p-1 rounded-lg bg-surface-container">
+<button class="px-3 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-bold shadow-sm" type="button">YES</button>
+<button class="px-3 py-1 rounded text-on-surface-variant font-label-sm text-label-sm" type="button">NO</button>
+</div>
+</div>
+<!-- Pre-filled Police Details Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-sm pt-2">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-body-sm text-outline font-medium">Police Station / Precinct</span>
+<input class="p-2 rounded bg-surface-container-lowest text-on-surface font-body-sm text-body-sm" type="text" value="PNP Station 7 - Hospital Precinct"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-body-sm text-outline font-medium">Officer-in-Charge</span>
+<input class="p-2 rounded bg-surface-container-lowest text-on-surface font-body-sm text-body-sm" type="text" value="P/Cpl. R. Villanueva (#48912)"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-body-sm text-outline font-medium">Blotter Reference No.</span>
+<input class="p-2 rounded bg-surface-container-lowest text-on-surface font-code-tabular text-body-sm font-bold" type="text" value="BLOTTER-2026-0812-ER"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-body-sm text-outline font-medium">Date &amp; Time Notified</span>
+<input class="p-2 rounded bg-surface-container-lowest text-on-surface font-code-tabular text-body-sm" type="text" value="15 Feb 2026, 00:15 PST"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 4: STRUCTURED INCIDENT DESCRIPTION & EVIDENCE -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="px-space-lg py-space-md bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-5 rounded-full bg-secondary"></span>
+<h2 class="font-title-lg text-title-lg text-primary font-bold">Section 4: Description &amp; Digital Evidence</h2>
+</div>
+<span class="font-code-tabular text-body-sm text-outline">SEC-04/07</span>
+</div>
+<div class="p-space-lg flex flex-col gap-space-lg">
+<!-- Event Summary Synopsis -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Executive Narrative Summary <span class="text-error">*</span></label>
+<textarea class="w-full p-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm leading-relaxed" rows="3">At approximately 22:45 PST during bed turnover, IV infusion of Norepinephrine was unintentionally titrated via Infusion Pump Unit #ER-IP-08 at 30 mL/hr instead of the physician-ordered maintenance dose of 3.0 mL/hr. The tenfold discrepancy was recognized within 15 minutes upon patient blood pressure spike (210/115 mmHg), triggering immediate shutdown and corrective bolus administration.</textarea>
+</div>
+<!-- Chronological Sequence of Events Timeline -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Chronological Timeline of Key Events</label>
+<button class="inline-flex items-center gap-1 text-primary hover:text-on-primary-fixed-variant font-label-sm text-label-sm font-bold" type="button">
+<span class="material-symbols-outlined text-base">add_circle</span> + Add Event Node
+              </button>
+</div>
+<div class="flex flex-col gap-2 relative pl-4 before:content-[''] before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-container-high">
+<!-- Event 1 -->
+<div class="relative flex items-start gap-3 bg-surface-container-low p-2.5 rounded-lg">
+<span class="w-2 h-2 rounded-full bg-primary -left-[19px] top-3 absolute"></span>
+<span class="font-code-tabular text-body-sm text-primary font-bold min-w-[70px]">22:30 PST</span>
+<span class="font-body-sm text-body-sm text-on-surface">Night duty nurse begins shift turnover; pump set up during sudden cardiac arrest resuscitation in adjacent Bay 02.</span>
+</div>
+<!-- Event 2 -->
+<div class="relative flex items-start gap-3 bg-amber-50 p-2.5 rounded-lg">
+<span class="w-2 h-2 rounded-full bg-amber-600 -left-[19px] top-3 absolute"></span>
+<span class="font-code-tabular text-body-sm text-amber-900 font-bold min-w-[70px]">22:45 PST</span>
+<span class="font-body-sm text-body-sm text-amber-950 font-medium">Dose programmed at 30 mL/hr without mandatory independent secondary nurse dual-signoff due to ER volume surge.</span>
+</div>
+<!-- Event 3 -->
+<div class="relative flex items-start gap-3 bg-surface-container-low p-2.5 rounded-lg">
+<span class="w-2 h-2 rounded-full bg-secondary -left-[19px] top-3 absolute"></span>
+<span class="font-code-tabular text-body-sm text-secondary font-bold min-w-[70px]">23:00 PST</span>
+<span class="font-body-sm text-body-sm text-on-surface">Senior Attending Dr. Ramos performs routine bedside audit, detects rapid infusion, halts pump immediately.</span>
+</div>
+</div>
+</div>
+<!-- Contributing Factors Systemic Matrix -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Identified Contributing &amp; Root Factors</label>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+<label class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="accent-primary rounded" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">High Patient Surge / ER Saturation</span>
+</label>
+<label class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="accent-primary rounded" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">Shift Handover Interruption</span>
+</label>
+<label class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low cursor-pointer">
+<input checked="" class="accent-primary rounded" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">Omitted Dual Verification</span>
+</label>
+<label class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low cursor-pointer">
+<input class="accent-primary rounded" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface">Device Screen Dimming Fault</span>
+</label>
+</div>
+</div>
+<!-- Digital Evidence Attachments & Verification -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Evidence, Device Telemetry &amp; Document Vault</label>
+<span class="font-code-tabular text-body-sm text-outline">2 Uploaded Files • DPA-Encrypted</span>
+</div>
+<!-- Drag & Drop Upload Zone -->
+<div class="p-space-lg rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-center gap-2 group hover:bg-surface-container transition-colors cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-title-lg">cloud_upload</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-primary font-bold">Upload Incident Attachments, MAR Sheets, or CCTV Logs</span>
+<span class="font-body-sm text-body-sm text-outline">Drag and drop PDF, PNG, JPG, or DICOM files (Max 25MB per record)</span>
+</div>
+<button class="mt-1 px-3 py-1 rounded-lg bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold shadow-sm" type="button">
+                Browse Workstation Files
+              </button>
+</div>
+<!-- Uploaded Evidence Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm pt-1">
+<!-- Evidence 1 -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded bg-error/10 text-error flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-title-md">picture_as_pdf</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="font-title-sm text-title-sm text-on-surface font-medium truncate">Infusion_Pump_Alarm_Log_Bay3.pdf</span>
+<span class="font-code-tabular text-body-sm text-outline">1.4 MB • Virus-Scanned Clean • SHA-256 Valid</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 text-outline hover:text-primary" type="button"><span class="material-symbols-outlined text-base">visibility</span></button>
+<button class="p-1 text-outline hover:text-error" type="button"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</div>
+<!-- Evidence 2 -->
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded bg-secondary-container text-secondary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-title-md">image</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="font-title-sm text-title-sm text-on-surface font-medium truncate">Medication_Administration_Record.png</span>
+<span class="font-code-tabular text-body-sm text-outline">2.8 MB • MAR Dual Sign-Off Extract</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 text-outline hover:text-primary" type="button"><span class="material-symbols-outlined text-base">visibility</span></button>
+<button class="p-1 text-outline hover:text-error" type="button"><span class="material-symbols-outlined text-base">delete</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 5: IMMEDIATE CONTAINMENT & CORRECTIVE ACTIONS TAKEN -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="px-space-lg py-space-md bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-5 rounded-full bg-secondary"></span>
+<h2 class="font-title-lg text-title-lg text-primary font-bold">Section 5: Immediate Containment Actions</h2>
+</div>
+<button class="inline-flex items-center gap-1 text-primary hover:text-on-primary-fixed-variant font-label-sm text-label-sm font-bold" type="button">
+<span class="material-symbols-outlined text-base">add_task</span> + Add Action
+          </button>
+</div>
+<div class="p-space-lg flex flex-col gap-space-md">
+<div class="overflow-x-auto rounded-lg bg-surface-container-low">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="p-3">Immediate Intervention Taken</th>
+<th class="p-3">Responsible Officer</th>
+<th class="p-3">Time Executed</th>
+<th class="p-3">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="bg-surface-container-lowest">
+<td class="p-3 font-body-sm text-body-sm text-on-surface">
+<span class="font-semibold block">Immediate Physician Assessment &amp; Bedside Stabilization</span>
+                    Patient placed on telemetry; IV Phentolamine prepared; vitals normalized to 138/82.
+                  </td>
+<td class="p-3 font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">Dr. Ramos (Senior MD)</td>
+<td class="p-3 font-code-tabular text-body-sm text-outline whitespace-nowrap">22:50 PST</td>
+<td class="p-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-body-sm font-semibold">Completed</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest">
+<td class="p-3 font-body-sm text-body-sm text-on-surface">
+<span class="font-semibold block">Biomedical Quarantine of Infusion Pump Unit #ER-IP-08</span>
+                    Device sealed with clinical tamper tape; removed to Clinical Engineering for log dump.
+                  </td>
+<td class="p-3 font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">Engr. Bautista (BioMed)</td>
+<td class="p-3 font-code-tabular text-body-sm text-outline whitespace-nowrap">23:15 PST</td>
+<td class="p-3 whitespace-nowrap">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-body-sm font-semibold">Completed</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Progressive Form Navigation Footer -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-md p-space-lg bg-surface-container-lowest rounded-xl shadow-sm">
+<button class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container font-label-md text-label-md font-semibold transition-all" type="button">
+<span class="material-symbols-outlined text-title-md">arrow_back</span>
+          Previous: Reporter Info
+        </button>
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<button class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-surface-container text-primary hover:bg-surface-container-high font-label-md text-label-md font-semibold transition-all" type="button">
+<span class="material-symbols-outlined text-title-md">save</span>
+            Save Draft &amp; Pause
+          </button>
+<button class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-on-primary hover:bg-on-primary-fixed-variant font-label-md text-label-md font-semibold transition-all shadow-md" type="button">
+<span>Continue to Step 3: People &amp; Witnesses</span>
+<span class="material-symbols-outlined text-title-md">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Auxiliary Panel: Institutional Standards & Quality Context -->
+<div class="xl:col-span-4 flex flex-col gap-space-lg">
+<!-- Official Department of Health Standard Seal Card -->
+<div class="p-space-lg bg-surface-container-lowest rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-2xl">local_hospital</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-sm text-title-sm text-primary font-bold">DOH Clinical Compliance</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Administrative Order No. 2020-0034</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-2 font-body-sm text-body-sm text-on-surface">
+<div class="flex items-center justify-between">
+<span class="text-outline">Reporting Window</span>
+<span class="font-code-tabular text-secondary font-bold">Within 24 Hours</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Mandatory RCA</span>
+<span class="font-semibold text-primary">Required for Level III/IV</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Confidentiality Grade</span>
+<span class="font-semibold text-on-surface">Strictly Privileged</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-outline leading-relaxed">
+          Information documented under HOPSS is generated for quality assurance, patient safety enhancement, and administrative review under Republic Act No. 10173 and hospital peer-review protection statutes.
+        </p>
+</div>
+<!-- Real-Time Automated Escalation Engine Preview -->
+<div class="p-space-lg bg-surface-container-lowest rounded-xl shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-title-lg">notifications_active</span>
+<span class="font-title-sm text-title-sm text-primary font-bold">Automated Routing Alerts</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-body-sm font-bold">Level III Triggered</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Upon submission of this report, instantaneous encrypted SMS &amp; secure portal dispatch will alert:</p>
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Chief Medical Officer / MCC</span>
+</div>
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Chief Nurse &amp; ER Supervisor</span>
+</div>
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Hospital Pharmacy &amp; Therapeutics Board</span>
+</div>
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Clinical Engineering Department Head</span>
+</div>
+</div>
+</div>
+<!-- Hospital Facility Incident Helpdesk Contact -->
+<div class="p-space-lg bg-gradient-to-br from-primary-container to-primary rounded-xl shadow-sm text-on-primary flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-title-lg text-secondary-fixed">support_agent</span>
+<span class="font-title-sm text-title-sm font-bold text-white">HOPSS Safety Hotlines</span>
+</div>
+<p class="font-body-sm text-body-sm text-surface-variant leading-relaxed">
+          Need immediate guidance classifying a severe adverse event or initiating a Sentinel Event investigation?
+        </p>
+<div class="flex flex-col gap-1 font-code-tabular text-body-sm pt-1">
+<span class="text-white font-medium">• ER Quality Desk: Loc. 4100 / 4101</span>
+<span class="text-white font-medium">• Legal &amp; Risk Unit: Loc. 2030</span>
+<span class="text-white font-medium">• BioMed Rapid Response: 0917-882-HOPSS</span>
+</div>
+</div>
+</div>
+</div>
+</div></main></div><footer class="fixed bottom-0 left-0 right-0 h-8 z-50 bg-surface-container-low/95 backdrop-blur-md shadow-[0_-1px_6px_rgba(0,0,0,0.03)] px-space-md flex items-center justify-between font-label-sm text-body-sm text-outline"><div class="flex items-center gap-space-md"><span>Republic of the Philippines • Department of Health Health Facility Incident Reporting System</span><span class="hidden md:inline">•</span><span class="hidden md:inline">Data Privacy Act of 2012 (RA 10173) Certified</span></div><div class="flex items-center gap-space-xs font-code-tabular text-body-sm"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="text-on-surface font-medium">Live &amp; Syncing - East Metro Cloud Node 01</span></div></footer></body></html>
