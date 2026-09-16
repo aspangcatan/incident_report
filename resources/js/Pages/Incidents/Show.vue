@@ -12,6 +12,7 @@ const props = defineProps({
     tab: { type: String, required: true },
     can: { type: Object, required: true },
     investigators: { type: Array, default: () => [] },
+    auditLogs: { type: Array, required: true },
 });
 
 const tabs = [
@@ -170,6 +171,24 @@ function switchTab(value) {
                 <span class="font-body-sm text-body-sm text-on-surface">{{ file.original_filename }}</span>
                 <FontAwesomeIcon icon="eye" class="text-primary" />
             </a>
+        </div>
+
+        <div v-else-if="activeTab === 'audit'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-2">
+            <div v-if="!auditLogs.length" class="text-center font-body-sm text-body-sm text-outline p-space-lg">
+                No audit trail entries yet.
+            </div>
+            <div v-for="log in auditLogs" :key="log.id" class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low">
+                <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center flex-shrink-0">
+                    <FontAwesomeIcon icon="clock-rotate-left" class="text-body-sm" />
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-title-sm text-title-sm text-on-surface font-semibold">
+                        {{ log.actor?.name ?? 'System' }} — {{ log.action.replace('_', ' ') }}
+                    </span>
+                    <span v-if="log.description" class="font-body-sm text-body-sm text-on-surface-variant">{{ log.description }}</span>
+                    <span class="font-code-tabular text-body-sm text-outline">{{ formatDate(log.created_at) }}</span>
+                </div>
+            </div>
         </div>
 
         <div v-else class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm text-center">
