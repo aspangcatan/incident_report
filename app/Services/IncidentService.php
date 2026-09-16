@@ -4,6 +4,10 @@ namespace App\Services;
 
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Events\IncidentAssigned;
+use App\Events\IncidentReturnedForRevision;
+use App\Events\IncidentReviewed;
+use App\Events\IncidentSubmitted;
 use App\Models\ContributingFactor;
 use App\Models\Incident;
 use App\Models\User;
@@ -47,13 +51,17 @@ class IncidentService
         while (true) {
             try {
                 DB::transaction(function () use ($incident) {
-                    $incident->incident_number = $this->generateIncidentNumber();
+                    if ($incident->incident_number === null) {
+                        $incident->incident_number = $this->generateIncidentNumber();
+                    }
                     $incident->status = IncidentStatus::Submitted;
                     $incident->reported_at = now();
                     $incident->legal_attestation_at = now();
                     $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
                     $incident->save();
                 });
+
+                IncidentSubmitted::dispatch($incident);
 
                 return $incident;
             } catch (QueryException $e) {
@@ -62,8 +70,59 @@ class IncidentService
                 if ($attempts >= self::MAX_SUBMIT_ATTEMPTS || ! $this->isDuplicateIncidentNumber($e)) {
                     throw $e;
                 }
+
+                $incident->incident_number = null;
             }
         }
+    }
+
+    public function markReviewed(Incident $incident, User $reviewer, ?string $comments): Incident
+    {
+        return DB::transaction(function () use ($incident, $reviewer, $comments) {
+            $incident->auditComment = $comments;
+            $incident->status = IncidentStatus::Reviewed;
+            $incident->supervisor_reviewed_by = $reviewer->id;
+            $incident->supervisor_reviewed_at = now();
+            $incident->supervisor_comments = $comments;
+            $incident->save();
+
+            IncidentReviewed::dispatch($incident);
+
+            return $incident;
+        });
+    }
+
+    public function returnForRevision(Incident $incident, User $reviewer, string $comments): Incident
+    {
+        return DB::transaction(function () use ($incident, $reviewer, $comments) {
+            $incident->auditComment = $comments;
+            $incident->status = IncidentStatus::Draft;
+            $incident->supervisor_reviewed_by = $reviewer->id;
+            $incident->supervisor_reviewed_at = now();
+            $incident->supervisor_comments = $comments;
+            $incident->save();
+
+            IncidentReturnedForRevision::dispatch($incident, $comments);
+
+            return $incident;
+        });
+    }
+
+    public function assignInvestigator(Incident $incident, User $investigator, $targetClosureDate = null): Incident
+    {
+        return DB::transaction(function () use ($incident, $investigator, $targetClosureDate) {
+            $incident->assigned_investigator_id = $investigator->id;
+            $incident->status = IncidentStatus::Assigned;
+            $incident->target_closure_date = $targetClosureDate
+                ?? now()->addHours(
+                    config('incident_workflow.investigation_sla_hours.' . $incident->severity->value, 168)
+                );
+            $incident->save();
+
+            IncidentAssigned::dispatch($incident);
+
+            return $incident;
+        });
     }
 
     private function isDuplicateIncidentNumber(QueryException $e): bool
