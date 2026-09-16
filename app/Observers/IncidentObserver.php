@@ -22,9 +22,6 @@ class IncidentObserver
                 ['assigned_investigator_id' => $incident->getOriginal('assigned_investigator_id')],
                 ['assigned_investigator_id' => $incident->assigned_investigator_id],
             );
-            $incident->auditComment = null;
-
-            return;
         }
 
         if ($incident->wasChanged('status')) {
@@ -35,7 +32,8 @@ class IncidentObserver
                 ['status' => $incident->getOriginal('status')],
                 ['status' => $incident->status->value],
             );
-            $incident->auditComment = null;
         }
+
+        $incident->auditComment = null;
     }
 }
