@@ -4,12 +4,15 @@ namespace Tests\Feature\Incidents;
 
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Models\Attachment;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
 use App\Services\IncidentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class IncidentReportingTest extends TestCase
@@ -326,5 +329,64 @@ class IncidentReportingTest extends TestCase
             ->component('Incidents/Index')
             ->has('incidents.data', 1)
         );
+    }
+
+    public function test_a_staff_member_can_upload_and_download_an_attachment_via_http(): void
+    {
+        Storage::fake('local');
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+
+        $response = $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'submit',
+            'department_id' => $department->id,
+            'incident_type_id' => $incidentType->id,
+            'severity' => Severity::Level2Moderate->value,
+            'occurred_at' => now()->toDateTimeString(),
+            'location' => 'ICU',
+            'summary' => 'Full incident summary.',
+            'legal_attestation' => true,
+            'attachments' => [UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf')],
+        ]);
+
+        $incident = Incident::first();
+        $response->assertRedirect("/incidents/{$incident->id}");
+
+        $attachment = Attachment::first();
+        $this->assertNotNull($attachment);
+        $this->assertSame($incident->id, $attachment->attachable_id);
+        $this->assertSame(Incident::class, $attachment->attachable_type);
+
+        $this->actingAs($reporter)
+            ->get("/attachments/{$attachment->id}")
+            ->assertOk();
+    }
+
+    public function test_a_user_cannot_download_someone_elses_attachment(): void
+    {
+        Storage::fake('local');
+        $reporter = $this->makeReporter();
+        $other = $this->makeReporter();
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+
+        $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'submit',
+            'department_id' => $department->id,
+            'incident_type_id' => $incidentType->id,
+            'severity' => Severity::Level2Moderate->value,
+            'occurred_at' => now()->toDateTimeString(),
+            'location' => 'ICU',
+            'summary' => 'Full incident summary.',
+            'legal_attestation' => true,
+            'attachments' => [UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf')],
+        ]);
+
+        $attachment = Attachment::first();
+
+        $this->actingAs($other)
+            ->get("/attachments/{$attachment->id}")
+            ->assertForbidden();
     }
 }

@@ -12,6 +12,7 @@ use App\Models\IncidentType;
 use App\Services\IncidentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -58,8 +59,12 @@ class IncidentController extends Controller
 
     public function store(StoreIncidentRequest $request): RedirectResponse
     {
-        $incident = $this->incidents->createDraft($request->user(), $request->validated());
-        $this->storeAttachments($incident, $request);
+        $incident = DB::transaction(function () use ($request) {
+            $incident = $this->incidents->createDraft($request->user(), $request->validated());
+            $this->storeAttachments($incident, $request);
+
+            return $incident;
+        });
 
         if ($request->input('action') === 'submit') {
             $this->incidents->submit($incident);
@@ -86,8 +91,10 @@ class IncidentController extends Controller
 
     public function update(UpdateIncidentRequest $request, Incident $incident): RedirectResponse
     {
-        $this->incidents->updateDraft($incident, $request->validated());
-        $this->storeAttachments($incident, $request);
+        DB::transaction(function () use ($request, $incident) {
+            $this->incidents->updateDraft($incident, $request->validated());
+            $this->storeAttachments($incident, $request);
+        });
 
         if ($request->input('action') === 'submit') {
             $this->incidents->submit($incident);
