@@ -373,4 +373,21 @@ class IncidentWorkflowTest extends TestCase
         $this->assertSame($investigator->id, $incident->fresh()->assigned_investigator_id);
         $this->assertSame(IncidentStatus::Assigned, $incident->fresh()->status);
     }
+
+    public function test_show_exposes_workflow_can_flags_and_audit_logs(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $incident = $this->submittedIncident($reporter, $department);
+
+        $response = $this->actingAs($supervisor)->get("/incidents/{$incident->id}");
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Show')
+            ->where('can.review', true)
+            ->where('can.assign', false)
+            ->has('auditLogs')
+        );
+    }
 }

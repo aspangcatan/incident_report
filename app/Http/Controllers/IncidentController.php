@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IncidentStatus;
+use App\Enums\Role;
 use App\Http\Requests\Incidents\StoreIncidentRequest;
 use App\Http\Requests\Incidents\UpdateIncidentRequest;
 use App\Models\ContributingFactor;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
+use App\Models\User;
 use App\Services\IncidentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -114,9 +116,20 @@ class IncidentController extends Controller
             'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments',
         ]);
 
+        $user = $request->user();
+
         return Inertia::render('Incidents/Show', [
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
+            'auditLogs' => $incident->auditLogs()->with('actor')->latest()->get(),
+            'investigators' => $user->can('assign', $incident)
+                ? User::where('role', Role::Investigator)->where('is_active', true)->get(['id', 'name'])
+                : [],
+            'can' => [
+                'update' => $user->can('update', $incident),
+                'review' => $user->can('review', $incident),
+                'assign' => $user->can('assign', $incident),
+            ],
         ]);
     }
 
