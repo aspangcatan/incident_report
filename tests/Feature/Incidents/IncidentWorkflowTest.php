@@ -159,4 +159,63 @@ class IncidentWorkflowTest extends TestCase
             'action' => 'status_changed',
         ]);
     }
+
+    public function test_supervisor_can_review_a_submitted_incident_in_their_own_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $incident = $this->submittedIncident($reporter, $department);
+
+        $this->assertTrue($supervisor->can('review', $incident));
+    }
+
+    public function test_supervisor_cannot_review_a_submitted_incident_from_a_different_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $incidentDepartment = Department::factory()->create();
+        $supervisorDepartment = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $supervisorDepartment->id]);
+        $incident = $this->submittedIncident($reporter, $incidentDepartment);
+
+        $this->assertFalse($supervisor->can('review', $incident));
+    }
+
+    public function test_nobody_can_review_a_draft_or_already_reviewed_incident(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+
+        $draft = app(IncidentService::class)->createDraft($reporter, ['department_id' => $department->id]);
+        $this->assertFalse($supervisor->can('review', $draft));
+
+        $submitted = $this->submittedIncident($reporter, $department);
+        app(IncidentService::class)->markReviewed($submitted, $supervisor, null);
+        $this->assertFalse($supervisor->can('review', $submitted->fresh()));
+    }
+
+    public function test_supervisor_can_assign_only_a_reviewed_incident_in_their_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $incident = $this->submittedIncident($reporter, $department);
+
+        $this->assertFalse($supervisor->can('assign', $incident));
+
+        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
+        $this->assertTrue($supervisor->can('assign', $incident->fresh()));
+    }
+
+    public function test_management_cannot_review_or_assign(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $management = User::factory()->create(['role' => \App\Enums\Role::Management, 'department_id' => $department->id]);
+        $incident = $this->submittedIncident($reporter, $department);
+
+        $this->assertFalse($management->can('review', $incident));
+        $this->assertFalse($management->can('assign', $incident));
+    }
 }

@@ -53,4 +53,35 @@ class IncidentPolicy
     {
         return $this->update($user, $incident);
     }
+
+    public function review(User $user, Incident $incident): bool
+    {
+        if (! in_array($incident->status, [IncidentStatus::Submitted, IncidentStatus::ForReview], true)) {
+            return false;
+        }
+
+        return $this->hasReviewOrAssignAccess($user, $incident);
+    }
+
+    public function assign(User $user, Incident $incident): bool
+    {
+        if ($incident->status !== IncidentStatus::Reviewed) {
+            return false;
+        }
+
+        return $this->hasReviewOrAssignAccess($user, $incident);
+    }
+
+    private function hasReviewOrAssignAccess(User $user, Incident $incident): bool
+    {
+        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true)) {
+            return true;
+        }
+
+        if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+            return $incident->department_id !== null && $incident->department_id === $user->department_id;
+        }
+
+        return false;
+    }
 }
