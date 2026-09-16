@@ -18,6 +18,18 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        \App\Events\IncidentSubmitted::class => [
+            \App\Listeners\NotifyReviewersOfSubmittedIncident::class,
+        ],
+        \App\Events\IncidentReviewed::class => [
+            \App\Listeners\NotifyReporterOfReviewOutcome::class,
+        ],
+        \App\Events\IncidentReturnedForRevision::class => [
+            \App\Listeners\NotifyReporterOfReturnForRevision::class,
+        ],
+        \App\Events\IncidentAssigned::class => [
+            \App\Listeners\NotifyInvestigatorOfAssignment::class,
+        ],
     ];
 
     /**

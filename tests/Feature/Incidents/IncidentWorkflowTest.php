@@ -8,8 +8,13 @@ use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
+use App\Notifications\IncidentAssignedNotification;
+use App\Notifications\IncidentReturnedForRevisionNotification;
+use App\Notifications\IncidentReviewedNotification;
+use App\Notifications\IncidentSubmittedNotification;
 use App\Services\IncidentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class IncidentWorkflowTest extends TestCase
@@ -217,5 +222,63 @@ class IncidentWorkflowTest extends TestCase
 
         $this->assertFalse($management->can('review', $incident));
         $this->assertFalse($management->can('assign', $incident));
+    }
+
+    public function test_submitting_notifies_department_supervisors_and_qso(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $qso = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]);
+        $otherDeptSupervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => Department::factory()->create()->id]);
+
+        $this->submittedIncident($reporter, $department);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo($supervisor, \App\Notifications\IncidentSubmittedNotification::class);
+        \Illuminate\Support\Facades\Notification::assertSentTo($qso, \App\Notifications\IncidentSubmittedNotification::class);
+        \Illuminate\Support\Facades\Notification::assertNotSentTo($otherDeptSupervisor, \App\Notifications\IncidentSubmittedNotification::class);
+    }
+
+    public function test_marking_reviewed_notifies_the_reporter(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $reporter = $this->makeReporter();
+        $reviewer = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+        $incident = $this->submittedIncident($reporter);
+
+        app(IncidentService::class)->markReviewed($incident, $reviewer, null);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo($reporter, \App\Notifications\IncidentReviewedNotification::class);
+    }
+
+    public function test_returning_for_revision_notifies_the_reporter(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $reporter = $this->makeReporter();
+        $reviewer = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+        $incident = $this->submittedIncident($reporter);
+
+        app(IncidentService::class)->returnForRevision($incident, $reviewer, 'Please add detail.');
+
+        \Illuminate\Support\Facades\Notification::assertSentTo($reporter, \App\Notifications\IncidentReturnedForRevisionNotification::class);
+    }
+
+    public function test_assigning_an_investigator_notifies_them(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $reporter = $this->makeReporter();
+        $reviewer = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+        $investigator = User::factory()->create(['role' => \App\Enums\Role::Investigator]);
+        $incident = $this->submittedIncident($reporter);
+        app(IncidentService::class)->markReviewed($incident, $reviewer, null);
+
+        app(IncidentService::class)->assignInvestigator($incident, $investigator);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo($investigator, \App\Notifications\IncidentAssignedNotification::class);
     }
 }
