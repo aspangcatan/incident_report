@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             IncidentTypeSeeder::class,
             DevUserSeeder::class,
+            ContributingFactorSeeder::class,
         ]);
     }
 }
