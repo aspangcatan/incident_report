@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\IncidentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -12,4 +14,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+    Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
+    Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
+    Route::get('/incidents/{incident}', [IncidentController::class, 'show'])->name('incidents.show');
+    Route::get('/incidents/{incident}/edit', [IncidentController::class, 'edit'])->name('incidents.edit');
+    Route::patch('/incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
+    Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 });

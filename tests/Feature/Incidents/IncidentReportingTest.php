@@ -251,4 +251,80 @@ class IncidentReportingTest extends TestCase
         $this->assertNotEquals($qso->department_id, $submitted->fresh()->department_id);
         $this->assertTrue($qso->can('view', $submitted->fresh()));
     }
+
+    public function test_a_staff_member_can_save_a_draft_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+
+        $response = $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'draft',
+            'location' => 'ER Bay 1',
+        ]);
+
+        $incident = Incident::first();
+        $response->assertRedirect("/incidents/{$incident->id}/edit");
+        $this->assertSame('ER Bay 1', $incident->location);
+        $this->assertTrue($incident->status->isDraft());
+    }
+
+    public function test_submitting_without_required_fields_fails_validation(): void
+    {
+        $reporter = $this->makeReporter();
+
+        $response = $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'submit',
+        ]);
+
+        $response->assertSessionHasErrors(['incident_type_id', 'department_id', 'severity', 'occurred_at', 'location', 'summary', 'legal_attestation']);
+        $this->assertDatabaseCount('incidents', 0);
+    }
+
+    public function test_a_staff_member_can_submit_a_complete_report_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+
+        $response = $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'submit',
+            'department_id' => $department->id,
+            'incident_type_id' => $incidentType->id,
+            'severity' => Severity::Level2Moderate->value,
+            'occurred_at' => now()->toDateTimeString(),
+            'location' => 'ICU',
+            'summary' => 'Full incident summary.',
+            'legal_attestation' => true,
+        ]);
+
+        $incident = Incident::first();
+        $response->assertRedirect("/incidents/{$incident->id}");
+        $this->assertSame(IncidentStatus::Submitted, $incident->fresh()->status);
+        $this->assertNotNull($incident->fresh()->incident_number);
+    }
+
+    public function test_a_user_cannot_update_someone_elses_draft_via_http(): void
+    {
+        $reporter = $this->makeReporter();
+        $other = $this->makeReporter();
+        $incident = app(IncidentService::class)->createDraft($reporter, ['location' => 'ER']);
+
+        $this->actingAs($other)
+            ->patch("/incidents/{$incident->id}", ['action' => 'draft', 'location' => 'hacked'])
+            ->assertForbidden();
+    }
+
+    public function test_incident_index_scopes_to_the_current_users_reports_by_default(): void
+    {
+        $reporter = $this->makeReporter();
+        $other = $this->makeReporter();
+        app(IncidentService::class)->createDraft($reporter, ['location' => 'mine']);
+        app(IncidentService::class)->createDraft($other, ['location' => 'not mine']);
+
+        $response = $this->actingAs($reporter)->get('/incidents?scope=drafts');
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Index')
+            ->has('incidents.data', 1)
+        );
+    }
 }
