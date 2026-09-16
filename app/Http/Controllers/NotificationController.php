@@ -18,6 +18,9 @@ class NotificationController extends Controller
 
     public function markRead(Request $request, string $notification): RedirectResponse
     {
+        // Scoped to the authenticated user's own notifications, so a foreign or
+        // unknown ID silently no-ops rather than 404ing - avoids confirming or
+        // denying whether a given notification ID exists for another user.
         $request->user()->notifications()->where('id', $notification)->first()?->markAsRead();
 
         return back();

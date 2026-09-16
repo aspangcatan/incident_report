@@ -1,6 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
 import { formatDate } from '@/Utils/formatDate';
 
 defineProps({
@@ -42,6 +43,8 @@ function markRead(notification) {
                     Mark as read
                 </button>
             </div>
+
+            <Pagination :paginator="notifications" />
         </div>
     </AuthenticatedLayout>
 </template>
