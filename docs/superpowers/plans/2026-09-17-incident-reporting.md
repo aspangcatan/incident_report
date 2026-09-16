@@ -1,6 +1,6 @@
 # Phase 3: Incident Reporting — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Let any authenticated hospital staff member create, save-as-draft, edit, and submit an incident report through an 8-step Vue/Inertia wizard, then browse a scoped incident list and view a submitted report's detail page — all backed by real database records, server-side validation, and policy-enforced authorization.
 
@@ -51,7 +51,7 @@
 
 **Files:** the 8 migration files listed above.
 
-- [ ] **Step 1: Generate the migration stubs**
+- [x] **Step 1: Generate the migration stubs**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -67,7 +67,7 @@ php artisan make:migration create_attachments_table
 
 Rename each generated file's timestamp prefix to match the exact filenames listed under File Structure above, in that order (so they run in that order — `incidents` before every table that has `incident_id`, `contributing_factors` before the pivot table).
 
-- [ ] **Step 2: Write `create_incidents_table`**
+- [x] **Step 2: Write `create_incidents_table`**
 
 ```php
 <?php
@@ -121,7 +121,7 @@ return new class extends Migration
 
 Note: `recommendations` (text, nullable) is an addition beyond what `docs/architecture.md` §2.2 listed — the original paper-form brief has a "Recommendations / Preventive Measures" section (wizard step 7) that the architecture doc's incidents column list omitted. Adding it here; Task 15 updates the doc to match.
 
-- [ ] **Step 3: Write `create_incident_individuals_table`**
+- [x] **Step 3: Write `create_incident_individuals_table`**
 
 ```php
 <?php
@@ -154,7 +154,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 4: Write `create_incident_witnesses_table`**
+- [x] **Step 4: Write `create_incident_witnesses_table`**
 
 ```php
 <?php
@@ -186,7 +186,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 5: Write `create_incident_actions_table`**
+- [x] **Step 5: Write `create_incident_actions_table`**
 
 ```php
 <?php
@@ -218,7 +218,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 6: Write `create_incident_narrative_events_table`**
+- [x] **Step 6: Write `create_incident_narrative_events_table`**
 
 ```php
 <?php
@@ -250,7 +250,7 @@ return new class extends Migration
 
 `occurred_at` is a free-text string (e.g. "22:30 PST"), not a strict time column — reporters write approximate/relative times here, matching the Stitch mockup's timeline entries.
 
-- [ ] **Step 7: Write `create_contributing_factors_table`**
+- [x] **Step 7: Write `create_contributing_factors_table`**
 
 ```php
 <?php
@@ -279,7 +279,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 8: Write `create_incident_contributing_factor_table`**
+- [x] **Step 8: Write `create_incident_contributing_factor_table`**
 
 ```php
 <?php
@@ -306,7 +306,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 9: Write `create_attachments_table`**
+- [x] **Step 9: Write `create_attachments_table`**
 
 ```php
 <?php
@@ -342,7 +342,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 10: Run migrations and verify**
+- [x] **Step 10: Run migrations and verify**
 
 ```bash
 php artisan migrate
@@ -350,7 +350,7 @@ php artisan migrate
 
 Expected: all 8 new migrations show `DONE`, no errors. This is against the real dev DB (`laravel` on the WAMP MySQL instance) — safe, since it's additive and the DB currently only holds Phase 2 seed data.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add database/migrations
@@ -364,7 +364,7 @@ git commit -m "feat: add incident reporting database schema"
 **Files:**
 - Create: `app/Enums/IncidentStatus.php`, `app/Enums/PersonType.php`, `app/Enums/ActionStatus.php`, `app/Enums/AttachmentCategory.php`
 
-- [ ] **Step 1: Write `IncidentStatus`**
+- [x] **Step 1: Write `IncidentStatus`**
 
 ```php
 <?php
@@ -409,7 +409,7 @@ enum IncidentStatus: string
 }
 ```
 
-- [ ] **Step 2: Write `PersonType`**
+- [x] **Step 2: Write `PersonType`**
 
 ```php
 <?php
@@ -435,7 +435,7 @@ enum PersonType: string
 }
 ```
 
-- [ ] **Step 3: Write `ActionStatus`**
+- [x] **Step 3: Write `ActionStatus`**
 
 ```php
 <?php
@@ -457,7 +457,7 @@ enum ActionStatus: string
 }
 ```
 
-- [ ] **Step 4: Write `AttachmentCategory`**
+- [x] **Step 4: Write `AttachmentCategory`**
 
 ```php
 <?php
@@ -485,7 +485,7 @@ enum AttachmentCategory: string
 }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Enums
@@ -498,7 +498,7 @@ git commit -m "feat: add incident domain enums"
 
 **Files:** the 7 model files listed under File Structure.
 
-- [ ] **Step 1: Write `Incident`**
+- [x] **Step 1: Write `Incident`**
 
 ```php
 <?php
@@ -599,7 +599,7 @@ class Incident extends Model
 }
 ```
 
-- [ ] **Step 2: Write `IncidentIndividual`**
+- [x] **Step 2: Write `IncidentIndividual`**
 
 ```php
 <?php
@@ -632,7 +632,7 @@ class IncidentIndividual extends Model
 }
 ```
 
-- [ ] **Step 3: Write `IncidentWitness`**
+- [x] **Step 3: Write `IncidentWitness`**
 
 ```php
 <?php
@@ -653,7 +653,7 @@ class IncidentWitness extends Model
 }
 ```
 
-- [ ] **Step 4: Write `IncidentAction`**
+- [x] **Step 4: Write `IncidentAction`**
 
 ```php
 <?php
@@ -685,7 +685,7 @@ class IncidentAction extends Model
 }
 ```
 
-- [ ] **Step 5: Write `IncidentNarrativeEvent`**
+- [x] **Step 5: Write `IncidentNarrativeEvent`**
 
 ```php
 <?php
@@ -706,7 +706,7 @@ class IncidentNarrativeEvent extends Model
 }
 ```
 
-- [ ] **Step 6: Write `ContributingFactor`**
+- [x] **Step 6: Write `ContributingFactor`**
 
 ```php
 <?php
@@ -731,7 +731,7 @@ class ContributingFactor extends Model
 }
 ```
 
-- [ ] **Step 7: Write `Attachment`**
+- [x] **Step 7: Write `Attachment`**
 
 ```php
 <?php
@@ -766,7 +766,7 @@ class Attachment extends Model
 }
 ```
 
-- [ ] **Step 8: Verify with tinker**
+- [x] **Step 8: Verify with tinker**
 
 ```bash
 php artisan tinker --execute="echo App\Models\Incident::class . ' OK';"
@@ -774,7 +774,7 @@ php artisan tinker --execute="echo App\Models\Incident::class . ' OK';"
 
 Expected: no fatal errors, prints `App\Models\Incident OK`.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add app/Models
@@ -789,7 +789,7 @@ git commit -m "feat: add incident reporting Eloquent models"
 - Create: `database/seeders/ContributingFactorSeeder.php`
 - Modify: `database/seeders/DatabaseSeeder.php`
 
-- [ ] **Step 1: Write the seeder**
+- [x] **Step 1: Write the seeder**
 
 ```php
 <?php
@@ -821,7 +821,7 @@ class ContributingFactorSeeder extends Seeder
 }
 ```
 
-- [ ] **Step 2: Register it in `DatabaseSeeder`**
+- [x] **Step 2: Register it in `DatabaseSeeder`**
 
 In `database/seeders/DatabaseSeeder.php`, change:
 
@@ -844,7 +844,7 @@ to:
         ]);
 ```
 
-- [ ] **Step 3: Run it**
+- [x] **Step 3: Run it**
 
 ```bash
 php artisan db:seed --class=ContributingFactorSeeder
@@ -852,7 +852,7 @@ php artisan db:seed --class=ContributingFactorSeeder
 
 Expected: `DONE`, no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add database/seeders
@@ -867,7 +867,7 @@ git commit -m "feat: seed contributing factors"
 - Create: `app/Services/IncidentService.php`
 - Test: `tests/Feature/Incidents/IncidentReportingTest.php` (created here, extended in later tasks)
 
-- [ ] **Step 1: Write the failing test file**
+- [x] **Step 1: Write the failing test file**
 
 ```php
 <?php
@@ -963,7 +963,7 @@ class IncidentReportingTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run it to see it fail**
+- [x] **Step 2: Run it to see it fail**
 
 ```bash
 php artisan test --filter=IncidentReportingTest
@@ -971,7 +971,7 @@ php artisan test --filter=IncidentReportingTest
 
 Expected: FAIL — `Class "App\Services\IncidentService" not found` (or similar), since factories for `Department`/`IncidentType` and the service don't exist yet.
 
-- [ ] **Step 3: Add factories the test needs**
+- [x] **Step 3: Add factories the test needs**
 
 ```bash
 php artisan make:factory DepartmentFactory --model=Department
@@ -1024,7 +1024,7 @@ class IncidentTypeFactory extends Factory
 
 Add `use HasFactory;` and `use Illuminate\Database\Eloquent\Factories\HasFactory;` to `app/Models/Department.php` and `app/Models/IncidentType.php` if not already present (`Department` already has it from Phase 2; `IncidentType` already has it too — confirm, don't duplicate the trait use line).
 
-- [ ] **Step 4: Write `IncidentService`**
+- [x] **Step 4: Write `IncidentService`**
 
 ```php
 <?php
@@ -1133,7 +1133,7 @@ class IncidentService
 }
 ```
 
-- [ ] **Step 5: Run tests to see them pass**
+- [x] **Step 5: Run tests to see them pass**
 
 ```bash
 php artisan test --filter=IncidentReportingTest
@@ -1141,7 +1141,7 @@ php artisan test --filter=IncidentReportingTest
 
 Expected: `3 passed`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Services database/factories app/Models/Department.php app/Models/IncidentType.php tests/Feature/Incidents
@@ -1155,7 +1155,7 @@ git commit -m "feat: add IncidentService with draft/submit and incident-number g
 **Files:**
 - Create: `app/Http/Requests/Concerns/ValidatesIncidentData.php`, `app/Http/Requests/Incidents/StoreIncidentRequest.php`, `app/Http/Requests/Incidents/UpdateIncidentRequest.php`
 
-- [ ] **Step 1: Write the shared rules trait**
+- [x] **Step 1: Write the shared rules trait**
 
 ```php
 <?php
@@ -1226,7 +1226,7 @@ trait ValidatesIncidentData
 }
 ```
 
-- [ ] **Step 2: Write `StoreIncidentRequest`**
+- [x] **Step 2: Write `StoreIncidentRequest`**
 
 ```php
 <?php
@@ -1253,7 +1253,7 @@ class StoreIncidentRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 3: Write `UpdateIncidentRequest`**
+- [x] **Step 3: Write `UpdateIncidentRequest`**
 
 ```php
 <?php
@@ -1279,7 +1279,7 @@ class UpdateIncidentRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Http/Requests
@@ -1295,7 +1295,7 @@ git commit -m "feat: add incident store/update form requests"
 - Modify: `app/Providers/AuthServiceProvider.php`
 - Modify: `tests/Feature/Incidents/IncidentReportingTest.php` (add authorization tests)
 
-- [ ] **Step 1: Add failing authorization tests**
+- [x] **Step 1: Add failing authorization tests**
 
 Append to `tests/Feature/Incidents/IncidentReportingTest.php`, inside the class:
 
@@ -1347,7 +1347,7 @@ Append to `tests/Feature/Incidents/IncidentReportingTest.php`, inside the class:
     }
 ```
 
-- [ ] **Step 2: Run to see the new tests fail**
+- [x] **Step 2: Run to see the new tests fail**
 
 ```bash
 php artisan test --filter=IncidentReportingTest
@@ -1355,7 +1355,7 @@ php artisan test --filter=IncidentReportingTest
 
 Expected: FAIL — `Call to undefined method ... can()` resolves fine (that's Laravel core), but assertions fail because no policy is registered yet, so `can()` returns `false` for everything including the owner checks.
 
-- [ ] **Step 3: Write `IncidentPolicy`**
+- [x] **Step 3: Write `IncidentPolicy`**
 
 ```php
 <?php
@@ -1414,7 +1414,7 @@ class IncidentPolicy
 }
 ```
 
-- [ ] **Step 4: Register the policy**
+- [x] **Step 4: Register the policy**
 
 In `app/Providers/AuthServiceProvider.php`, change:
 
@@ -1432,7 +1432,7 @@ to:
     ];
 ```
 
-- [ ] **Step 5: Run tests to see them pass**
+- [x] **Step 5: Run tests to see them pass**
 
 ```bash
 php artisan test --filter=IncidentReportingTest
@@ -1440,7 +1440,7 @@ php artisan test --filter=IncidentReportingTest
 
 Expected: `7 passed`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Policies app/Providers/AuthServiceProvider.php tests/Feature/Incidents
@@ -1456,7 +1456,7 @@ git commit -m "feat: add IncidentPolicy and authorization tests"
 - Modify: `routes/web.php`
 - Modify: `tests/Feature/Incidents/IncidentReportingTest.php` (HTTP-level tests)
 
-- [ ] **Step 1: Add failing HTTP-level tests**
+- [x] **Step 1: Add failing HTTP-level tests**
 
 Append to the test class:
 
@@ -1538,7 +1538,7 @@ Append to the test class:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=IncidentReportingTest
@@ -1546,7 +1546,7 @@ php artisan test --filter=IncidentReportingTest
 
 Expected: FAIL — routes don't exist yet (404s).
 
-- [ ] **Step 3: Write `IncidentController`**
+- [x] **Step 3: Write `IncidentController`**
 
 ```php
 <?php
@@ -1683,7 +1683,7 @@ class IncidentController extends Controller
 }
 ```
 
-- [ ] **Step 4: Write `AttachmentController`**
+- [x] **Step 4: Write `AttachmentController`**
 
 ```php
 <?php
@@ -1704,7 +1704,7 @@ class AttachmentController extends Controller
 }
 ```
 
-- [ ] **Step 5: Add routes**
+- [x] **Step 5: Add routes**
 
 In `routes/web.php`, add these imports at the top alongside the existing ones:
 
@@ -1725,7 +1725,7 @@ Then inside the existing `Route::middleware('auth')->group(function () { ... })`
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 ```
 
-- [ ] **Step 6: Run the full test file**
+- [x] **Step 6: Run the full test file**
 
 ```bash
 php artisan test --filter=IncidentReportingTest
@@ -1733,7 +1733,7 @@ php artisan test --filter=IncidentReportingTest
 
 Expected: all tests pass (12 total: 3 service + 4 policy + 5 HTTP).
 
-- [ ] **Step 7: Run the whole suite to check nothing else broke**
+- [x] **Step 7: Run the whole suite to check nothing else broke**
 
 ```bash
 php artisan test
@@ -1741,7 +1741,7 @@ php artisan test
 
 Expected: all green (should be 12 + the 7 from `AuthenticationTest` + 1 `ExampleTest` = 20).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers routes/web.php tests/Feature/Incidents
@@ -1755,7 +1755,7 @@ git commit -m "feat: add incident CRUD routes and controllers"
 **Files:**
 - Create: `resources/js/Composables/useIncidentStatus.js`, `resources/js/Components/StatusBadge.vue`, `resources/js/Components/SeverityBadge.vue`
 
-- [ ] **Step 1: Write the composable**
+- [x] **Step 1: Write the composable**
 
 ```js
 const STATUS_LABELS = {
@@ -1817,7 +1817,7 @@ export function severityBadgeClasses(severity) {
 }
 ```
 
-- [ ] **Step 2: Write `StatusBadge.vue`**
+- [x] **Step 2: Write `StatusBadge.vue`**
 
 ```vue
 <script setup>
@@ -1839,7 +1839,7 @@ const classes = computed(() => statusBadgeClasses(props.status));
 </template>
 ```
 
-- [ ] **Step 3: Write `SeverityBadge.vue`**
+- [x] **Step 3: Write `SeverityBadge.vue`**
 
 ```vue
 <script setup>
@@ -1861,7 +1861,7 @@ const classes = computed(() => severityBadgeClasses(props.severity));
 </template>
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/Composables resources/js/Components/StatusBadge.vue resources/js/Components/SeverityBadge.vue
@@ -1875,7 +1875,7 @@ git commit -m "feat: add status/severity badge components"
 **Files:**
 - Create: `resources/js/Components/ConfirmationDialog.vue`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```vue
 <script setup>
@@ -1918,7 +1918,7 @@ const emit = defineEmits(['confirm', 'cancel']);
 </template>
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add resources/js/Components/ConfirmationDialog.vue
@@ -1933,7 +1933,7 @@ git commit -m "feat: add reusable ConfirmationDialog component"
 
 Every step component receives one prop, `form` (the Inertia form object from `useForm`, passed down by `Wizard.vue` in Task 12), and mutates its nested fields directly — this works because `form` is the same reactive object throughout, not a copy.
 
-- [ ] **Step 1: `Step1ReporterInfo.vue`**
+- [x] **Step 1: `Step1ReporterInfo.vue`**
 
 ```vue
 <script setup>
@@ -1980,7 +1980,7 @@ const user = usePage().props.auth.user;
 </template>
 ```
 
-- [ ] **Step 2: `Step2IncidentDetails.vue`**
+- [x] **Step 2: `Step2IncidentDetails.vue`**
 
 ```vue
 <script setup>
@@ -2054,7 +2054,7 @@ const severities = [
 </template>
 ```
 
-- [ ] **Step 3: `Step3PeopleInvolved.vue`**
+- [x] **Step 3: `Step3PeopleInvolved.vue`**
 
 ```vue
 <script setup>
@@ -2105,7 +2105,7 @@ function removeIndividual(form, index) {
 </template>
 ```
 
-- [ ] **Step 4: `Step4WitnessesPolice.vue`**
+- [x] **Step 4: `Step4WitnessesPolice.vue`**
 
 ```vue
 <script setup>
@@ -2169,7 +2169,7 @@ function removeWitness(form, index) {
 </template>
 ```
 
-- [ ] **Step 5: `Step5Description.vue`**
+- [x] **Step 5: `Step5Description.vue`**
 
 ```vue
 <script setup>
@@ -2247,7 +2247,7 @@ function removeAttachment(form, index) {
 </template>
 ```
 
-- [ ] **Step 6: `Step6ActionsTaken.vue`**
+- [x] **Step 6: `Step6ActionsTaken.vue`**
 
 ```vue
 <script setup>
@@ -2294,7 +2294,7 @@ function removeAction(form, index) {
 </template>
 ```
 
-- [ ] **Step 7: `Step7Recommendations.vue`**
+- [x] **Step 7: `Step7Recommendations.vue`**
 
 ```vue
 <script setup>
@@ -2316,7 +2316,7 @@ defineProps({
 </template>
 ```
 
-- [ ] **Step 8: `Step8Review.vue`**
+- [x] **Step 8: `Step8Review.vue`**
 
 ```vue
 <script setup>
@@ -2384,7 +2384,7 @@ function departmentName(departments, id) {
 </template>
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add resources/js/Components/Incidents
@@ -2398,7 +2398,7 @@ git commit -m "feat: add 8 incident report wizard step components"
 **Files:**
 - Create: `resources/js/Pages/Incidents/Wizard.vue`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```vue
 <script setup>
@@ -2572,7 +2572,7 @@ function confirmSubmit() {
 </template>
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add resources/js/Pages/Incidents/Wizard.vue
@@ -2586,7 +2586,7 @@ git commit -m "feat: add incident report wizard page"
 **Files:**
 - Create: `resources/js/Pages/Incidents/Index.vue`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```vue
 <script setup>
@@ -2674,7 +2674,7 @@ function switchScope(value) {
 </template>
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add resources/js/Pages/Incidents/Index.vue
@@ -2688,7 +2688,7 @@ git commit -m "feat: add scoped incident list page"
 **Files:**
 - Create: `resources/js/Pages/Incidents/Show.vue`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```vue
 <script setup>
@@ -2838,7 +2838,7 @@ const notYetAvailable = computed(() => !['overview', 'attachments'].includes(act
 </template>
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add resources/js/Pages/Incidents/Show.vue
@@ -2853,7 +2853,7 @@ git commit -m "feat: add incident detail page with Overview and Attachments tabs
 - Modify: `resources/js/Layouts/AuthenticatedLayout.vue`
 - Modify: `docs/architecture.md`
 
-- [ ] **Step 1: Wire the CTA and three relevant sidebar links**
+- [x] **Step 1: Wire the CTA and three relevant sidebar links**
 
 In `resources/js/Layouts/AuthenticatedLayout.vue`, change the "Report an Incident" CTA from:
 
@@ -2885,7 +2885,7 @@ In the `navGroups` array's `'Incident Management'` group, change the `href: '#'`
 
 Leave every other nav item's `href: '#'` as-is — they belong to later phases.
 
-- [ ] **Step 2: Update `docs/architecture.md`**
+- [x] **Step 2: Update `docs/architecture.md`**
 
 Add a new subsection right after "## 9a. Implementation note — Inertia version ceiling":
 
@@ -2897,7 +2897,7 @@ Add a new subsection right after "## 9a. Implementation note — Inertia version
 - Sidebar nav item counts (e.g. "142" next to "All Incidents") are intentionally still not wired up — would need either a per-request count query in `HandleInertiaRequests::share()` or a caching strategy, neither of which is justified yet at this data volume. Revisit in Phase 8 (Analytics) or if it becomes a real UX complaint.
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/js/Layouts/AuthenticatedLayout.vue docs/architecture.md
@@ -2908,7 +2908,7 @@ git commit -m "docs: wire incident sidebar links, record Phase 3 schema notes"
 
 ### Task 16: Full verification pass
 
-- [ ] **Step 1: Run the full PHPUnit suite**
+- [x] **Step 1: Run the full PHPUnit suite**
 
 ```bash
 php artisan test
@@ -2916,7 +2916,7 @@ php artisan test
 
 Expected: all tests pass (Phase 2's 7 + Phase 3's 12 = 19, plus the pre-existing `ExampleTest` unit test = 20 total).
 
-- [ ] **Step 2: Production build**
+- [x] **Step 2: Production build**
 
 ```bash
 npm run build
@@ -2924,7 +2924,7 @@ npm run build
 
 Expected: builds with no errors.
 
-- [ ] **Step 3: Browser-drive the full flow with Playwright**
+- [x] **Step 3: Browser-drive the full flow with Playwright**
 
 Reuse the scratchpad Playwright setup from Phase 2 verification (`playwright@1.48.2` + downloaded Chromium, already present under the session's scratchpad `pw/` directory). Start both dev servers:
 
@@ -2944,7 +2944,7 @@ Write and run a script that:
 
 Take a screenshot after step 5 (submitted incident detail) and step 6 (incident list) and view them to visually confirm the Stitch-derived styling renders correctly (cards, badges, table).
 
-- [ ] **Step 4: Report results**
+- [x] **Step 4: Report results**
 
 If everything passes, this phase is done. If Playwright surfaces a runtime error the test suite didn't catch (as happened in Phase 2 with the Inertia version mismatch), fix it, re-run the whole verification pass from Step 1, and update `docs/architecture.md` §9a/§9b if the fix reveals another non-obvious gotcha worth recording.
 
