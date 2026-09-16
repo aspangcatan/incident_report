@@ -153,18 +153,86 @@ class IncidentReportingTest extends TestCase
         $this->assertTrue($reporter->can('view', $incident->fresh()));
     }
 
-    public function test_supervisor_can_view_submitted_incidents_from_any_department_but_not_others_drafts(): void
+    public function test_supervisor_cannot_view_someone_elses_draft(): void
     {
         $reporter = $this->makeReporter();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
 
         $draft = app(IncidentService::class)->createDraft($reporter, ['location' => 'ER']);
         $this->assertFalse($supervisor->can('view', $draft));
+    }
+
+    public function test_supervisor_can_view_submitted_incident_from_their_own_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create([
+            'role' => \App\Enums\Role::Supervisor,
+            'department_id' => $department->id,
+        ]);
 
         $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $department->id,
             'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
         ]);
         app(IncidentService::class)->submit($submitted);
+
         $this->assertTrue($supervisor->can('view', $submitted->fresh()));
+    }
+
+    public function test_supervisor_cannot_view_submitted_incident_from_a_different_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $incidentDepartment = Department::factory()->create();
+        $supervisorDepartment = Department::factory()->create();
+        $supervisor = User::factory()->create([
+            'role' => \App\Enums\Role::Supervisor,
+            'department_id' => $supervisorDepartment->id,
+        ]);
+
+        $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $incidentDepartment->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
+        ]);
+        app(IncidentService::class)->submit($submitted);
+
+        $this->assertFalse($supervisor->can('view', $submitted->fresh()));
+    }
+
+    public function test_supervisor_with_no_department_cannot_view_any_submitted_incident(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor]);
+
+        $this->assertNull($supervisor->department_id);
+
+        $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $department->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
+        ]);
+        app(IncidentService::class)->submit($submitted);
+
+        $this->assertFalse($supervisor->can('view', $submitted->fresh()));
+    }
+
+    public function test_quality_safety_officer_can_view_submitted_incidents_from_any_department(): void
+    {
+        $reporter = $this->makeReporter();
+        $incidentDepartment = Department::factory()->create();
+        $qsoDepartment = Department::factory()->create();
+        $qso = User::factory()->create([
+            'role' => \App\Enums\Role::QualitySafetyOfficer,
+            'department_id' => $qsoDepartment->id,
+        ]);
+
+        $submitted = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $incidentDepartment->id,
+            'occurred_at' => now(), 'location' => 'ER', 'summary' => 'x',
+        ]);
+        app(IncidentService::class)->submit($submitted);
+
+        $this->assertNotEquals($qso->department_id, $submitted->fresh()->department_id);
+        $this->assertTrue($qso->can('view', $submitted->fresh()));
     }
 }

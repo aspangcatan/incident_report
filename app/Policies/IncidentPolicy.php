@@ -28,13 +28,15 @@ class IncidentPolicy
             return true;
         }
 
-        return in_array($user->role, [
-            Role::Supervisor,
-            Role::DepartmentHead,
-            Role::QualitySafetyOfficer,
-            Role::Administrator,
-            Role::Management,
-        ], true);
+        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator, Role::Management], true)) {
+            return true;
+        }
+
+        if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+            return $incident->department_id !== null && $incident->department_id === $user->department_id;
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
