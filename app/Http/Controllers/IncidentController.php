@@ -121,6 +121,10 @@ class IncidentController extends Controller
         return Inertia::render('Incidents/Show', [
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
+            // Fetched separately rather than via load() above: Incident::auditLogs() is
+            // deliberately unordered (Eloquent appends orderBy rather than replacing it,
+            // so a hardcoded ->latest() on the relation would silently break any future
+            // caller that tries to reorder it) - ordering is applied explicitly here instead.
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->get(),
             'investigators' => $user->can('assign', $incident)
                 ? User::where('role', Role::Investigator)->where('is_active', true)->get(['id', 'name'])
