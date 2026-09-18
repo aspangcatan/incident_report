@@ -362,4 +362,28 @@ class ApprovalTest extends TestCase
 
         $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
     }
+
+    public function test_the_incident_show_page_exposes_resource_shaped_approvals_with_per_item_can_flags(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $qso);
+        $management = User::factory()->create(['role' => Role::Management]);
+
+        $this->actingAs($management)
+            ->get("/incidents/{$incident->id}?tab=approvals")
+            ->assertInertia(fn ($page) => $page
+                ->where('approvals.0.id', $approval->id)
+                ->where('approvals.0.status.value', 'pending')
+                ->where('approvals.0.can.approve', true)
+                ->where('approvals.0.can.return', true)
+            );
+
+        $this->actingAs($qso)
+            ->get("/incidents/{$incident->id}?tab=approvals")
+            ->assertInertia(fn ($page) => $page
+                ->where('can.requestApproval', false) // already requested; incident is no longer Verified
+                ->where('approvals.0.can.approve', false)
+            );
+    }
 }

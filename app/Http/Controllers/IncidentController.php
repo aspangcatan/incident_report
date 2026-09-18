@@ -6,6 +6,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\Role;
 use App\Http\Requests\Incidents\StoreIncidentRequest;
 use App\Http\Requests\Incidents\UpdateIncidentRequest;
+use App\Http\Resources\ApprovalResource;
 use App\Http\Resources\CorrectiveActionResource;
 use App\Http\Resources\InvestigationFindingResource;
 use App\Http\Resources\InvestigationResource;
@@ -139,6 +140,11 @@ class IncidentController extends Controller
             ->latest('id')
             ->get();
 
+        $approvals = $incident->approvals()
+            ->with(['requestedBy', 'approver', 'incident'])
+            ->latest('id')
+            ->get();
+
         return Inertia::render('Incidents/Show', [
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
@@ -159,6 +165,7 @@ class IncidentController extends Controller
                 ? User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'role'])
                 : [],
             'correctiveActions' => CorrectiveActionResource::collection($correctiveActions),
+            'approvals' => ApprovalResource::collection($approvals),
             'investigationFindings' => $investigation
                 ? InvestigationFindingResource::collection($investigation->findings)
                 : [],
@@ -173,6 +180,8 @@ class IncidentController extends Controller
                 'recordFindings' => $investigation && $user->can('recordFindings', $investigation),
                 'completeInvestigation' => $investigation && $user->can('complete', $investigation),
                 'createCorrectiveAction' => $user->can('create', [CorrectiveAction::class, $incident]),
+                'requestApproval' => $user->can('requestApproval', $incident),
+                'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),
             ],
         ]);
     }
