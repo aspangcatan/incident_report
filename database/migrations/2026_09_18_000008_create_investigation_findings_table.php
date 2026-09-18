@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up()
+    {
+        Schema::create('investigation_findings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('investigation_id')->constrained()->cascadeOnDelete();
+            $table->unsignedInteger('sequence')->nullable();
+            $table->string('category')->nullable();
+            $table->string('question')->nullable();
+            $table->text('finding');
+            $table->boolean('is_root_cause')->default(false);
+            $table->timestamps();
+        });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('investigation_findings');
+    }
+};
