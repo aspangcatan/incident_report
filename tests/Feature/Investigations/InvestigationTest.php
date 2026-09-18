@@ -340,4 +340,151 @@ class InvestigationTest extends TestCase
         $this->assertTrue($investigator->can('complete', $investigation));
         $this->assertFalse($teamMember->can('complete', $investigation));
     }
+
+    public function test_the_assigned_investigator_can_start_an_investigation_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+
+        $response = $this->actingAs($investigator)->post("/incidents/{$incident->id}/investigation", [
+            'objective' => 'Determine root cause.',
+            'methodology' => 'five_whys',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('investigations', ['incident_id' => $incident->id]);
+    }
+
+    public function test_starting_an_investigation_requires_an_objective_and_a_valid_methodology(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+
+        $this->actingAs($investigator)
+            ->post("/incidents/{$incident->id}/investigation", ['methodology' => 'not-a-real-methodology'])
+            ->assertSessionHasErrors(['objective', 'methodology']);
+    }
+
+    public function test_adding_a_team_member_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $nurse = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone'));
+
+        $response = $this->actingAs($investigator)->post("/investigations/{$investigation->id}/team-members", [
+            'user_id' => $nurse->id,
+            'role_in_team' => 'Nursing Service Rep',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('investigation_team_members', ['investigation_id' => $investigation->id, 'user_id' => $nurse->id]);
+    }
+
+    public function test_a_stranger_cannot_add_a_team_member_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $stranger = User::factory()->create();
+        $nurse = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone'));
+
+        $this->actingAs($stranger)
+            ->post("/investigations/{$investigation->id}/team-members", ['user_id' => $nurse->id, 'role_in_team' => 'Rep'])
+            ->assertForbidden();
+    }
+
+    public function test_removing_a_team_member_scoped_to_another_investigation_is_rejected(): void
+    {
+        $investigatorA = User::factory()->create(['role' => Role::Investigator]);
+        $investigatorB = User::factory()->create(['role' => Role::Investigator]);
+        $nurse = User::factory()->create();
+        $incidentA = $this->assignedIncident($investigatorA);
+        $incidentB = $this->assignedIncident($investigatorB);
+        $investigationA = app(InvestigationService::class)->start($incidentA, $investigatorA, $this->startData('fishbone'));
+        $investigationB = app(InvestigationService::class)->start($incidentB, $investigatorB, $this->startData('fishbone', [
+            'team_members' => [['user_id' => $nurse->id, 'role_in_team' => 'Rep']],
+        ]));
+        $memberOfB = $investigationB->teamMembers->firstWhere('user_id', $nurse->id);
+
+        $this->actingAs($investigatorA)
+            ->delete("/investigations/{$investigationA->id}/team-members/{$memberOfB->id}")
+            ->assertNotFound();
+    }
+
+    public function test_a_team_member_can_add_a_finding_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+
+        $response = $this->actingAs($investigator)->post("/investigations/{$investigation->id}/findings", [
+            'question' => 'Why did it happen?',
+            'finding' => 'Because of X.',
+            'is_root_cause' => false,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('investigation_findings', ['investigation_id' => $investigation->id, 'finding' => 'Because of X.']);
+    }
+
+    public function test_updating_a_finding_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+        $finding = app(InvestigationService::class)->addFinding($investigation, $this->findingData(['question' => 'Q', 'finding' => 'Original', 'is_root_cause' => false]));
+
+        $this->actingAs($investigator)
+            ->patch("/investigations/{$investigation->id}/findings/{$finding->id}", [
+                'question' => 'Q', 'finding' => 'Corrected.', 'is_root_cause' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('Corrected.', $finding->fresh()->finding);
+        $this->assertTrue($finding->fresh()->is_root_cause);
+    }
+
+    public function test_updating_a_finding_scoped_to_another_investigation_is_rejected(): void
+    {
+        $investigatorA = User::factory()->create(['role' => Role::Investigator]);
+        $investigatorB = User::factory()->create(['role' => Role::Investigator]);
+        $incidentA = $this->assignedIncident($investigatorA);
+        $incidentB = $this->assignedIncident($investigatorB);
+        $investigationA = app(InvestigationService::class)->start($incidentA, $investigatorA, $this->startData('five_whys'));
+        $investigationB = app(InvestigationService::class)->start($incidentB, $investigatorB, $this->startData('five_whys'));
+        $findingOfB = app(InvestigationService::class)->addFinding($investigationB, $this->findingData(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => false]));
+
+        $this->actingAs($investigatorA)
+            ->patch("/investigations/{$investigationA->id}/findings/{$findingOfB->id}", ['finding' => 'Hijacked.', 'is_root_cause' => false])
+            ->assertNotFound();
+    }
+
+    public function test_completing_an_investigation_requires_at_least_one_finding(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+
+        $this->actingAs($investigator)
+            ->post("/investigations/{$investigation->id}/complete", ['conclusion' => 'Done.'])
+            ->assertSessionHasErrors(['conclusion']);
+
+        $this->assertSame(InvestigationStatus::InProgress, $investigation->fresh()->status);
+    }
+
+    public function test_completing_an_investigation_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+        app(InvestigationService::class)->addFinding($investigation, $this->findingData(['question' => 'Q', 'finding' => 'Root cause.', 'is_root_cause' => true]));
+
+        $response = $this->actingAs($investigator)->post("/investigations/{$investigation->id}/complete", [
+            'conclusion' => 'Root cause: pump miscalibration.',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame(InvestigationStatus::Completed, $investigation->fresh()->status);
+    }
 }
