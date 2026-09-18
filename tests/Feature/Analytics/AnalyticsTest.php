@@ -213,4 +213,47 @@ class AnalyticsTest extends TestCase
         $this->assertSame(100, $row['safetyIndex']);
         $this->assertSame('Exemplary', $row['statusLabel']);
     }
+
+    /**
+     * departmentSafety()'s inner aggregation deliberately skips
+     * baseQuery()/visibleTo() (see its own code comment) on the theory that
+     * $departmentIds was already scoped upstream - this proves that holds
+     * for a real Supervisor/DepartmentHead-scoped caller, not just the
+     * hospital-wide QSO case every other test in this file uses. Same
+     * scoping property applies to rootCauseDistribution(), checked here too.
+     */
+    public function test_root_cause_and_department_safety_are_scoped_to_a_department_heads_own_department(): void
+    {
+        $deptA = Department::factory()->create(['name' => 'Emergency Medicine']);
+        $deptB = Department::factory()->create(['name' => 'Surgery']);
+
+        $incidentA = $this->incidentThroughReview($deptA);
+        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
+        $incidentA->contributingFactors()->sync([$humanFactors->id]);
+
+        $incidentB = $this->incidentThroughReview($deptB);
+        $equipment = \App\Models\ContributingFactor::create(['label' => 'Device malfunction', 'category' => 'Equipment']);
+        $incidentB->contributingFactors()->sync([$equipment->id]);
+        $investigatorB = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incidentB->fresh(), $investigatorB);
+        $investigationB = app(InvestigationService::class)->start($incidentB->fresh(), $investigatorB, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
+        ]));
+        app(InvestigationService::class)->addFinding($investigationB, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigationB->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        app(CorrectiveActionService::class)->create($incidentB->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+
+        $deptHeadA = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $deptA->id]);
+        $overview = app(AnalyticsService::class)->overview($deptHeadA);
+
+        $categories = collect($overview['rootCauseDistribution'])->pluck('category')->all();
+        $this->assertContains('Human Factors', $categories);
+        $this->assertNotContains('Equipment', $categories);
+
+        $departmentNames = collect($overview['departmentSafety'])->pluck('departmentName')->all();
+        $this->assertContains('Emergency Medicine', $departmentNames);
+        $this->assertNotContains('Surgery', $departmentNames);
+    }
 }

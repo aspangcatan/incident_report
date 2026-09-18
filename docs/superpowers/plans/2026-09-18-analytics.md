@@ -563,6 +563,49 @@ Append these test methods:
         $this->assertSame(100, $row['safetyIndex']);
         $this->assertSame('Exemplary', $row['statusLabel']);
     }
+
+    /**
+     * departmentSafety()'s inner aggregation deliberately skips
+     * baseQuery()/visibleTo() (see its own code comment) on the theory that
+     * $departmentIds was already scoped upstream - this proves that holds
+     * for a real Supervisor/DepartmentHead-scoped caller, not just the
+     * hospital-wide QSO case every other test in this file uses. Same
+     * scoping property applies to rootCauseDistribution(), checked here too.
+     */
+    public function test_root_cause_and_department_safety_are_scoped_to_a_department_heads_own_department(): void
+    {
+        $deptA = Department::factory()->create(['name' => 'Emergency Medicine']);
+        $deptB = Department::factory()->create(['name' => 'Surgery']);
+
+        $incidentA = $this->incidentThroughReview($deptA);
+        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
+        $incidentA->contributingFactors()->sync([$humanFactors->id]);
+
+        $incidentB = $this->incidentThroughReview($deptB);
+        $equipment = \App\Models\ContributingFactor::create(['label' => 'Device malfunction', 'category' => 'Equipment']);
+        $incidentB->contributingFactors()->sync([$equipment->id]);
+        $investigatorB = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incidentB->fresh(), $investigatorB);
+        $investigationB = app(InvestigationService::class)->start($incidentB->fresh(), $investigatorB, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
+        ]));
+        app(InvestigationService::class)->addFinding($investigationB, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigationB->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        app(CorrectiveActionService::class)->create($incidentB->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+
+        $deptHeadA = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $deptA->id]);
+        $overview = app(AnalyticsService::class)->overview($deptHeadA);
+
+        $categories = collect($overview['rootCauseDistribution'])->pluck('category')->all();
+        $this->assertContains('Human Factors', $categories);
+        $this->assertNotContains('Equipment', $categories);
+
+        $departmentNames = collect($overview['departmentSafety'])->pluck('departmentName')->all();
+        $this->assertContains('Emergency Medicine', $departmentNames);
+        $this->assertNotContains('Surgery', $departmentNames);
+    }
 ```
 
 - [ ] **Step 2: Run to confirm they fail**
@@ -629,51 +672,84 @@ Add the two private methods:
     {
         $departmentIds = $this->baseQuery($user)->whereNotNull('department_id')->distinct()->pluck('department_id');
 
-        return Department::query()
-            ->whereIn('id', $departmentIds)
-            ->orderBy('name')
-            ->get()
-            ->map(function (Department $department) {
-                // Not routed through baseQuery()/visibleTo() here: $department
-                // is already one of $departmentIds, which was itself derived
-                // from baseQuery($user) above, so this can never reach a
-                // department the caller isn't allowed to see. Draft incidents
-                // are also safe to leave in this particular id set (unlike
-                // hourlyVolume()) since a draft can never have a
-                // CorrectiveAction/Approval row pointing at it - the counts
-                // below would be identical either way.
-                $incidentIds = Incident::where('department_id', $department->id)->pluck('id');
+        $departments = Department::query()->whereIn('id', $departmentIds)->orderBy('name')->get();
 
-                $capasTotal = CorrectiveAction::whereIn('incident_id', $incidentIds)->count();
-                $capasVerified = CorrectiveAction::whereIn('incident_id', $incidentIds)
-                    ->where('status', CorrectiveActionStatus::Verified->value)
-                    ->count();
-                $capasOverdue = CorrectiveAction::whereIn('incident_id', $incidentIds)->overdue()->count();
+        if ($departments->isEmpty()) {
+            return [];
+        }
 
-                $approvalsTotal = Approval::whereIn('incident_id', $incidentIds)->count();
-                $approvalsOverdue = Approval::whereIn('incident_id', $incidentIds)->overdue()->count();
+        // Not routed through baseQuery()/visibleTo() here: $departmentIds
+        // was itself derived from baseQuery($user) above, so this can never
+        // reach a department the caller isn't allowed to see. Draft incidents
+        // are also safe to leave in this particular id set (unlike
+        // hourlyVolume()) since a draft can never have a
+        // CorrectiveAction/Approval row pointing at it - the counts below
+        // would be identical either way.
+        //
+        // Fetched as one incident_id -> department_id lookup plus one query
+        // each for CorrectiveAction/Approval, then aggregated in PHP using
+        // the models' own isOverdue() - rather than N queries per department
+        // (which scaled linearly with department count) or a raw SQL
+        // CASE/NOW() aggregation (which would duplicate each model's overdue
+        // rule as a second, driver-specific copy: this project's tests run
+        // against SQLite while production runs MySQL, and NOW() isn't
+        // portable between them).
+        $incidentDepartmentIds = Incident::query()->whereIn('department_id', $departmentIds)->pluck('department_id', 'id');
 
-                $everCreated = $capasTotal + $approvalsTotal;
-                $everOverdue = $capasOverdue + $approvalsOverdue;
-                $safetyIndex = $everCreated > 0 ? (int) round(100 * (1 - $everOverdue / $everCreated)) : 100;
+        $stats = $departments->mapWithKeys(fn (Department $d) => [$d->id => [
+            'capasTotal' => 0, 'capasVerified' => 0, 'capasOverdue' => 0,
+            'approvalsTotal' => 0, 'approvalsOverdue' => 0,
+        ]])->all();
 
-                return [
-                    'departmentId' => $department->id,
-                    'departmentName' => $department->name,
-                    'capasVerified' => $capasVerified,
-                    'capasTotal' => $capasTotal,
-                    'safetyIndex' => $safetyIndex,
-                    'statusLabel' => match (true) {
-                        $safetyIndex >= 95 => 'Exemplary',
-                        $safetyIndex >= 85 => 'Optimal',
-                        $safetyIndex >= 70 => 'Compliant',
-                        default => 'Needs Attention',
-                    },
-                ];
-            })
-            ->all();
+        CorrectiveAction::query()
+            ->whereIn('incident_id', $incidentDepartmentIds->keys())
+            ->get(['incident_id', 'status', 'due_date'])
+            ->each(function (CorrectiveAction $capa) use (&$stats, $incidentDepartmentIds) {
+                $departmentId = $incidentDepartmentIds[$capa->incident_id];
+                $stats[$departmentId]['capasTotal']++;
+                if ($capa->status === CorrectiveActionStatus::Verified) {
+                    $stats[$departmentId]['capasVerified']++;
+                }
+                if ($capa->isOverdue()) {
+                    $stats[$departmentId]['capasOverdue']++;
+                }
+            });
+
+        Approval::query()
+            ->whereIn('incident_id', $incidentDepartmentIds->keys())
+            ->get(['incident_id', 'status', 'due_at'])
+            ->each(function (Approval $approval) use (&$stats, $incidentDepartmentIds) {
+                $departmentId = $incidentDepartmentIds[$approval->incident_id];
+                $stats[$departmentId]['approvalsTotal']++;
+                if ($approval->isOverdue()) {
+                    $stats[$departmentId]['approvalsOverdue']++;
+                }
+            });
+
+        return $departments->map(function (Department $department) use ($stats) {
+            $s = $stats[$department->id];
+            $everCreated = $s['capasTotal'] + $s['approvalsTotal'];
+            $everOverdue = $s['capasOverdue'] + $s['approvalsOverdue'];
+            $safetyIndex = $everCreated > 0 ? (int) round(100 * (1 - $everOverdue / $everCreated)) : 100;
+
+            return [
+                'departmentId' => $department->id,
+                'departmentName' => $department->name,
+                'capasVerified' => $s['capasVerified'],
+                'capasTotal' => $s['capasTotal'],
+                'safetyIndex' => $safetyIndex,
+                'statusLabel' => match (true) {
+                    $safetyIndex >= 95 => 'Exemplary',
+                    $safetyIndex >= 85 => 'Optimal',
+                    $safetyIndex >= 70 => 'Compliant',
+                    default => 'Needs Attention',
+                },
+            ];
+        })->all();
     }
 ```
+
+**Fixed during this task's own code-quality review**: the first draft of this method ran a per-department loop issuing 6 queries per department (unbounded by any time window), which would scale linearly with department count. Rewritten above to fetch everything in a small constant number of queries (one incident-to-department lookup, one CorrectiveAction fetch, one Approval fetch) and aggregate in PHP using each model's own `isOverdue()` — this also avoids duplicating the overdue business rule as a second, database-driver-specific copy (a raw SQL `CASE ... NOW() ...` aggregation would need to differ between this project's SQLite test environment and its MySQL production environment).
 
 - [ ] **Step 4: Run tests, then the full suite**
 
@@ -681,7 +757,7 @@ Add the two private methods:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `10 passed` (8 from Task 2 + 2 new).
+Expected: `11 passed` (8 from Task 2 + 3 new).
 
 ```bash
 php artisan test
@@ -840,7 +916,7 @@ Add the two private methods plus one private constant:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `12 passed` (10 from Task 3 + 2 new).
+Expected: `13 passed` (11 from Task 3 + 2 new).
 
 ```bash
 php artisan test
@@ -948,7 +1024,7 @@ Inside the `auth` middleware group, after the notifications routes:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `14 passed` (12 from Task 4 + 2 new).
+Expected: `15 passed` (13 from Task 4 + 2 new).
 
 ```bash
 php artisan test
