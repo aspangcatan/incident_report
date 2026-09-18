@@ -332,4 +332,123 @@ class CorrectiveActionTest extends TestCase
 
         $this->assertFalse($investigator->can('verify', $capa->fresh()));
     }
+
+    public function test_qso_can_create_a_corrective_action_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $response = $this->actingAs($qso)->post("/incidents/{$incident->id}/corrective-actions", [
+            'description' => 'Implement double-check checklist.',
+            'action_type' => 'corrective',
+            'priority' => 'high',
+            'due_date' => now()->addDays(14)->toDateString(),
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('corrective_actions', ['incident_id' => $incident->id]);
+    }
+
+    public function test_creating_a_corrective_action_requires_a_description_type_priority_and_due_date(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($qso)
+            ->post("/incidents/{$incident->id}/corrective-actions", [])
+            ->assertSessionHasErrors(['description', 'action_type', 'priority', 'due_date']);
+    }
+
+    public function test_an_investigator_cannot_create_a_corrective_action_via_http(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->incidentReadyForCapa($investigator);
+
+        $this->actingAs($investigator)
+            ->post("/incidents/{$incident->id}/corrective-actions", [
+                'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
+                'due_date' => now()->addDays(14)->toDateString(),
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_updating_a_corrective_action_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData());
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($qso)
+            ->patch("/corrective-actions/{$capa->id}", [
+                'description' => 'Revised.', 'action_type' => 'corrective', 'priority' => 'critical',
+                'due_date' => now()->addDays(7)->toDateString(),
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('Revised.', $capa->fresh()->description);
+    }
+
+    public function test_marking_in_progress_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $responsible = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
+
+        $this->actingAs($responsible)
+            ->post("/corrective-actions/{$capa->id}/progress")
+            ->assertRedirect();
+
+        $this->assertSame(\App\Enums\CorrectiveActionStatus::InProgress, $capa->fresh()->status);
+    }
+
+    public function test_completing_via_http_requires_completion_notes(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $responsible = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
+
+        $this->actingAs($responsible)
+            ->post("/corrective-actions/{$capa->id}/complete", [])
+            ->assertSessionHasErrors(['completion_notes']);
+    }
+
+    public function test_completing_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $responsible = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
+
+        $this->actingAs($responsible)
+            ->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.'])
+            ->assertRedirect();
+
+        $this->assertSame(\App\Enums\CorrectiveActionStatus::ForVerification, $capa->fresh()->status);
+    }
+
+    public function test_the_person_who_completed_it_cannot_verify_it_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $completer = User::factory()->create(['role' => Role::Supervisor]);
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $completer->id]));
+        $this->actingAs($completer)->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.']);
+
+        $this->actingAs($completer)
+            ->post("/corrective-actions/{$capa->id}/verify", ['verification_comments' => 'Looks good.'])
+            ->assertForbidden();
+    }
+
+    public function test_verifying_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $completer = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $completer->id]));
+        $this->actingAs($completer)->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.']);
+        $verifier = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($verifier)
+            ->post("/corrective-actions/{$capa->id}/verify", ['verification_comments' => 'Confirmed.'])
+            ->assertRedirect();
+
+        $this->assertSame(\App\Enums\CorrectiveActionStatus::Verified, $capa->fresh()->status);
+    }
 }

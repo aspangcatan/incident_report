@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\CorrectiveActionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentWorkflowController;
@@ -34,6 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/investigations/{investigation}/findings/{finding}', [InvestigationController::class, 'updateFinding'])->name('investigations.findings.update');
     Route::delete('/investigations/{investigation}/findings/{finding}', [InvestigationController::class, 'deleteFinding'])->name('investigations.findings.destroy');
     Route::post('/investigations/{investigation}/complete', [InvestigationController::class, 'complete'])->name('investigations.complete');
+    Route::post('/incidents/{incident}/corrective-actions', [CorrectiveActionController::class, 'store'])->name('corrective-actions.store');
+    Route::patch('/corrective-actions/{correctiveAction}', [CorrectiveActionController::class, 'update'])->name('corrective-actions.update');
+    Route::post('/corrective-actions/{correctiveAction}/progress', [CorrectiveActionController::class, 'progress'])->name('corrective-actions.progress');
+    Route::post('/corrective-actions/{correctiveAction}/complete', [CorrectiveActionController::class, 'complete'])->name('corrective-actions.complete');
+    Route::post('/corrective-actions/{correctiveAction}/verify', [CorrectiveActionController::class, 'verify'])->name('corrective-actions.verify');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
