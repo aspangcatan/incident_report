@@ -422,6 +422,51 @@ class InvestigationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_adding_the_same_team_member_twice_returns_a_validation_error_not_a_server_error(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $nurse = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone'));
+
+        $this->actingAs($investigator)->post("/investigations/{$investigation->id}/team-members", [
+            'user_id' => $nurse->id,
+            'role_in_team' => 'Nursing Service Rep',
+        ])->assertRedirect();
+
+        $this->actingAs($investigator)
+            ->post("/investigations/{$investigation->id}/team-members", [
+                'user_id' => $nurse->id,
+                'role_in_team' => 'Nursing Service Rep',
+            ])
+            ->assertSessionHasErrors(['user_id']);
+
+        $this->assertSame(
+            1,
+            $investigation->teamMembers()->where('user_id', $nurse->id)->count()
+        );
+    }
+
+    public function test_starting_an_investigation_rejects_a_duplicate_user_id_in_the_team_members_list(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $nurse = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+
+        $this->actingAs($investigator)
+            ->post("/incidents/{$incident->id}/investigation", [
+                'objective' => 'Determine root cause.',
+                'methodology' => 'fishbone',
+                'team_members' => [
+                    ['user_id' => $nurse->id, 'role_in_team' => 'Nursing Service Rep'],
+                    ['user_id' => $nurse->id, 'role_in_team' => 'Duplicate'],
+                ],
+            ])
+            ->assertSessionHasErrors(['team_members.0.user_id', 'team_members.1.user_id']);
+
+        $this->assertDatabaseMissing('investigations', ['incident_id' => $incident->id]);
+    }
+
     public function test_removing_a_team_member_scoped_to_another_investigation_is_rejected(): void
     {
         $investigatorA = User::factory()->create(['role' => Role::Investigator]);

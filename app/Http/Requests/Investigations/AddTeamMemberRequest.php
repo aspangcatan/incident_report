@@ -16,8 +16,20 @@ class AddTeamMemberRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', Rule::exists('users', 'id')],
+            'user_id' => [
+                'required',
+                Rule::exists('users', 'id'),
+                Rule::unique('investigation_team_members', 'user_id')
+                    ->where('investigation_id', $this->route('investigation')->id),
+            ],
             'role_in_team' => ['required', 'string'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'user_id.unique' => 'This user is already on the investigation team.',
         ];
     }
 

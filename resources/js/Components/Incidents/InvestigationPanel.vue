@@ -179,17 +179,19 @@ function completeInvestigation() {
                         </div>
                     </div>
 
-                    <form v-if="can.manageInvestigationTeam" class="flex flex-wrap items-end gap-2" @submit.prevent="addTeamMember">
+                    <form v-if="can.manageInvestigationTeam" class="flex flex-wrap items-start gap-2" @submit.prevent="addTeamMember">
                         <div class="flex flex-col">
                             <label class="font-label-sm text-body-sm text-on-surface" for="member_user_id">Add member</label>
                             <select id="member_user_id" v-model="memberForm.user_id" class="p-2 rounded-lg bg-surface-container-low">
                                 <option :value="null" disabled>Select a user</option>
                                 <option v-for="option in potentialTeamMembers" :key="option.id" :value="option.id">{{ option.name }}</option>
                             </select>
+                            <span v-if="memberForm.errors.user_id" class="font-body-sm text-body-sm text-error">{{ memberForm.errors.user_id }}</span>
                         </div>
                         <div class="flex flex-col">
                             <label class="font-label-sm text-body-sm text-on-surface" for="member_role">Role on team</label>
                             <input id="member_role" v-model="memberForm.role_in_team" type="text" class="p-2 rounded-lg bg-surface-container-low" />
+                            <span v-if="memberForm.errors.role_in_team" class="font-body-sm text-body-sm text-error">{{ memberForm.errors.role_in_team }}</span>
                         </div>
                         <button type="submit" :disabled="memberForm.processing" class="px-3 py-2 rounded-lg bg-primary text-on-primary font-label-sm text-body-sm font-semibold disabled:opacity-60">
                             Add
