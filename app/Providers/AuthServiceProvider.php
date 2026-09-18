@@ -27,6 +27,8 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        Gate::define('viewAnalytics', function ($user) {
+            return (new \App\Policies\IncidentPolicy())->viewAnalytics($user);
+        });
     }
 }

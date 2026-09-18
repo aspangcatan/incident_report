@@ -16,6 +16,17 @@ class IncidentPolicy
         return $user->role !== Role::Staff;
     }
 
+    public function viewAnalytics(User $user): bool
+    {
+        return in_array($user->role, [
+            Role::QualitySafetyOfficer,
+            Role::Administrator,
+            Role::Management,
+            Role::Supervisor,
+            Role::DepartmentHead,
+        ], true);
+    }
+
     public function view(User $user, Incident $incident): bool
     {
         if ($incident->reporter_id === $user->id) {
