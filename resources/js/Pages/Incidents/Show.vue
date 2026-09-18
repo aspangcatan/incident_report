@@ -6,6 +6,7 @@ import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import WorkflowActionsPanel from '@/Components/Incidents/WorkflowActionsPanel.vue';
 import InvestigationPanel from '@/Components/Incidents/InvestigationPanel.vue';
+import CapaPanel from '@/Components/Incidents/CapaPanel.vue';
 import { formatDate } from '@/Utils/formatDate';
 
 const props = defineProps({
@@ -15,6 +16,10 @@ const props = defineProps({
     investigators: { type: Array, default: () => [] },
     investigation: { type: Object, default: null },
     potentialTeamMembers: { type: Array, default: () => [] },
+    correctiveActions: { type: Array, default: () => [] },
+    investigationFindings: { type: Array, default: () => [] },
+    potentialResponsibleUsers: { type: Array, default: () => [] },
+    departments: { type: Array, default: () => [] },
     auditLogs: { type: Array, required: true },
 });
 
@@ -200,6 +205,16 @@ function switchTab(value) {
             :investigation="investigation"
             :can="can"
             :potential-team-members="potentialTeamMembers"
+        />
+
+        <CapaPanel
+            v-else-if="activeTab === 'capa'"
+            :incident="incident"
+            :corrective-actions="correctiveActions"
+            :investigation-findings="investigationFindings"
+            :potential-responsible-users="potentialResponsibleUsers"
+            :departments="departments"
+            :can="can"
         />
 
         <div v-else class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm text-center">
