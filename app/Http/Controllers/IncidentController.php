@@ -126,7 +126,8 @@ class IncidentController extends Controller
         // otherwise duplicate it - unfiltered, with nested user PII - inside the raw
         // 'incident' prop below. Drop the cached relation so $incident serializes
         // exactly as it did before this feature: the investigation is exposed solely
-        // through the Resource-shaped 'investigation' prop.
+        // through the Resource-shaped 'investigation' prop. Use $investigation (not
+        // $incident->investigation) anywhere else below, or this reopens the leak.
         $incident->unsetRelation('investigation');
         $canManageInvestigationTeam = $investigation && $user->can('manageTeam', $investigation);
 
