@@ -107,7 +107,8 @@ function formatPercent(rate) {
                                 <span
                                     class="px-2.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold"
                                     :class="{
-                                        'bg-secondary-container text-on-secondary-container': row.statusLabel === 'Exemplary' || row.statusLabel === 'Optimal',
+                                        'bg-tertiary-container text-on-tertiary-container': row.statusLabel === 'Exemplary',
+                                        'bg-secondary-container text-on-secondary-container': row.statusLabel === 'Optimal',
                                         'bg-surface-container text-on-surface': row.statusLabel === 'Compliant',
                                         'bg-error-container text-on-error-container': row.statusLabel === 'Needs Attention',
                                     }"
@@ -123,7 +124,7 @@ function formatPercent(rate) {
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
                 <div>
                     <h2 class="font-title-lg text-title-lg text-primary font-bold">Recurring Pattern Alerts</h2>
-                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, {{ 3 }}+ times in the last 90 days. A grouped count, not an AI-generated inference.</p>
+                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, 3+ times in the last 90 days. A grouped count, not an AI-generated inference.</p>
                 </div>
                 <div v-if="!recurringPatterns.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
                     No recurring patterns detected in this window.

@@ -1444,7 +1444,8 @@ Insert after the Root Cause Distribution `</div>` block, before the closing `</d
                                 <span
                                     class="px-2.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold"
                                     :class="{
-                                        'bg-secondary-container text-on-secondary-container': row.statusLabel === 'Exemplary' || row.statusLabel === 'Optimal',
+                                        'bg-tertiary-container text-on-tertiary-container': row.statusLabel === 'Exemplary',
+                                        'bg-secondary-container text-on-secondary-container': row.statusLabel === 'Optimal',
                                         'bg-surface-container text-on-surface': row.statusLabel === 'Compliant',
                                         'bg-error-container text-on-error-container': row.statusLabel === 'Needs Attention',
                                     }"
@@ -1460,7 +1461,7 @@ Insert after the Root Cause Distribution `</div>` block, before the closing `</d
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
                 <div>
                     <h2 class="font-title-lg text-title-lg text-primary font-bold">Recurring Pattern Alerts</h2>
-                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, {{ 3 }}+ times in the last 90 days. A grouped count, not an AI-generated inference.</p>
+                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, 3+ times in the last 90 days. A grouped count, not an AI-generated inference.</p>
                 </div>
                 <div v-if="!recurringPatterns.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
                     No recurring patterns detected in this window.
@@ -1558,9 +1559,10 @@ Read across the full diff for this phase (`git log --oneline <first-Phase-8-comm
 
 1. **Department scoping correctness end-to-end** — confirm a Supervisor/DepartmentHead with `department_id === null` gets an empty (not hospital-wide) result set from every `AnalyticsService` method, the same way `Incident::scopeVisibleTo()`'s own null-department guard already prevents a null-department Supervisor from matching null-department incidents (the exact bug Phase 3's own holistic review caught in `scopeVisibleTo()` itself - confirm this phase doesn't reintroduce an equivalent gap anywhere a raw `department_id` is used directly, e.g. in `departmentSafety()`'s `whereNotNull('department_id')` chain).
 2. **Division-by-zero / null-data guards** — re-verify every ratio (`capaAdoptionRate`, `sentinelRecurrenceRate`, `departmentSafety`'s per-department index, `nearMissVelocity`) degrades to a sensible value (`null` or `0`/`100` as documented) rather than throwing or returning `NAN`/`INF` when its denominator is zero, across all four. Add a test for any case not already covered.
-3. **`recurringPatterns()`'s `havingRaw`/`orderByDesc` on an aliased aggregate column** — MySQL allows ordering by a `SELECT`-aliased column in the same query; confirm this actually works against this project's real MySQL connection (not just SQLite, if the test suite's `.env.testing` uses a different driver - check `phpunit.xml`/`.env.testing` for the configured `DB_CONNECTION`) by re-running `test_recurring_patterns_only_lists_groups_at_or_above_the_threshold` and confirming its exact SQL via `DB::listen()` or `->toSql()` if there's any doubt.
+3. **`recurringPatterns()`'s `havingRaw`/`orderByDesc` on an aliased aggregate column** — already empirically verified during Task 4's own code-quality review (a throwaway 2-group test confirmed correct descending order under SQLite, and the reasoning for MySQL parity — Laravel's query grammar fixes clause order independent of PHP call order, and `ORDER BY <select-alias>` is standard SQL both drivers honor — was documented there, not just assumed). Re-confirm `test_recurring_patterns_are_ordered_by_incident_count_descending` (added during that review) still passes; no further action expected unless it doesn't.
 4. **Root-cause distribution double-counting** — an incident with 2 contributing factors in the *same* category should count once for that category, not twice; confirm `COUNT(DISTINCT incident_contributing_factor.incident_id)` in `rootCauseDistribution()` actually prevents this with a test if one doesn't already cover it (the existing test uses 2 *different*-category factors, which doesn't exercise the same-category case).
-5. Re-run `php artisan test` and `npm run build` yourself — don't just trust individual task reports.
+5. **Static "3+"/"90 days" copy drift risk (raised in Task 7's own review, not yet acted on)** — `AnalyticsService`'s `REPEAT_PATTERN_MIN_COUNT`/`REPEAT_PATTERN_WINDOW_DAYS`/`WINDOW_DAYS` constants are never passed to the frontend; `Analytics/Index.vue` independently hardcodes "3+" and "90 days" as static copy in three places. If any of these constants ever change, the copy silently goes stale. Decide whether this is worth fixing now (surface the relevant constants via `overview()`'s return array and interpolate them in the Vue copy) or explicitly deferring — either is defensible, but make the call deliberately rather than leaving it unexamined.
+6. Re-run `php artisan test` and `npm run build` yourself — don't just trust individual task reports.
 
 - [ ] **Step 3: Browser verification**
 
