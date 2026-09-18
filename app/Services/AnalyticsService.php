@@ -9,6 +9,7 @@ use App\Models\Approval;
 use App\Models\CorrectiveAction;
 use App\Models\Department;
 use App\Models\Incident;
+use App\Models\IncidentType;
 use App\Models\Investigation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,9 @@ class AnalyticsService
     /** Sentinel events are rare; a shorter window would too often read zero. */
     private const SENTINEL_WINDOW_DAYS = 180;
 
+    private const REPEAT_PATTERN_WINDOW_DAYS = 90;
+    private const REPEAT_PATTERN_MIN_COUNT = 3;
+
     public function overview(User $user): array
     {
         return [
@@ -34,6 +38,8 @@ class AnalyticsService
             ],
             'rootCauseDistribution' => $this->rootCauseDistribution($user),
             'departmentSafety' => $this->departmentSafety($user),
+            'hourlyVolume' => $this->hourlyVolume($user),
+            'recurringPatterns' => $this->recurringPatterns($user),
         ];
     }
 
@@ -285,5 +291,65 @@ class AnalyticsService
                 },
             ];
         })->all();
+    }
+
+    /**
+     * Day shift 07:00-18:59, night shift 19:00-06:59 - a fixed convention
+     * documented here since no shift-schedule table exists in this app.
+     */
+    private function hourlyVolume(User $user): array
+    {
+        $counts = array_fill(0, 24, 0);
+
+        $this->baseQuery($user)
+            ->where('occurred_at', '>=', now()->subDays(self::WINDOW_DAYS))
+            ->get(['occurred_at'])
+            ->each(function (Incident $incident) use (&$counts) {
+                $counts[(int) $incident->occurred_at->format('G')]++;
+            });
+
+        return array_map(
+            fn (int $hour, int $count) => [
+                'hour' => $hour,
+                'count' => $count,
+                'shift' => ($hour >= 7 && $hour < 19) ? 'day' : 'night',
+            ],
+            range(0, 23),
+            $counts,
+        );
+    }
+
+    /**
+     * Grouped by (department, incident type) rather than a specific
+     * contributing factor - an incident can carry several factors, which
+     * would make "the" factor for a cluster ambiguous, while department +
+     * type is unambiguous and still a meaningful, real recurring-pattern
+     * signal. Deliberately NOT labeled "AI" and carries no invented
+     * confidence score - see this plan's scope decision 1.
+     */
+    private function recurringPatterns(User $user): array
+    {
+        $rows = $this->baseQuery($user)
+            ->where('reported_at', '>=', now()->subDays(self::REPEAT_PATTERN_WINDOW_DAYS))
+            ->whereNotNull('department_id')
+            ->whereNotNull('incident_type_id')
+            ->groupBy('department_id', 'incident_type_id')
+            ->havingRaw('COUNT(*) >= ?', [self::REPEAT_PATTERN_MIN_COUNT])
+            ->orderByDesc('incidentCount')
+            ->selectRaw('department_id, incident_type_id, COUNT(*) as incidentCount')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        $departments = Department::whereIn('id', $rows->pluck('department_id'))->pluck('name', 'id');
+        $incidentTypes = IncidentType::whereIn('id', $rows->pluck('incident_type_id'))->pluck('name', 'id');
+
+        return $rows->map(fn ($row) => [
+            'departmentName' => $departments[$row->department_id] ?? 'Unknown',
+            'incidentTypeName' => $incidentTypes[$row->incident_type_id] ?? 'Unknown',
+            'incidentCount' => (int) $row->incidentCount,
+        ])->all();
     }
 }

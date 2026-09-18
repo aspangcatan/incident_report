@@ -256,4 +256,43 @@ class AnalyticsTest extends TestCase
         $this->assertContains('Emergency Medicine', $departmentNames);
         $this->assertNotContains('Surgery', $departmentNames);
     }
+
+    public function test_hourly_volume_buckets_incidents_by_hour_and_shift(): void
+    {
+        $department = Department::factory()->create();
+        $morning = $this->incidentThroughReview($department);
+        $morning->forceFill(['occurred_at' => now()->setTime(9, 0)])->save();
+        $night = $this->incidentThroughReview($department);
+        $night->forceFill(['occurred_at' => now()->setTime(23, 0)])->save();
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $volume = app(AnalyticsService::class)->overview($qso)['hourlyVolume'];
+
+        $this->assertSame(24, count($volume));
+        $nineAm = collect($volume)->firstWhere('hour', 9);
+        $elevenPm = collect($volume)->firstWhere('hour', 23);
+        $this->assertSame(1, $nineAm['count']);
+        $this->assertSame('day', $nineAm['shift']);
+        $this->assertSame(1, $elevenPm['count']);
+        $this->assertSame('night', $elevenPm['shift']);
+    }
+
+    public function test_recurring_patterns_only_lists_groups_at_or_above_the_threshold(): void
+    {
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+        $this->incidentThroughReview($department, $incidentType);
+        $this->incidentThroughReview($department, $incidentType);
+        $this->incidentThroughReview($department, $incidentType);
+        $otherType = IncidentType::factory()->create();
+        $this->incidentThroughReview($department, $otherType);
+        $this->incidentThroughReview($department, $otherType);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $patterns = app(AnalyticsService::class)->overview($qso)['recurringPatterns'];
+
+        $this->assertCount(1, $patterns);
+        $this->assertSame(3, $patterns[0]['incidentCount']);
+        $this->assertSame($incidentType->name, $patterns[0]['incidentTypeName']);
+    }
 }
