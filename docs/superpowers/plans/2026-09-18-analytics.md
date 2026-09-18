@@ -441,7 +441,7 @@ class AnalyticsService
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `8 passed`.
+Expected: `7 passed` (3 from Task 1 + 4 new).
 
 - [ ] **Step 5: Run the full suite**
 
@@ -640,7 +640,7 @@ Add the two private methods:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `10 passed`.
+Expected: `9 passed` (7 from Task 2 + 2 new).
 
 ```bash
 php artisan test
@@ -799,7 +799,7 @@ Add the two private methods plus one private constant:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `12 passed`.
+Expected: `11 passed` (9 from Task 3 + 2 new).
 
 ```bash
 php artisan test
@@ -907,7 +907,7 @@ Inside the `auth` middleware group, after the notifications routes:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `14 passed`.
+Expected: `13 passed` (11 from Task 4 + 2 new).
 
 ```bash
 php artisan test
