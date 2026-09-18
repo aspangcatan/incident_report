@@ -1,6 +1,6 @@
 # Phase 7: Approvals & Closure Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Once an incident has either (a) reached `IncidentStatus::Verified` (every CAPA on it verified) or (b) reached `IncidentStatus::CorrectiveAction` with zero corrective actions ever created on it, let a Quality & Safety Officer / Administrator request closure approval. A Department Head (scoped to their own department), Management, or Administrator — never the person who requested it — then either approves (closing the incident immediately) or returns it for further corrective action. Every incident can be closed exactly once per approval cycle; a returned incident can be re-submitted for approval again later, producing a fresh approval record. All gated by policy, audit-logged, and covered by a fifth SLA-escalation sweep alongside the existing four.
 
@@ -61,7 +61,7 @@
 
 **Files:** `database/migrations/2026_09_18_000010_create_approvals_table.php`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -105,7 +105,7 @@ return new class extends Migration
 
 `request_comments`, `due_at`, and `escalated_at` are additions beyond `docs/architecture.md` §2.4's original schema — same deliberate, documented pattern Phases 5 & 6 used for `investigations`/`corrective_actions`. `request_comments` holds the required justification when an incident is closed with no CAPA (Design decision 2); `due_at` is computed once at request time (mirroring how `Investigation.target_completion_at` and `CorrectiveAction.due_date` are each stored rather than recomputed) so the escalation sweep (Task 8) can query it directly; `escalated_at` is the same one-shot flag pattern as every prior phase. `requested_by` is `restrictOnDelete()` (a required actor reference, matching `incidents.reporter_id`'s convention) while `approver_id` is `nullOnDelete()` (nullable until decided, matching `incidents.assigned_investigator_id`'s convention). The decision-comments column is named `decision_comments`, not the bare `comments` architecture.md §2.4 uses — this table already has `request_comments` as a sibling column, and two similarly-named free-text columns on the same row (one written by the requester, one by the approver) would be exactly the kind of ambiguity `corrective_actions` avoids by using `completion_notes` vs. `verification_comments` instead of two columns both called something like "comments". All four `_at` columns (`due_at`, `decided_at`, `escalated_at`, plus the inherited `timestamps()`) use `timestamp()`, matching the convention every Phase 5/6 addition already settled on (`investigations`/`corrective_actions`), not the older `dateTime()` used in the original Phase 1 `incidents` table.
 
-- [ ] **Step 2: Run migrations and verify**
+- [x] **Step 2: Run migrations and verify**
 
 ```bash
 php artisan migrate
@@ -113,7 +113,7 @@ php artisan migrate
 
 Expected: `2026_09_18_000010_create_approvals_table` shows `DONE`, no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add database/migrations
@@ -126,7 +126,7 @@ git commit -m "feat: add approvals table"
 
 **Files:** `app/Enums/ApprovalStatus.php`
 
-- [ ] **Step 1: Write it**
+- [x] **Step 1: Write it**
 
 ```php
 <?php
@@ -159,7 +159,7 @@ enum ApprovalStatus: string
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -168,7 +168,7 @@ php artisan tinker --execute="echo App\Enums\ApprovalStatus::Pending->label();"
 
 Expected: `Pending Approval`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/Enums/ApprovalStatus.php
@@ -183,7 +183,7 @@ git commit -m "feat: add ApprovalStatus enum"
 - Create: `app/Models/Approval.php`
 - Modify: `app/Models/Incident.php`
 
-- [ ] **Step 1: Write `Approval`**
+- [x] **Step 1: Write `Approval`**
 
 ```php
 <?php
@@ -246,7 +246,7 @@ class Approval extends Model
 }
 ```
 
-- [ ] **Step 2: Add the `approvals()` relation to `Incident`**
+- [x] **Step 2: Add the `approvals()` relation to `Incident`**
 
 In `app/Models/Incident.php`, add near `correctiveActions()`:
 
@@ -259,7 +259,7 @@ In `app/Models/Incident.php`, add near `correctiveActions()`:
 
 (`HasMany` is already imported in this file.)
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -268,7 +268,7 @@ php artisan tinker --execute="echo App\Models\Approval::class . ' OK';"
 
 Expected: no fatal errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Models/Approval.php app/Models/Incident.php
@@ -283,7 +283,7 @@ git commit -m "feat: add Approval model and Incident::approvals() relation"
 - Create: `app/DataTransferObjects/Approvals/MarkNoCorrectiveActionNeededData.php`
 - Create: `app/DataTransferObjects/Approvals/DecideApprovalData.php`
 
-- [ ] **Step 1: Write `MarkNoCorrectiveActionNeededData`**
+- [x] **Step 1: Write `MarkNoCorrectiveActionNeededData`**
 
 ```php
 <?php
@@ -311,7 +311,7 @@ final class MarkNoCorrectiveActionNeededData
 }
 ```
 
-- [ ] **Step 2: Write `DecideApprovalData`**
+- [x] **Step 2: Write `DecideApprovalData`**
 
 Shared by both `approve()` and `returnForRevision()` on the Service — same shape either way, mirroring how Phase 6's `VerifyCorrectiveActionData` had its own single-field shape reused across a similarly-small decision action.
 
@@ -342,7 +342,7 @@ final class DecideApprovalData
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -351,7 +351,7 @@ php artisan tinker --execute="var_dump(App\DataTransferObjects\Approvals\DecideA
 
 Expected: `string(1) "x"`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/DataTransferObjects/Approvals
@@ -366,7 +366,7 @@ git commit -m "feat: add DTOs for approval no-CAPA-justification and decision in
 - Create: `app/Repositories/ApprovalRepository.php`
 - Create: `app/Queries/OverdueApprovalsQuery.php`
 
-- [ ] **Step 1: Write `ApprovalRepository`**
+- [x] **Step 1: Write `ApprovalRepository`**
 
 ```php
 <?php
@@ -401,7 +401,7 @@ class ApprovalRepository
 }
 ```
 
-- [ ] **Step 2: Write `OverdueApprovalsQuery`**
+- [x] **Step 2: Write `OverdueApprovalsQuery`**
 
 ```php
 <?php
@@ -422,7 +422,7 @@ class OverdueApprovalsQuery
 }
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -431,7 +431,7 @@ php artisan tinker --execute="echo App\Repositories\ApprovalRepository::class . 
 
 Expected: no fatal errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Repositories/ApprovalRepository.php app/Queries/OverdueApprovalsQuery.php
@@ -446,7 +446,7 @@ git commit -m "feat: add ApprovalRepository and OverdueApprovalsQuery"
 - Create: `app/Services/ApprovalService.php`
 - Create: `tests/Feature/Approvals/ApprovalTest.php`
 
-- [ ] **Step 1: Write the failing test file**
+- [x] **Step 1: Write the failing test file**
 
 ```php
 <?php
@@ -635,7 +635,7 @@ class ApprovalTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -644,7 +644,7 @@ php artisan test --filter=ApprovalTest
 
 Expected: FAIL — `App\Services\ApprovalService` doesn't exist yet.
 
-- [ ] **Step 3: Write `ApprovalService`**
+- [x] **Step 3: Write `ApprovalService`**
 
 ```php
 <?php
@@ -753,7 +753,7 @@ class ApprovalService
 
 `config/incident_workflow.php` does not have `approval_sla_hours` yet — that's added in Task 8 alongside the escalation sweep that reads it. The `?? 72` default keeps this task's tests passing (via the config array's absence returning `null`, falling through to the default) even before Task 8 adds the real per-severity values; Task 8's test will assert the real values are actually read.
 
-- [ ] **Step 4: Run tests to see them pass**
+- [x] **Step 4: Run tests to see them pass**
 
 ```bash
 php artisan test --filter=ApprovalTest
@@ -761,7 +761,7 @@ php artisan test --filter=ApprovalTest
 
 Expected: `6 passed`.
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 ```bash
 php artisan test
@@ -769,7 +769,7 @@ php artisan test
 
 Expected: all green (Phases 3-6 suite plus these 7).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Services/ApprovalService.php tests/Feature/Approvals/ApprovalTest.php
@@ -784,7 +784,7 @@ git commit -m "feat: add ApprovalService (request/no-CAPA-needed/approve/return)
 - Modify: `app/Policies/IncidentPolicy.php`
 - Modify: `tests/Feature/Approvals/ApprovalTest.php`
 
-- [ ] **Step 1: Add failing tests**
+- [x] **Step 1: Add failing tests**
 
 Append to the test class:
 
@@ -903,7 +903,7 @@ Append to the test class:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=ApprovalTest
@@ -911,7 +911,7 @@ php artisan test --filter=ApprovalTest
 
 Expected: FAIL — the new abilities don't exist on `IncidentPolicy` yet, so every `can()` call returns `false`, including the ones expected to be `true`.
 
-- [ ] **Step 3: Add the four abilities to `IncidentPolicy`**
+- [x] **Step 3: Add the four abilities to `IncidentPolicy`**
 
 In `app/Policies/IncidentPolicy.php`, add the imports and the four public methods plus two private helpers (near the existing `hasReviewOrAssignAccess` helper):
 
@@ -1007,7 +1007,7 @@ use App\Models\Approval;
     }
 ```
 
-- [ ] **Step 4: Run tests, then the full suite**
+- [x] **Step 4: Run tests, then the full suite**
 
 ```bash
 php artisan test --filter=ApprovalTest
@@ -1021,7 +1021,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Policies/IncidentPolicy.php tests/Feature/Approvals/ApprovalTest.php
@@ -1037,7 +1037,7 @@ git commit -m "feat: add requestApproval/markNoCorrectiveActionNeeded/approveClo
 - Modify: `app/Console/Commands/CheckOverdueIncidents.php`
 - Create: `tests/Feature/Approvals/ApprovalEscalationTest.php`
 
-- [ ] **Step 1: Add `approval_sla_hours` to the config**
+- [x] **Step 1: Add `approval_sla_hours` to the config**
 
 In `config/incident_workflow.php`, add after `investigation_sla_hours`:
 
@@ -1055,7 +1055,7 @@ In `config/incident_workflow.php`, add after `investigation_sla_hours`:
     ],
 ```
 
-- [ ] **Step 2: Write the failing test file**
+- [x] **Step 2: Write the failing test file**
 
 ```php
 <?php
@@ -1153,7 +1153,7 @@ class ApprovalEscalationTest extends TestCase
 }
 ```
 
-- [ ] **Step 3: Run to confirm they fail**
+- [x] **Step 3: Run to confirm they fail**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -1162,7 +1162,7 @@ php artisan test --filter=ApprovalEscalationTest
 
 Expected: FAIL — the new sweep doesn't exist yet.
 
-- [ ] **Step 4: Add `escalateOverdueApprovals()` to `CheckOverdueIncidents`**
+- [x] **Step 4: Add `escalateOverdueApprovals()` to `CheckOverdueIncidents`**
 
 Read the current file first — it already has a constructor injecting `OverdueInvestigationsQuery`/`InvestigationRepository`/`OverdueCorrectiveActionsQuery`/`CorrectiveActionRepository`. Add two more constructor-promoted dependencies alongside them:
 
@@ -1208,7 +1208,7 @@ Add the new private method:
     }
 ```
 
-- [ ] **Step 5: Run tests, then the full suite**
+- [x] **Step 5: Run tests, then the full suite**
 
 ```bash
 php artisan test --filter=ApprovalEscalationTest
@@ -1222,7 +1222,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add config/incident_workflow.php app/Console/Commands/CheckOverdueIncidents.php tests/Feature/Approvals/ApprovalEscalationTest.php
@@ -1245,7 +1245,7 @@ git commit -m "feat: escalate closure approvals that breach their due date"
 - Modify: `routes/web.php`
 - Modify: `tests/Feature/Approvals/ApprovalTest.php`
 
-- [ ] **Step 1: Add failing HTTP-level tests**
+- [x] **Step 1: Add failing HTTP-level tests**
 
 Append to `ApprovalTest`:
 
@@ -1344,7 +1344,7 @@ Append to `ApprovalTest`:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=ApprovalTest
@@ -1352,7 +1352,7 @@ php artisan test --filter=ApprovalTest
 
 Expected: FAIL — routes don't exist yet (404s).
 
-- [ ] **Step 3: Write the 3 Form Requests**
+- [x] **Step 3: Write the 3 Form Requests**
 
 `app/Http/Requests/Approvals/MarkNoCorrectiveActionNeededRequest.php`:
 ```php
@@ -1450,7 +1450,7 @@ class ReturnFromApprovalRequest extends FormRequest
 
 There is no dedicated Form Request for `requestApproval` — it has no body to validate, same pattern Phase 6 used for `progress()` (see `CorrectiveActionController::progress()`); the controller authorizes it directly with a plain `Illuminate\Http\Request`.
 
-- [ ] **Step 4: Write the 4 Actions**
+- [x] **Step 4: Write the 4 Actions**
 
 `app/Actions/Approvals/RequestApprovalAction.php`:
 ```php
@@ -1549,7 +1549,7 @@ class ReturnFromApprovalAction
 }
 ```
 
-- [ ] **Step 5: Write `ApprovalController`**
+- [x] **Step 5: Write `ApprovalController`**
 
 ```php
 <?php
@@ -1602,7 +1602,7 @@ class ApprovalController extends Controller
 }
 ```
 
-- [ ] **Step 6: Add routes**
+- [x] **Step 6: Add routes**
 
 In `routes/web.php`, add the import:
 
@@ -1619,7 +1619,7 @@ Inside the `auth` middleware group, after the corrective-action routes:
     Route::post('/approvals/{approval}/return', [ApprovalController::class, 'returnForRevision'])->name('approvals.return');
 ```
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 ```bash
 php artisan test --filter=ApprovalTest
@@ -1633,7 +1633,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Requests/Approvals app/Actions/Approvals app/Http/Controllers/ApprovalController.php routes/web.php tests/Feature/Approvals/ApprovalTest.php
@@ -1648,7 +1648,7 @@ git commit -m "feat: add approval request/no-CAPA-needed/approve/return routes"
 - Create: `app/Http/Resources/ApprovalResource.php`
 - Modify: `app/Http/Controllers/IncidentController.php`
 
-- [ ] **Step 1: Write `ApprovalResource`**
+- [x] **Step 1: Write `ApprovalResource`**
 
 Like `CorrectiveActionResource`, this needs per-item `can` flags (`approve`/`return`) — the returned/approved history rows must show `false` once decided, and stay `false` forever even after a later resubmission cycle puts the incident back into `ForApproval` via a *different* `Approval` row. The `approveClosure`/`returnFromApproval` abilities live on `IncidentPolicy` but take the specific `Approval` row as well as the incident (`$user->can('approveClosure', [$this->incident, $this->resource])`) precisely so each row's own `status` — not just the incident's current status — gates its own flags. This Resource needs the parent `Incident` loaded on each row to check them.
 
@@ -1696,7 +1696,7 @@ class ApprovalResource extends JsonResource
 }
 ```
 
-- [ ] **Step 2: Wire into `IncidentController::show()`**
+- [x] **Step 2: Wire into `IncidentController::show()`**
 
 Add the import:
 
@@ -1726,7 +1726,7 @@ Add to the `can` array:
                 'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),
 ```
 
-- [ ] **Step 3: Add a regression test**
+- [x] **Step 3: Add a regression test**
 
 Append to `tests/Feature/Approvals/ApprovalTest.php`:
 
@@ -1756,7 +1756,7 @@ Append to `tests/Feature/Approvals/ApprovalTest.php`:
     }
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 php artisan test --filter=ApprovalTest
@@ -1770,7 +1770,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Http/Resources/ApprovalResource.php app/Http/Controllers/IncidentController.php tests/Feature/Approvals/ApprovalTest.php
@@ -1784,7 +1784,7 @@ git commit -m "feat: expose approvals via a Resource with per-item can flags"
 **Files:**
 - Create: `resources/js/Components/Incidents/ApprovalPanel.vue`
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 ```vue
 <script setup>
@@ -1937,7 +1937,7 @@ function submitDecision(approvalId) {
 
 No `ConfirmationDialog` here either, for the same reason `CapaPanel.vue` skips it — both "Approve & Close" and "Return for Revision" already require typing comments into an inline panel before a second Submit click confirms.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add resources/js/Components/Incidents/ApprovalPanel.vue
@@ -1951,7 +1951,7 @@ git commit -m "feat: add ApprovalPanel component (closure approval UI)"
 **Files:**
 - Modify: `resources/js/Pages/Incidents/Show.vue`
 
-- [ ] **Step 1: Import the component and accept the new prop**
+- [x] **Step 1: Import the component and accept the new prop**
 
 ```js
 import ApprovalPanel from '@/Components/Incidents/ApprovalPanel.vue';
@@ -1963,7 +1963,7 @@ Extend `defineProps` (add alongside the existing CAPA props):
     approvals: { type: Array, default: () => [] },
 ```
 
-- [ ] **Step 2: Add the `approvals` branch**
+- [x] **Step 2: Add the `approvals` branch**
 
 Insert a new `v-else-if="activeTab === 'approvals'"` branch immediately before the final catch-all `v-else` (after the `CapaPanel` branch added in Phase 6):
 
@@ -1976,7 +1976,7 @@ Insert a new `v-else-if="activeTab === 'approvals'"` branch immediately before t
         />
 ```
 
-- [ ] **Step 3: Build frontend assets**
+- [x] **Step 3: Build frontend assets**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -1985,7 +1985,7 @@ npm run build
 
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/Pages/Incidents/Show.vue
@@ -1998,7 +1998,7 @@ git commit -m "feat: render the Approvals tab with real closure-approval data"
 
 **Files:** none (verification-only task).
 
-- [ ] **Step 1: Run the full backend test suite**
+- [x] **Step 1: Run the full backend test suite**
 
 ```bash
 php artisan test
@@ -2006,7 +2006,7 @@ php artisan test
 
 Expected: all green — every prior phase's tests plus all new Phase 7 tests.
 
-- [ ] **Step 2: Holistic cross-task code review**
+- [x] **Step 2: Holistic cross-task code review**
 
 Read across the full diff for this phase (`git log --oneline <first-Phase-7-commit>..HEAD`), not just each task's own delta. Specifically check:
 
@@ -2021,7 +2021,7 @@ Read across the full diff for this phase (`git log --oneline <first-Phase-7-comm
    - `IncidentController::show()` now assembles props/can-flags for four concerns (Overview, Investigation, CorrectiveAction, Approval) in one method. Still coherent, but flagged as the natural point to consider an `IncidentShowData` builder if a Phase 8+ tab adds a fifth concern — explicitly a "flag, don't act" item per the standing instruction to ask before extending the DTO/Repository/Action layering pattern to a new kind of class.
 6. Re-run `php artisan test` and `npm run build` yourself — don't just trust individual task reports.
 
-- [ ] **Step 3: Browser verification**
+- [x] **Step 3: Browser verification**
 
 A headless Chromium (Playwright) was available and used for Phase 6's own final verification — use the same approach here (`php artisan serve` on a scratch port, not the WAMP vhost on port 80, which serves a different landing page for this project). Drive the full flow end-to-end on a fresh incident:
 1. As a QSO/Administrator, take an incident through review → assignment → investigation → CAPA → verified (reusing the Phase 5/6 flow), **then** request approval; as Department Head/Management/Administrator (a *different* user than the requester), verify "Approve & Close" moves the incident to `Closed`.
@@ -2029,15 +2029,15 @@ A headless Chromium (Playwright) was available and used for Phase 6's own final 
 3. Exercise a "Return for Revision" once, confirming the incident lands back at `Corrective Action` status and a new CAPA can be added and the cycle can be resubmitted for approval.
 Confirm zero browser console errors throughout, and screenshot the final `Closed` status badge as evidence.
 
-- [ ] **Step 4: Update `docs/architecture.md`**
+- [x] **Step 4: Update `docs/architecture.md`**
 
 Add a `§9h` entry (following the `§9e`/`§9f`/`§9g` pattern) documenting: what shipped, the confirmed design decisions from this plan's header (requester/approver role split with the never-self-decide guard, the no-CAPA-needed gap closure and its intentionally narrow scope, approve-closes-in-one-step, no new domain events), any bugs the holistic review caught, and the browser verification outcome.
 
-- [ ] **Step 5: Update memory**
+- [x] **Step 5: Update memory**
 
 Per the standing instruction, update `project_state.md` and `MEMORY.md` in `C:\Users\DOH\.claude\projects\c--wamp64-projects-incident-report\memory\` with a "Phase 7 (Approvals & Closure) complete" entry, and update `feedback_architecture.md` to note this is now the third phase area confirming the layered pattern's continued, unprompted-pushback-free use.
 
-- [ ] **Step 6: Final commit**
+- [x] **Step 6: Final commit**
 
 ```bash
 git add docs/architecture.md
