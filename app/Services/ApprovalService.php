@@ -1,0 +1,102 @@
+<?php
+
+namespace App\Services;
+
+use App\DataTransferObjects\Approvals\DecideApprovalData;
+use App\DataTransferObjects\Approvals\MarkNoCorrectiveActionNeededData;
+use App\Enums\ApprovalStatus;
+use App\Enums\IncidentStatus;
+use App\Models\Approval;
+use App\Models\Incident;
+use App\Models\User;
+use App\Repositories\ApprovalRepository;
+use Illuminate\Support\Facades\DB;
+
+class ApprovalService
+{
+    public function __construct(private ApprovalRepository $approvals)
+    {
+    }
+
+    public function requestApproval(Incident $incident, User $requester): Approval
+    {
+        return $this->createPendingApproval($incident, $requester, null);
+    }
+
+    public function markNoCorrectiveActionNeeded(Incident $incident, User $requester, MarkNoCorrectiveActionNeededData $data): Approval
+    {
+        return $this->createPendingApproval($incident, $requester, $data->justification);
+    }
+
+    public function approve(Approval $approval, User $approver, DecideApprovalData $data): Approval
+    {
+        return DB::transaction(function () use ($approval, $approver, $data) {
+            $approval = $this->approvals->update($approval, [
+                'status' => ApprovalStatus::Approved,
+                'approver_id' => $approver->id,
+                'decision_comments' => $data->comments,
+                'decided_at' => now(),
+            ]);
+
+            $incident = $approval->incident;
+            $incident->auditComment = "Approved for closure: {$data->comments}";
+            $incident->status = IncidentStatus::Closed;
+            $incident->closed_by = $approver->id;
+            $incident->closed_at = now();
+            $incident->save();
+
+            return $approval;
+        });
+    }
+
+    public function returnForRevision(Approval $approval, User $approver, DecideApprovalData $data): Approval
+    {
+        return DB::transaction(function () use ($approval, $approver, $data) {
+            $approval = $this->approvals->update($approval, [
+                'status' => ApprovalStatus::Returned,
+                'approver_id' => $approver->id,
+                'decision_comments' => $data->comments,
+                'decided_at' => now(),
+            ]);
+
+            $incident = $approval->incident;
+            $incident->auditComment = "Returned for revision: {$data->comments}";
+            $incident->status = IncidentStatus::CorrectiveAction;
+            $incident->save();
+
+            return $approval;
+        });
+    }
+
+    /**
+     * Both public "request" methods funnel here — the DB operations are
+     * identical either way (create a pending Approval row, move the
+     * incident to ForApproval); only the human-readable audit description
+     * differs. Which source status is actually allowed (Verified vs
+     * CorrectiveAction-with-zero-CAPAs) is IncidentPolicy's job, not this
+     * Service's — the same division of responsibility every prior phase's
+     * Service/Policy pair already uses.
+     */
+    private function createPendingApproval(Incident $incident, User $requester, ?string $justification): Approval
+    {
+        return DB::transaction(function () use ($incident, $requester, $justification) {
+            $approval = $this->approvals->create([
+                'incident_id' => $incident->id,
+                'requested_by' => $requester->id,
+                'request_comments' => $justification,
+                'status' => ApprovalStatus::Pending,
+                'due_at' => now()->addHours(
+                    config('incident_workflow.approval_sla_hours.' . $incident->severity->value, 72)
+                ),
+            ]);
+
+            $incident->auditComment = $justification
+                ? "No corrective action required: {$justification}"
+                : 'Corrective action(s) verified; requesting closure approval.';
+            $incident->status = IncidentStatus::ForApproval;
+            $incident->save();
+
+            return $approval;
+        });
+    }
+}
