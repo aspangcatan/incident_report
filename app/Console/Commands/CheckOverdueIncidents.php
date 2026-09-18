@@ -3,11 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Enums\IncidentStatus;
+use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\Investigation;
 use App\Models\User;
 use App\Notifications\IncidentEscalationNotification;
+use App\Queries\OverdueCorrectiveActionsQuery;
 use App\Queries\OverdueInvestigationsQuery;
+use App\Repositories\CorrectiveActionRepository;
 use App\Repositories\InvestigationRepository;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
@@ -22,6 +25,8 @@ class CheckOverdueIncidents extends Command
     public function __construct(
         private OverdueInvestigationsQuery $overdueInvestigations,
         private InvestigationRepository $investigations,
+        private OverdueCorrectiveActionsQuery $overdueCorrectiveActions,
+        private CorrectiveActionRepository $correctiveActions,
     ) {
         parent::__construct();
     }
@@ -39,6 +44,7 @@ class CheckOverdueIncidents extends Command
         $this->escalateOverdueReviews($recipients);
         $this->escalateOverdueAssignments($recipients);
         $this->escalateOverdueInvestigations($recipients);
+        $this->escalateOverdueCorrectiveActions($recipients);
 
         return self::SUCCESS;
     }
@@ -79,6 +85,17 @@ class CheckOverdueIncidents extends Command
         $this->overdueInvestigations->get()->each(function (Investigation $investigation) use ($recipients) {
             Notification::send($recipients, new IncidentEscalationNotification($investigation->incident, 'Investigation SLA breached'));
             $this->investigations->markEscalated($investigation);
+        });
+    }
+
+    private function escalateOverdueCorrectiveActions(Collection $recipients): void
+    {
+        $this->overdueCorrectiveActions->get()->each(function (CorrectiveAction $correctiveAction) use ($recipients) {
+            Notification::send(
+                $recipients,
+                new IncidentEscalationNotification($correctiveAction->incident, "Corrective action {$correctiveAction->capa_number} SLA breached")
+            );
+            $this->correctiveActions->markEscalated($correctiveAction);
         });
     }
 }
