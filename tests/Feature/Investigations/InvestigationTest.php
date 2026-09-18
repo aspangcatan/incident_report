@@ -487,4 +487,33 @@ class InvestigationTest extends TestCase
         $response->assertRedirect();
         $this->assertSame(InvestigationStatus::Completed, $investigation->fresh()->status);
     }
+
+    public function test_the_incident_show_page_exposes_a_resource_shaped_investigation_prop_and_can_flags(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+
+        $response = $this->actingAs($investigator)->get("/incidents/{$incident->id}?tab=investigation");
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Incidents/Show')
+            ->where('investigation', null)
+            ->where('can.startInvestigation', true)
+            ->where('can.completeInvestigation', false)
+        );
+
+        $investigation = app(InvestigationService::class)->start($incident->fresh(), $investigator, $this->startData('five_whys'));
+
+        $this->actingAs($investigator)
+            ->get("/incidents/{$incident->id}?tab=investigation")
+            ->assertInertia(fn ($page) => $page
+                ->where('can.startInvestigation', false)
+                ->where('can.recordFindings', true)
+                ->where('investigation.id', $investigation->id)
+                ->where('investigation.methodology.value', 'five_whys')
+                ->where('investigation.methodology.label', '5 Whys')
+                ->where('investigation.methodology.uses_sequence', true)
+                ->missing('incident.investigation')
+            );
+    }
 }

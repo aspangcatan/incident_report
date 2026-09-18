@@ -6,6 +6,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\Role;
 use App\Http\Requests\Incidents\StoreIncidentRequest;
 use App\Http\Requests\Incidents\UpdateIncidentRequest;
+use App\Http\Resources\InvestigationResource;
 use App\Models\ContributingFactor;
 use App\Models\Department;
 use App\Models\Incident;
@@ -118,6 +119,17 @@ class IncidentController extends Controller
 
         $user = $request->user();
 
+        $canStartInvestigation = $user->can('start', $incident);
+        $investigation = $incident->investigation?->load(['leadInvestigator', 'teamMembers.user', 'findings']);
+        // Accessing the investigation relation above caches it on $incident (Eloquent
+        // caches every relation it resolves, however it was resolved), which would
+        // otherwise duplicate it - unfiltered, with nested user PII - inside the raw
+        // 'incident' prop below. Drop the cached relation so $incident serializes
+        // exactly as it did before this feature: the investigation is exposed solely
+        // through the Resource-shaped 'investigation' prop.
+        $incident->unsetRelation('investigation');
+        $canManageInvestigationTeam = $investigation && $user->can('manageTeam', $investigation);
+
         return Inertia::render('Incidents/Show', [
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
@@ -130,13 +142,21 @@ class IncidentController extends Controller
             // both an "assigned" and a "status_changed" row) within the same second, so
             // created_at alone cannot reliably order same-second rows chronologically.
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
+            'investigation' => $investigation ? new InvestigationResource($investigation) : null,
             'investigators' => $user->can('assign', $incident)
                 ? User::where('role', Role::Investigator)->where('is_active', true)->get(['id', 'name'])
+                : [],
+            'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
+                ? User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'role'])
                 : [],
             'can' => [
                 'update' => $user->can('update', $incident),
                 'review' => $user->can('review', $incident),
                 'assign' => $user->can('assign', $incident),
+                'startInvestigation' => $canStartInvestigation,
+                'manageInvestigationTeam' => $canManageInvestigationTeam,
+                'recordFindings' => $investigation && $user->can('recordFindings', $investigation),
+                'completeInvestigation' => $investigation && $user->can('complete', $investigation),
             ],
         ]);
     }
