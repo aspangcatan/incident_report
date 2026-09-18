@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -73,6 +74,11 @@ class Incident extends Model
     public function assignedInvestigator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_investigator_id');
+    }
+
+    public function investigation(): HasOne
+    {
+        return $this->hasOne(Investigation::class);
     }
 
     public function individuals(): HasMany
