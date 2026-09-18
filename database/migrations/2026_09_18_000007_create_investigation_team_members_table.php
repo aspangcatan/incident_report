@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('investigation_team_members', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('investigation_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignId('investigation_id')->constrained('investigations')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
             $table->string('role_in_team');
             $table->timestamps();
             $table->unique(['investigation_id', 'user_id']);

@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('investigations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('incident_id')->unique()->constrained()->cascadeOnDelete();
-            $table->foreignId('lead_investigator_id')->constrained('users');
+            $table->foreignId('incident_id')->unique()->constrained('incidents')->cascadeOnDelete();
+            $table->foreignId('lead_investigator_id')->constrained('users')->restrictOnDelete();
             $table->text('objective');
             $table->string('methodology');
             $table->timestamp('started_at');

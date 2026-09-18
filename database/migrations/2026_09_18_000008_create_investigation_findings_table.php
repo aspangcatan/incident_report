@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('investigation_findings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('investigation_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('investigation_id')->constrained('investigations')->cascadeOnDelete();
             $table->unsignedInteger('sequence')->nullable();
             $table->string('category')->nullable();
             $table->string('question')->nullable();
