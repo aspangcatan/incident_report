@@ -1,4 +1,5 @@
 <script setup>
+import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import KpiStatTile from '@/Components/Analytics/KpiStatTile.vue';
 import StackedBarChart from '@/Components/Analytics/StackedBarChart.vue';
@@ -25,6 +26,8 @@ function formatPercent(rate) {
 </script>
 
 <template>
+    <Head title="Analytics" />
+
     <AuthenticatedLayout>
         <div class="flex flex-col gap-space-lg">
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
