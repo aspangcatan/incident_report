@@ -1,10 +1,10 @@
 <script setup>
+import { categoricalPalette as palette } from '@/Utils/chartPalette';
+
 const props = defineProps({
     // [{ category: string, incidentCount: number }], pre-sorted descending by the caller.
     segments: { type: Array, required: true },
 });
-
-const palette = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#4a3aa7', '#e34948', '#008300'];
 
 const total = props.segments.reduce((sum, s) => sum + s.incidentCount, 0);
 

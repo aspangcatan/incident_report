@@ -1117,11 +1117,39 @@ git commit -m "feat: add /analytics route and controller"
 ### Task 6: KPI row and root-cause distribution UI
 
 **Files:**
+- Create: `resources/js/Utils/chartPalette.js`
 - Create: `resources/js/Components/Analytics/KpiStatTile.vue`
 - Create: `resources/js/Components/Analytics/StackedBarChart.vue`
 - Modify: `resources/js/Pages/Analytics/Index.vue` (placeholder from Task 5 — filling in the KPI row + root-cause section only; the rest is Task 7)
 
-This task establishes the page's color tokens and the two simplest sections. Per the `dataviz` skill: color comes last, and the categorical/status palettes below are the skill's own validated default (`references/palette.md`), used unmodified — scoped to this page only via CSS custom properties, not added to the shared `tailwind.config.js` (which has no categorical/status color set of its own to extend).
+This task establishes the page's color tokens and the two simplest sections. Per the `dataviz` skill: color comes last, and the categorical/status palettes below are the skill's own validated default (`references/palette.md`), used unmodified — not added to the shared `tailwind.config.js` (which has no categorical/status color set of its own to extend), but factored into one shared `resources/js/Utils/chartPalette.js` module so every chart component in this phase references the same array rather than each hardcoding its own copy (Task 7's `HourlyVolumeChart.vue` reuses two of these same slots for its day/night shift colors — without a shared source, that would be a third hardcoded copy of the same hex values).
+
+- [ ] **Step 0: Write `chartPalette.js`**
+
+```js
+/**
+ * The dataviz skill's validated default categorical palette (8 hues, fixed
+ * order - the order is the CVD-safety mechanism, not cosmetic, so don't
+ * reorder or cycle it). Not added to tailwind.config.js since this app has
+ * no categorical/status color set of its own to extend - kept here as the
+ * one shared source of truth so every chart component references the same
+ * array instead of each hardcoding its own copy.
+ */
+export const categoricalPalette = [
+    '#2a78d6', // slot 1: blue
+    '#eb6834', // slot 2: orange
+    '#1baf7a', // slot 3: aqua
+    '#eda100', // slot 4: yellow
+    '#e87ba4', // slot 5: magenta
+    '#4a3aa7', // slot 6: violet
+    '#e34948', // slot 7: red
+    '#008300', // slot 8: green
+];
+
+/** Day/night shift colors, reusing categorical slots 1 and 2 (blue/orange) - an already-validated adjacent pair. */
+export const dayShiftColor = categoricalPalette[0];
+export const nightShiftColor = categoricalPalette[1];
+```
 
 - [ ] **Step 1: Write `KpiStatTile.vue`**
 
@@ -1160,12 +1188,12 @@ A single horizontal stacked bar for part-to-whole data (root-cause distribution)
 
 ```vue
 <script setup>
+import { categoricalPalette as palette } from '@/Utils/chartPalette';
+
 const props = defineProps({
     // [{ category: string, incidentCount: number }], pre-sorted descending by the caller.
     segments: { type: Array, required: true },
 });
-
-const palette = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#4a3aa7', '#e34948', '#008300'];
 
 const total = props.segments.reduce((sum, s) => sum + s.incidentCount, 0);
 
@@ -1316,13 +1344,12 @@ A 24-bar column chart, one bar per hour, colored by shift bucket (day/night) —
 
 ```vue
 <script setup>
+import { dayShiftColor as dayColor, nightShiftColor as nightColor } from '@/Utils/chartPalette';
+
 const props = defineProps({
     // [{ hour: number, count: number, shift: 'day'|'night' }] x24, hour-ascending.
     hours: { type: Array, required: true },
 });
-
-const dayColor = '#2a78d6';
-const nightColor = '#eb6834';
 
 const maxCount = Math.max(1, ...props.hours.map((h) => h.count));
 
