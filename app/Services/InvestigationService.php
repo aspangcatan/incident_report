@@ -37,7 +37,9 @@ class InvestigationService
                 'objective' => $data->objective,
                 'methodology' => $data->methodology,
                 'started_at' => now(),
-                'target_completion_at' => $data->targetCompletionAt ?? $incident->target_closure_date,
+                'target_completion_at' => $data->targetCompletionAt ?? now()->addHours(
+                    config('incident_workflow.investigation_sla_hours.' . $incident->severity->value, 168)
+                ),
                 'status' => InvestigationStatus::InProgress,
             ]);
 

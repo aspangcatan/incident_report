@@ -111,17 +111,31 @@ class InvestigationTest extends TestCase
         $this->assertSame('Nursing Service Rep', $investigation->teamMembers->firstWhere('user_id', $nurse->id)->role_in_team);
     }
 
-    public function test_starting_an_investigation_defaults_target_completion_to_the_incidents_target_closure_date(): void
+    public function test_starting_an_investigation_defaults_target_completion_to_now_plus_the_severitys_investigation_sla(): void
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
         $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('hfacs'));
 
-        $this->assertSame(
-            $incident->target_closure_date->timestamp,
-            $investigation->target_completion_at->timestamp
+        // Level 2 Moderate -> 168 hours per config/incident_workflow.php
+        $this->assertEqualsWithDelta(
+            now()->addHours(168)->timestamp,
+            $investigation->target_completion_at->timestamp,
+            5
         );
+    }
+
+    public function test_starting_a_late_investigation_does_not_inherit_an_already_past_deadline(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        // Simulate the incident's original assignment-time SLA having already lapsed.
+        $incident->forceFill(['target_closure_date' => now()->subDays(5)])->save();
+
+        $investigation = app(InvestigationService::class)->start($incident->fresh(), $investigator, $this->startData('hfacs'));
+
+        $this->assertTrue($investigation->target_completion_at->isFuture());
     }
 
     public function test_starting_an_investigation_writes_an_investigation_started_audit_log_entry(): void
@@ -363,6 +377,20 @@ class InvestigationTest extends TestCase
         $this->actingAs($investigator)
             ->post("/incidents/{$incident->id}/investigation", ['methodology' => 'not-a-real-methodology'])
             ->assertSessionHasErrors(['objective', 'methodology']);
+    }
+
+    public function test_starting_an_investigation_rejects_an_explicit_past_target_completion_date(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+
+        $this->actingAs($investigator)
+            ->post("/incidents/{$incident->id}/investigation", [
+                'objective' => 'Determine root cause.',
+                'methodology' => 'five_whys',
+                'target_completion_at' => now()->subDay()->toDateString(),
+            ])
+            ->assertSessionHasErrors(['target_completion_at']);
     }
 
     public function test_adding_a_team_member_via_http(): void
