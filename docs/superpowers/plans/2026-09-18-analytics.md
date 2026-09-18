@@ -237,6 +237,34 @@ Add these test methods to the class:
         $this->assertSame(50.0, $kpis['capaAdoption']['rate']);
     }
 
+    /**
+     * Regression test for a truncation bug caught in this task's own
+     * code-quality review: diffInHours()/24 floors to a whole hour before
+     * dividing, so a 25h36m span would wrongly read as 25/24 = 1.0 day
+     * (rounded) instead of the real 25.6/24 = 1.1 days.
+     */
+    public function test_mean_days_to_investigate_does_not_truncate_sub_hour_precision(): void
+    {
+        $department = Department::factory()->create();
+        $incident = $this->incidentThroughReview($department);
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incident->fresh(), $investigator);
+        $investigation = app(InvestigationService::class)->start($incident->fresh(), $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
+        ]));
+        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        $investigation->fresh()->forceFill([
+            'started_at' => now()->subHours(25)->subMinutes(36),
+            'completed_at' => now(),
+        ])->save();
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $kpis = app(AnalyticsService::class)->overview($qso)['kpis'];
+
+        $this->assertSame(1.1, $kpis['meanDaysToInvestigate']);
+    }
+
     public function test_near_miss_velocity_is_null_safe_with_no_prior_period_data(): void
     {
         $department = Department::factory()->create();
@@ -352,7 +380,11 @@ class AnalyticsService
             return null;
         }
 
-        return round($investigations->avg(fn (Investigation $i) => $i->started_at->diffInHours($i->completed_at) / 24), 1);
+        // diffInMinutes()/60/24, not diffInHours()/24: diffInHours() truncates
+        // to a whole hour before the division, which would systematically
+        // undercount every investigation whose span isn't an exact multiple
+        // of 24 hours (e.g. 25h36m -> 25h -> 1.041... days instead of 1.066...).
+        return round($investigations->avg(fn (Investigation $i) => $i->started_at->diffInMinutes($i->completed_at) / 60 / 24), 1);
     }
 
     private function capaAdoptionRate(User $user): array
@@ -388,6 +420,15 @@ class AnalyticsService
             return ['recurrences' => 0, 'total' => 0, 'rate' => 0.0];
         }
 
+        // Deliberately not re-scoped by visibleTo($user): safe only because
+        // every $sentinel here already passed the outer baseQuery($user)
+        // scope, so its own department_id is always one this caller can
+        // already see in full (either they're unrestricted, or visibleTo()
+        // already grants them full visibility into that exact department -
+        // never a partial-visibility case, since IncidentPolicy::viewAnalytics()
+        // never lets a partial-visibility role reach this Service at all).
+        // If that policy gate is ever loosened, this inner query would need
+        // its own explicit department/visibility check.
         $recurrences = $sentinels->filter(function (Incident $sentinel) {
             return Incident::query()
                 ->where('is_sentinel_event', true)
@@ -441,7 +482,7 @@ class AnalyticsService
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `7 passed` (3 from Task 1 + 4 new).
+Expected: `8 passed` (3 from Task 1 + 5 new).
 
 - [ ] **Step 5: Run the full suite**
 
@@ -640,7 +681,7 @@ Add the two private methods:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `9 passed` (7 from Task 2 + 2 new).
+Expected: `10 passed` (8 from Task 2 + 2 new).
 
 ```bash
 php artisan test
@@ -799,7 +840,7 @@ Add the two private methods plus one private constant:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `11 passed` (9 from Task 3 + 2 new).
+Expected: `12 passed` (10 from Task 3 + 2 new).
 
 ```bash
 php artisan test
@@ -907,7 +948,7 @@ Inside the `auth` middleware group, after the notifications routes:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `13 passed` (11 from Task 4 + 2 new).
+Expected: `14 passed` (12 from Task 4 + 2 new).
 
 ```bash
 php artisan test

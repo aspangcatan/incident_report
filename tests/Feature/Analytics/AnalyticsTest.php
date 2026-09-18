@@ -112,6 +112,33 @@ class AnalyticsTest extends TestCase
         $this->assertSame(50.0, $kpis['capaAdoption']['rate']);
     }
 
+    /**
+     * Regression test for a truncation bug: diffInHours()/24 floors to a
+     * whole hour before dividing, so a 25h36m span would wrongly read as
+     * 25/24 = 1.0 day (rounded) instead of the real 25.6/24 = 1.1 days.
+     */
+    public function test_mean_days_to_investigate_does_not_truncate_sub_hour_precision(): void
+    {
+        $department = Department::factory()->create();
+        $incident = $this->incidentThroughReview($department);
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incident->fresh(), $investigator);
+        $investigation = app(InvestigationService::class)->start($incident->fresh(), $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
+        ]));
+        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        $investigation->fresh()->forceFill([
+            'started_at' => now()->subHours(25)->subMinutes(36),
+            'completed_at' => now(),
+        ])->save();
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $kpis = app(AnalyticsService::class)->overview($qso)['kpis'];
+
+        $this->assertSame(1.1, $kpis['meanDaysToInvestigate']);
+    }
+
     public function test_near_miss_velocity_is_null_safe_with_no_prior_period_data(): void
     {
         $department = Department::factory()->create();

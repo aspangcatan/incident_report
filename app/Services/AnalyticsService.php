@@ -73,7 +73,11 @@ class AnalyticsService
             return null;
         }
 
-        return round($investigations->avg(fn (Investigation $i) => $i->started_at->diffInHours($i->completed_at) / 24), 1);
+        // diffInMinutes()/60/24, not diffInHours()/24: diffInHours() truncates
+        // to a whole hour before the division, which would systematically
+        // undercount every investigation whose span isn't an exact multiple
+        // of 24 hours (e.g. 25h36m -> 25h -> 1.041... days instead of 1.066...).
+        return round($investigations->avg(fn (Investigation $i) => $i->started_at->diffInMinutes($i->completed_at) / 60 / 24), 1);
     }
 
     private function capaAdoptionRate(User $user): array
@@ -109,6 +113,15 @@ class AnalyticsService
             return ['recurrences' => 0, 'total' => 0, 'rate' => 0.0];
         }
 
+        // Deliberately not re-scoped by visibleTo($user): safe only because
+        // every $sentinel here already passed the outer baseQuery($user)
+        // scope, so its own department_id is always one this caller can
+        // already see in full (either they're unrestricted, or visibleTo()
+        // already grants them full visibility into that exact department -
+        // never a partial-visibility case, since IncidentPolicy::viewAnalytics()
+        // never lets a partial-visibility role reach this Service at all).
+        // If that policy gate is ever loosened, this inner query would need
+        // its own explicit department/visibility check.
         $recurrences = $sentinels->filter(function (Incident $sentinel) {
             return Incident::query()
                 ->where('is_sentinel_event', true)
