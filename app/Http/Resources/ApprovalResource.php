@@ -31,8 +31,8 @@ class ApprovalResource extends JsonResource
             'decided_at' => $this->decided_at,
             'created_at' => $this->created_at,
             'can' => [
-                'approve' => $user->can('approveClosure', $this->incident),
-                'return' => $user->can('returnFromApproval', $this->incident),
+                'approve' => $user->can('approveClosure', [$this->incident, $this->resource]),
+                'return' => $user->can('returnFromApproval', [$this->incident, $this->resource]),
             ],
         ];
     }

@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\ApprovalStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\Role;
+use App\Models\Approval;
 use App\Models\Incident;
 use App\Models\User;
 
@@ -121,22 +122,38 @@ class IncidentPolicy
         return $this->isQualityStaff($user);
     }
 
-    public function approveClosure(User $user, Incident $incident): bool
+    /**
+     * Takes the specific Approval row, not just the incident, precisely so
+     * this can't be satisfied by an incident that's currently ForApproval
+     * but via a *different*, already-decided Approval row (e.g. a
+     * previously-Returned row from an earlier resubmission cycle) - only
+     * that row's own Pending status makes it the one actually up for
+     * decision. Called as $user->can('approveClosure', [$incident, $approval]).
+     */
+    public function approveClosure(User $user, Incident $incident, Approval $approval): bool
     {
         if ($incident->status !== IncidentStatus::ForApproval) {
             return false;
         }
 
-        return $this->hasApprovalAuthority($user, $incident);
+        if ($approval->status !== ApprovalStatus::Pending) {
+            return false;
+        }
+
+        return $this->hasApprovalAuthority($user, $incident, $approval);
     }
 
-    public function returnFromApproval(User $user, Incident $incident): bool
+    public function returnFromApproval(User $user, Incident $incident, Approval $approval): bool
     {
         if ($incident->status !== IncidentStatus::ForApproval) {
             return false;
         }
 
-        return $this->hasApprovalAuthority($user, $incident);
+        if ($approval->status !== ApprovalStatus::Pending) {
+            return false;
+        }
+
+        return $this->hasApprovalAuthority($user, $incident, $approval);
     }
 
     private function isQualityStaff(User $user): bool
@@ -148,16 +165,19 @@ class IncidentPolicy
      * Management/Administrator approve hospital-wide; a DepartmentHead is
      * scoped to their own department, same convention as
      * hasReviewOrAssignAccess() above. Either way, the specific user who
-     * requested this incident's current pending approval is excluded, even
-     * if their role would otherwise qualify - mirrors CorrectiveActionPolicy
-     * ::verify()'s never-self-verification check, checked by user id, not
-     * just role, for the same reason (an Administrator can both request and
+     * requested *this* Approval row is excluded, even if their role would
+     * otherwise qualify - mirrors CorrectiveActionPolicy::verify()'s
+     * never-self-verification check, checked by user id, not just role,
+     * for the same reason (an Administrator can both request and
      * ordinarily approve, so role alone isn't a strong enough guard).
+     * Checking $approval->requested_by directly (rather than re-querying
+     * "the" pending approval on the incident) is both correct and cheap -
+     * $approval is already the exact row callers are deciding on.
      */
-    private function hasApprovalAuthority(User $user, Incident $incident): bool
+    private function hasApprovalAuthority(User $user, Incident $incident, Approval $approval): bool
     {
         if (in_array($user->role, [Role::Management, Role::Administrator], true)) {
-            return $this->isNotTheRequester($user, $incident);
+            return $approval->requested_by !== $user->id;
         }
 
         if ($user->role === Role::DepartmentHead) {
@@ -165,23 +185,9 @@ class IncidentPolicy
                 return false;
             }
 
-            return $this->isNotTheRequester($user, $incident);
+            return $approval->requested_by !== $user->id;
         }
 
         return false;
-    }
-
-    /**
-     * Fails closed: callers already guard on IncidentStatus::ForApproval,
-     * which should never coexist with a missing pending Approval row, but
-     * if that invariant is ever violated by a bug elsewhere, deny rather
-     * than grant - the wrong default for an authorization check is never
-     * "allow when confused".
-     */
-    private function isNotTheRequester(User $user, Incident $incident): bool
-    {
-        $pendingApproval = $incident->approvals()->where('status', ApprovalStatus::Pending->value)->first();
-
-        return $pendingApproval !== null && $pendingApproval->requested_by !== $user->id;
     }
 }

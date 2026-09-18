@@ -9,7 +9,9 @@ class ApproveClosureRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('approveClosure', $this->route('approval')->incident);
+        $approval = $this->route('approval');
+
+        return $this->user()->can('approveClosure', [$approval->incident, $approval]);
     }
 
     public function rules(): array

@@ -229,45 +229,70 @@ class ApprovalTest extends TestCase
     public function test_management_and_administrator_can_approve_closure_hospital_wide(): void
     {
         $incident = $this->incidentReadyForApproval();
-        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
         $management = User::factory()->create(['role' => Role::Management]);
         $admin = User::factory()->create(['role' => Role::Administrator]);
 
-        $this->assertTrue($management->can('approveClosure', $incident->fresh()));
-        $this->assertTrue($admin->can('approveClosure', $incident->fresh()));
+        $this->assertTrue($management->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertTrue($admin->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
     public function test_a_department_head_can_only_approve_closure_for_their_own_department(): void
     {
         $incident = $this->incidentReadyForApproval();
-        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
         $sameDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
         $otherDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
 
-        $this->assertTrue($sameDeptHead->can('approveClosure', $incident->fresh()));
-        $this->assertFalse($otherDeptHead->can('approveClosure', $incident->fresh()));
+        $this->assertTrue($sameDeptHead->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertFalse($otherDeptHead->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
     public function test_a_supervisor_cannot_approve_closure(): void
     {
         $incident = $this->incidentReadyForApproval();
-        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
 
-        $this->assertFalse($supervisor->can('approveClosure', $incident->fresh()));
+        $this->assertFalse($supervisor->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
     public function test_the_requester_cannot_approve_or_return_their_own_request_even_as_administrator(): void
     {
         $incident = $this->incidentReadyForApproval();
         $admin = User::factory()->create(['role' => Role::Administrator]);
-        app(ApprovalService::class)->requestApproval($incident, $admin);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $admin);
         $otherAdmin = User::factory()->create(['role' => Role::Administrator]);
 
-        $this->assertFalse($admin->can('approveClosure', $incident->fresh()));
-        $this->assertFalse($admin->can('returnFromApproval', $incident->fresh()));
-        $this->assertTrue($otherAdmin->can('approveClosure', $incident->fresh()));
-        $this->assertTrue($otherAdmin->can('returnFromApproval', $incident->fresh()));
+        $this->assertFalse($admin->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertFalse($admin->can('returnFromApproval', [$incident->fresh(), $approval]));
+        $this->assertTrue($otherAdmin->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertTrue($otherAdmin->can('returnFromApproval', [$incident->fresh(), $approval]));
+    }
+
+    public function test_an_already_decided_approval_can_no_longer_be_approved_or_returned_even_if_the_incident_is_for_approval_again(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $first = app(ApprovalService::class)->requestApproval($incident, $qso);
+        $approver = User::factory()->create(['role' => Role::Management]);
+        app(ApprovalService::class)->returnForRevision($first, $approver, DecideApprovalData::fromArray(['comments' => 'Not enough.']));
+
+        $capa = app(CorrectiveActionService::class)->create($incident->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Additional fix.', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+        $this->actingAs(User::factory()->create());
+        app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        app(CorrectiveActionService::class)->verify($capa->fresh(), User::factory()->create(['role' => Role::QualitySafetyOfficer]), VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+        $second = app(ApprovalService::class)->requestApproval($incident->fresh(), $qso);
+
+        // The incident is ForApproval again, but $first is the old, already-Returned
+        // row from the earlier cycle - it must stay permanently undecidable, even
+        // though the incident's *current* status would otherwise allow a decision.
+        $this->assertFalse($approver->can('approveClosure', [$incident->fresh(), $first]));
+        $this->assertFalse($approver->can('returnFromApproval', [$incident->fresh(), $first]));
+        $this->assertTrue($approver->can('approveClosure', [$incident->fresh(), $second]));
     }
 
     public function test_qso_can_request_approval_via_http(): void

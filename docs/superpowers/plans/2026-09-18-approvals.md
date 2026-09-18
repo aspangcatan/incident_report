@@ -836,45 +836,70 @@ Append to the test class:
     public function test_management_and_administrator_can_approve_closure_hospital_wide(): void
     {
         $incident = $this->incidentReadyForApproval();
-        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
         $management = User::factory()->create(['role' => Role::Management]);
         $admin = User::factory()->create(['role' => Role::Administrator]);
 
-        $this->assertTrue($management->can('approveClosure', $incident->fresh()));
-        $this->assertTrue($admin->can('approveClosure', $incident->fresh()));
+        $this->assertTrue($management->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertTrue($admin->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
     public function test_a_department_head_can_only_approve_closure_for_their_own_department(): void
     {
         $incident = $this->incidentReadyForApproval();
-        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
         $sameDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
         $otherDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
 
-        $this->assertTrue($sameDeptHead->can('approveClosure', $incident->fresh()));
-        $this->assertFalse($otherDeptHead->can('approveClosure', $incident->fresh()));
+        $this->assertTrue($sameDeptHead->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertFalse($otherDeptHead->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
     public function test_a_supervisor_cannot_approve_closure(): void
     {
         $incident = $this->incidentReadyForApproval();
-        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
 
-        $this->assertFalse($supervisor->can('approveClosure', $incident->fresh()));
+        $this->assertFalse($supervisor->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
     public function test_the_requester_cannot_approve_or_return_their_own_request_even_as_administrator(): void
     {
         $incident = $this->incidentReadyForApproval();
         $admin = User::factory()->create(['role' => Role::Administrator]);
-        app(ApprovalService::class)->requestApproval($incident, $admin);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $admin);
         $otherAdmin = User::factory()->create(['role' => Role::Administrator]);
 
-        $this->assertFalse($admin->can('approveClosure', $incident->fresh()));
-        $this->assertFalse($admin->can('returnFromApproval', $incident->fresh()));
-        $this->assertTrue($otherAdmin->can('approveClosure', $incident->fresh()));
-        $this->assertTrue($otherAdmin->can('returnFromApproval', $incident->fresh()));
+        $this->assertFalse($admin->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertFalse($admin->can('returnFromApproval', [$incident->fresh(), $approval]));
+        $this->assertTrue($otherAdmin->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertTrue($otherAdmin->can('returnFromApproval', [$incident->fresh(), $approval]));
+    }
+
+    public function test_an_already_decided_approval_can_no_longer_be_approved_or_returned_even_if_the_incident_is_for_approval_again(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $first = app(ApprovalService::class)->requestApproval($incident, $qso);
+        $approver = User::factory()->create(['role' => Role::Management]);
+        app(ApprovalService::class)->returnForRevision($first, $approver, DecideApprovalData::fromArray(['comments' => 'Not enough.']));
+
+        $capa = app(CorrectiveActionService::class)->create($incident->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Additional fix.', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+        $this->actingAs(User::factory()->create());
+        app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        app(CorrectiveActionService::class)->verify($capa->fresh(), User::factory()->create(['role' => Role::QualitySafetyOfficer]), VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+        $second = app(ApprovalService::class)->requestApproval($incident->fresh(), $qso);
+
+        // The incident is ForApproval again, but $first is the old, already-Returned
+        // row from the earlier cycle - it must stay permanently undecidable, even
+        // though the incident's *current* status would otherwise allow a decision.
+        $this->assertFalse($approver->can('approveClosure', [$incident->fresh(), $first]));
+        $this->assertFalse($approver->can('returnFromApproval', [$incident->fresh(), $first]));
+        $this->assertTrue($approver->can('approveClosure', [$incident->fresh(), $second]));
     }
 ```
 
@@ -888,11 +913,14 @@ Expected: FAIL — the new abilities don't exist on `IncidentPolicy` yet, so eve
 
 - [ ] **Step 3: Add the four abilities to `IncidentPolicy`**
 
-In `app/Policies/IncidentPolicy.php`, add the import and the four public methods plus one private helper (near the existing `hasReviewOrAssignAccess` helper):
+In `app/Policies/IncidentPolicy.php`, add the imports and the four public methods plus two private helpers (near the existing `hasReviewOrAssignAccess` helper):
 
 ```php
 use App\Enums\ApprovalStatus;
+use App\Models\Approval;
 ```
+
+`approveClosure`/`returnFromApproval` take the specific `Approval` row as a third argument, not just the incident — called as `$user->can('approveClosure', [$incident, $approval])`, which Laravel resolves to `IncidentPolicy::approveClosure($user, $incident, $approval)` (the policy class is picked from the array's first element, the same "extra context" idiom `CorrectiveActionPolicy::create()` already uses via `[CorrectiveAction::class, $incident]`). This matters: an incident can cycle `Verified → ForApproval → (returned) → CorrectiveAction → Verified → ForApproval` again, producing a *second* `Approval` row while the first, already-`Returned` row still exists. If these abilities only checked `$incident->status === ForApproval`, the old row would incorrectly stay "decidable" forever, since the incident's status alone can't tell two `Approval` rows apart — only checking the specific row's own `status` can.
 
 ```php
     public function requestApproval(User $user, Incident $incident): bool
@@ -917,22 +945,30 @@ use App\Enums\ApprovalStatus;
         return $this->isQualityStaff($user);
     }
 
-    public function approveClosure(User $user, Incident $incident): bool
+    public function approveClosure(User $user, Incident $incident, Approval $approval): bool
     {
         if ($incident->status !== IncidentStatus::ForApproval) {
             return false;
         }
 
-        return $this->hasApprovalAuthority($user, $incident);
+        if ($approval->status !== ApprovalStatus::Pending) {
+            return false;
+        }
+
+        return $this->hasApprovalAuthority($user, $incident, $approval);
     }
 
-    public function returnFromApproval(User $user, Incident $incident): bool
+    public function returnFromApproval(User $user, Incident $incident, Approval $approval): bool
     {
         if ($incident->status !== IncidentStatus::ForApproval) {
             return false;
         }
 
-        return $this->hasApprovalAuthority($user, $incident);
+        if ($approval->status !== ApprovalStatus::Pending) {
+            return false;
+        }
+
+        return $this->hasApprovalAuthority($user, $incident, $approval);
     }
 
     private function isQualityStaff(User $user): bool
@@ -944,16 +980,19 @@ use App\Enums\ApprovalStatus;
      * Management/Administrator approve hospital-wide; a DepartmentHead is
      * scoped to their own department, same convention as
      * hasReviewOrAssignAccess() above. Either way, the specific user who
-     * requested this incident's current pending approval is excluded, even
-     * if their role would otherwise qualify - mirrors CorrectiveActionPolicy
-     * ::verify()'s never-self-verification check, checked by user id, not
-     * just role, for the same reason (an Administrator can both request and
+     * requested *this* Approval row is excluded, even if their role would
+     * otherwise qualify - mirrors CorrectiveActionPolicy::verify()'s
+     * never-self-verification check, checked by user id, not just role,
+     * for the same reason (an Administrator can both request and
      * ordinarily approve, so role alone isn't a strong enough guard).
+     * Checking $approval->requested_by directly (rather than re-querying
+     * "the" pending approval on the incident) is both correct and cheap -
+     * $approval is already the exact row callers are deciding on.
      */
-    private function hasApprovalAuthority(User $user, Incident $incident): bool
+    private function hasApprovalAuthority(User $user, Incident $incident, Approval $approval): bool
     {
         if (in_array($user->role, [Role::Management, Role::Administrator], true)) {
-            return $this->isNotTheRequester($user, $incident);
+            return $approval->requested_by !== $user->id;
         }
 
         if ($user->role === Role::DepartmentHead) {
@@ -961,17 +1000,10 @@ use App\Enums\ApprovalStatus;
                 return false;
             }
 
-            return $this->isNotTheRequester($user, $incident);
+            return $approval->requested_by !== $user->id;
         }
 
         return false;
-    }
-
-    private function isNotTheRequester(User $user, Incident $incident): bool
-    {
-        $pendingApproval = $incident->approvals()->where('status', ApprovalStatus::Pending->value)->first();
-
-        return $pendingApproval !== null && $pendingApproval->requested_by !== $user->id;
     }
 ```
 
@@ -981,7 +1013,7 @@ use App\Enums\ApprovalStatus;
 php artisan test --filter=ApprovalTest
 ```
 
-Expected: `15 passed`.
+Expected: `16 passed`.
 
 ```bash
 php artisan test
@@ -1365,7 +1397,9 @@ class ApproveClosureRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('approveClosure', $this->route('approval')->incident);
+        $approval = $this->route('approval');
+
+        return $this->user()->can('approveClosure', [$approval->incident, $approval]);
     }
 
     public function rules(): array
@@ -1395,7 +1429,9 @@ class ReturnFromApprovalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('returnFromApproval', $this->route('approval')->incident);
+        $approval = $this->route('approval');
+
+        return $this->user()->can('returnFromApproval', [$approval->incident, $approval]);
     }
 
     public function rules(): array
@@ -1589,7 +1625,7 @@ Inside the `auth` middleware group, after the corrective-action routes:
 php artisan test --filter=ApprovalTest
 ```
 
-Expected: `23 passed` (15 from Task 7 + 8 new HTTP tests).
+Expected: `24 passed` (16 from Task 7 + 8 new HTTP tests).
 
 ```bash
 php artisan test
@@ -1614,7 +1650,7 @@ git commit -m "feat: add approval request/no-CAPA-needed/approve/return routes"
 
 - [ ] **Step 1: Write `ApprovalResource`**
 
-Like `CorrectiveActionResource`, this needs per-item `can` flags (`approve`/`return`) — even though in practice only the single current *pending* row will ever have them `true`, the returned/approved history rows correctly show `false` once decided. The `approveClosure`/`returnFromApproval` abilities are defined on `IncidentPolicy` (they gate on the incident, not the approval row), so this Resource needs the parent `Incident` loaded on each row to check them.
+Like `CorrectiveActionResource`, this needs per-item `can` flags (`approve`/`return`) — the returned/approved history rows must show `false` once decided, and stay `false` forever even after a later resubmission cycle puts the incident back into `ForApproval` via a *different* `Approval` row. The `approveClosure`/`returnFromApproval` abilities live on `IncidentPolicy` but take the specific `Approval` row as well as the incident (`$user->can('approveClosure', [$this->incident, $this->resource])`) precisely so each row's own `status` — not just the incident's current status — gates its own flags. This Resource needs the parent `Incident` loaded on each row to check them.
 
 The JSON key stays `comments` (there's no sibling ambiguity in the payload the frontend already reads distinctly-named `request_comments` and `comments`) even though it reads from the model's `decision_comments` column — that column name exists specifically to avoid ambiguity at the *database* row level, where `request_comments` and a second bare `comments` column would sit side by side.
 
@@ -1652,8 +1688,8 @@ class ApprovalResource extends JsonResource
             'decided_at' => $this->decided_at,
             'created_at' => $this->created_at,
             'can' => [
-                'approve' => $user->can('approveClosure', $this->incident),
-                'return' => $user->can('returnFromApproval', $this->incident),
+                'approve' => $user->can('approveClosure', [$this->incident, $this->resource]),
+                'return' => $user->can('returnFromApproval', [$this->incident, $this->resource]),
             ],
         ];
     }
@@ -1726,7 +1762,7 @@ Append to `tests/Feature/Approvals/ApprovalTest.php`:
 php artisan test --filter=ApprovalTest
 ```
 
-Expected: `24 passed`.
+Expected: `25 passed`.
 
 ```bash
 php artisan test
@@ -1974,11 +2010,16 @@ Expected: all green — every prior phase's tests plus all new Phase 7 tests.
 
 Read across the full diff for this phase (`git log --oneline <first-Phase-7-commit>..HEAD`), not just each task's own delta. Specifically check:
 
-1. **The requester/approver self-check** — `IncidentPolicy::isNotTheRequester()` looks up the incident's current *pending* approval each time it's called, rather than being passed the specific `Approval` instance being decided. Confirm this can't be tricked: since `approveClosure`/`returnFromApproval` both already require `status === ForApproval` first, and an incident can only have one `Pending` row while in that status (the next request only happens after the current one is settled and the status has moved away from `ForApproval`), the lookup should always resolve to the correct row. Verify this reasoning with a test if the existing `test_a_returned_incident_can_be_resubmitted_for_approval_producing_a_second_approval_record` test doesn't already exercise it end-to-end (it creates two rows on the same incident over time — confirm the self-check still keys off the *current* one correctly after a return).
+1. **The requester/approver self-check, keyed to the wrong scope.** An earlier draft of this plan had `approveClosure`/`returnFromApproval` take only the `Incident`, checking `status === ForApproval` and re-querying "the" pending approval on the incident for the self-check. Task 10's code-quality review caught that this was a real authorization gap, not just a style nit: after a `Returned → CorrectiveAction → Verified → ForApproval` resubmission cycle, the incident has a *second* `Approval` row while the first, already-`Returned` row still exists — and since the ability never looked at any specific row's own status, that first row stayed permanently "decidable" by anyone who could decide the second one. **This was fixed within the phase** (both abilities now take the `Approval` row as well as the incident, require `$approval->status === Pending`, and check `$approval->requested_by` directly instead of re-querying) and is covered by `test_an_already_decided_approval_can_no_longer_be_approved_or_returned_even_if_the_incident_is_for_approval_again`. Re-confirm this test still passes and still actually exercises the two-row scenario (not just the happy path) — this is the single riskiest piece of logic in the phase and deserves a second look even though it's already fixed.
 2. **`markNoCorrectiveActionNeeded` re-entrancy** — after it's used once and the incident is later *returned* (back to `CorrectiveAction`), can it be used a second time if still zero CAPAs exist? Trace whether `IncidentPolicy::markNoCorrectiveActionNeeded()`'s guard (`status === CorrectiveAction && zero corrective actions`) still holds correctly on a second pass, and that doing so doesn't collide with the first (now-`Returned`) `Approval` row. Add a test if this path isn't already covered.
 3. **`due_at` severity lookup** — confirm `config('incident_workflow.approval_sla_hours.' . $incident->severity->value)` is read correctly for all four `Severity` cases, not just the `Level2Moderate` case the existing tests use — add a quick data-provider-style check or additional assertions if only one severity is currently exercised.
 4. **Audit trail ordering** — confirm the `status_changed` rows this phase produces (via `IncidentObserver`, same mechanism as every prior phase) interleave correctly in true chronological order with pre-existing investigation/CAPA audit entries (the Phase 4 `->latest()->latest('id')` fix, confirmed action-agnostic in both the Phase 5 and Phase 6 holistic reviews).
-5. Re-run `php artisan test` and `npm run build` yourself — don't just trust individual task reports.
+5. **Forward-looking notes raised during task reviews, not acted on mid-phase (deliberately deferred to this step):**
+   - The `incidentThroughInvestigation()`/`incidentReadyForApproval()` test helpers in `ApprovalTest.php` are now a 4th near-duplicate of the same incident-setup scaffolding also living in `CorrectiveActionTest.php` and `CorrectiveActionEscalationTest.php`. Worth a shared trait/base test case now, before a 5th copy appears in Phase 8.
+   - `CheckOverdueIncidents` now has 5 escalation sweeps and 6 constructor-injected dependencies. Still readable, but flagged as the point where a small "escalator" abstraction would pay for itself if a 6th sweep is ever added — don't build it now, just note it.
+   - `InvestigationResource`/`CorrectiveActionResource` both carry a comment claiming their `public static $wrap = null;` is what disables Inertia's "data" envelope. It isn't — `AppServiceProvider::boot()` already calls `JsonResource::withoutWrapping()` globally, so those per-class declarations are redundant and their comments are misleading (harmless, since the actual behavior is still correct either way). Worth a documentation fix, not a behavior change.
+   - `IncidentController::show()` now assembles props/can-flags for four concerns (Overview, Investigation, CorrectiveAction, Approval) in one method. Still coherent, but flagged as the natural point to consider an `IncidentShowData` builder if a Phase 8+ tab adds a fifth concern — explicitly a "flag, don't act" item per the standing instruction to ask before extending the DTO/Repository/Action layering pattern to a new kind of class.
+6. Re-run `php artisan test` and `npm run build` yourself — don't just trust individual task reports.
 
 - [ ] **Step 3: Browser verification**
 

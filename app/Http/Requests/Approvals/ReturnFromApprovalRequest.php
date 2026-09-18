@@ -9,7 +9,9 @@ class ReturnFromApprovalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('returnFromApproval', $this->route('approval')->incident);
+        $approval = $this->route('approval');
+
+        return $this->user()->can('returnFromApproval', [$approval->incident, $approval]);
     }
 
     public function rules(): array
