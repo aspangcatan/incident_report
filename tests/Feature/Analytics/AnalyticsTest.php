@@ -326,6 +326,152 @@ class AnalyticsTest extends TestCase
         $this->assertSame(3, $patterns[1]['incidentCount']);
     }
 
+    /**
+     * Task 9 holistic-review regression (item 1): scopeVisibleTo() treats a
+     * null department_id Supervisor/DepartmentHead as seeing nothing at all
+     * (Incident::scopeVisibleTo() has its own explicit whereRaw('1 = 0')
+     * guard for this - the exact bug Phase 3's holistic review once caught).
+     * This proves every AnalyticsService method inherits that guard
+     * end-to-end, rather than any of them falling back to a hospital-wide
+     * result when department_id is null. Seeds real, varied data (a
+     * qualifying recurring pattern, a sentinel recurrence, contributing
+     * factors, a verified CAPA) and proves a hospital-wide QSO really does
+     * see it, so the null-department emptiness below is scoping, not just
+     * "there's no data".
+     */
+    public function test_department_head_with_null_department_id_gets_empty_analytics_not_hospital_wide(): void
+    {
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+
+        $incidentA = $this->incidentThroughReview($department, $incidentType);
+        $this->incidentThroughReview($department, $incidentType);
+        $this->incidentThroughReview($department, $incidentType);
+
+        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
+        $incidentA->contributingFactors()->sync([$humanFactors->id]);
+        $incidentA->forceFill(['is_sentinel_event' => true, 'reported_at' => now()->subDays(10)])->save();
+
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incidentA->fresh(), $investigator);
+        $investigation = app(InvestigationService::class)->start($incidentA->fresh(), $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
+        ]));
+        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        $capa = app(CorrectiveActionService::class)->create($incidentA->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+        $this->actingAs(User::factory()->create());
+        app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        app(CorrectiveActionService::class)->verify($capa->fresh(), User::factory()->create(['role' => Role::QualitySafetyOfficer]), VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+
+        // Sanity: a hospital-wide QSO really does see this data.
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $qsoOverview = app(AnalyticsService::class)->overview($qso);
+        $this->assertNotEmpty($qsoOverview['recurringPatterns']);
+        $this->assertNotEmpty($qsoOverview['departmentSafety']);
+        $this->assertNotEmpty($qsoOverview['rootCauseDistribution']);
+
+        $deptHeadNoDept = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
+        $overview = app(AnalyticsService::class)->overview($deptHeadNoDept);
+
+        $this->assertNull($overview['kpis']['meanHoursToReview']);
+        $this->assertNull($overview['kpis']['meanDaysToInvestigate']);
+        $this->assertSame(['verified' => 0, 'total' => 0, 'rate' => null], $overview['kpis']['capaAdoption']);
+        $this->assertSame(['recurrences' => 0, 'total' => 0, 'rate' => 0.0], $overview['kpis']['sentinelRecurrence']);
+        $this->assertSame(0.0, $overview['kpis']['nearMissVelocityPercent']);
+        $this->assertSame([], $overview['rootCauseDistribution']);
+        $this->assertSame([], $overview['departmentSafety']);
+        $this->assertSame([], $overview['recurringPatterns']);
+        $this->assertCount(24, $overview['hourlyVolume']);
+        $this->assertSame(0, array_sum(array_column($overview['hourlyVolume'], 'count')));
+    }
+
+    /**
+     * Task 9 holistic-review regression (item 2): departmentSafety()'s
+     * $everCreated > 0 guard means a department with zero CorrectiveActions
+     * and zero Approvals ever created is trivially "Exemplary" rather than
+     * a division-by-zero. The existing department-safety test always seeds
+     * one verified CAPA, so it never actually exercises this branch.
+     */
+    public function test_department_safety_index_defaults_to_exemplary_with_no_capas_or_approvals_ever_created(): void
+    {
+        $department = Department::factory()->create(['name' => 'Radiology']);
+        $this->incidentThroughReview($department);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $table = app(AnalyticsService::class)->overview($qso)['departmentSafety'];
+
+        $row = collect($table)->firstWhere('departmentName', 'Radiology');
+        $this->assertNotNull($row);
+        $this->assertSame(0, $row['capasTotal']);
+        $this->assertSame(0, $row['capasVerified']);
+        $this->assertSame(100, $row['safetyIndex']);
+        $this->assertSame('Exemplary', $row['statusLabel']);
+    }
+
+    /**
+     * Task 9 holistic-review regression (item 2): with no CAPAs and no
+     * sentinel events at all, capaAdoptionRate()'s rate stays null (not a
+     * division-by-zero error), sentinelRecurrenceRate() short-circuits via
+     * its isEmpty() guard, and nearMissVelocity()'s both-zero branch (unlike
+     * the already-covered current>0/previous=0 "surge" branch) returns 0.0.
+     */
+    public function test_capa_adoption_and_sentinel_recurrence_default_to_documented_zero_state_with_no_data(): void
+    {
+        $department = Department::factory()->create();
+        $this->incidentThroughReview($department);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $kpis = app(AnalyticsService::class)->overview($qso)['kpis'];
+
+        $this->assertSame(['verified' => 0, 'total' => 0, 'rate' => null], $kpis['capaAdoption']);
+        $this->assertSame(['recurrences' => 0, 'total' => 0, 'rate' => 0.0], $kpis['sentinelRecurrence']);
+        $this->assertSame(0.0, $kpis['nearMissVelocityPercent']);
+    }
+
+    /**
+     * Task 9 holistic-review regression (item 4): rootCauseDistribution()'s
+     * existing test only ever attaches factors from 2 *different*
+     * categories, so it never actually exercises the
+     * COUNT(DISTINCT incident_contributing_factor.incident_id) that's
+     * supposed to prevent one incident with 2 factors in the *same*
+     * category from being counted twice for that category.
+     */
+    public function test_root_cause_distribution_counts_an_incident_once_per_category_with_two_same_category_factors(): void
+    {
+        $department = Department::factory()->create();
+        $incident = $this->incidentThroughReview($department);
+        $fatigue = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
+        $distraction = \App\Models\ContributingFactor::create(['label' => 'Distraction', 'category' => 'Human Factors']);
+        $incident->contributingFactors()->sync([$fatigue->id, $distraction->id]);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $distribution = app(AnalyticsService::class)->overview($qso)['rootCauseDistribution'];
+
+        $row = collect($distribution)->firstWhere('category', 'Human Factors');
+        $this->assertNotNull($row);
+        $this->assertSame(1, $row['incidentCount']);
+    }
+
+    /**
+     * Task 9 holistic-review decision (item 5): AnalyticsService's
+     * WINDOW_DAYS/REPEAT_PATTERN_WINDOW_DAYS/REPEAT_PATTERN_MIN_COUNT
+     * constants are now surfaced through overview() so Analytics/Index.vue
+     * interpolates them into its "90 days"/"3+" copy instead of hardcoding
+     * a second, driftable copy of the same numbers.
+     */
+    public function test_overview_surfaces_the_window_and_recurring_pattern_constants_for_frontend_copy(): void
+    {
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $overview = app(AnalyticsService::class)->overview($qso);
+
+        $this->assertSame(90, $overview['windowDays']);
+        $this->assertSame(90, $overview['recurringPatternWindowDays']);
+        $this->assertSame(3, $overview['recurringPatternMinCount']);
+    }
+
     public function test_qso_can_load_the_analytics_page_via_http(): void
     {
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
@@ -340,6 +486,9 @@ class AnalyticsTest extends TestCase
                 ->has('departmentSafety')
                 ->has('hourlyVolume')
                 ->has('recurringPatterns')
+                ->has('windowDays')
+                ->has('recurringPatternWindowDays')
+                ->has('recurringPatternMinCount')
             );
     }
 

@@ -11,6 +11,9 @@ const props = defineProps({
     departmentSafety: { type: Array, required: true },
     hourlyVolume: { type: Array, required: true },
     recurringPatterns: { type: Array, required: true },
+    windowDays: { type: Number, required: true },
+    recurringPatternWindowDays: { type: Number, required: true },
+    recurringPatternMinCount: { type: Number, required: true },
 });
 
 function formatHours(hours) {
@@ -33,7 +36,7 @@ function formatPercent(rate) {
         <div class="flex flex-col gap-space-lg">
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
                 <h1 class="font-headline-md text-headline-md text-primary tracking-tight">Executive Incident Intelligence &amp; Organizational Learning</h1>
-                <p class="font-body-sm text-body-sm text-outline mt-1">Trailing 90-day window, scoped to the departments you have access to.</p>
+                <p class="font-body-sm text-body-sm text-outline mt-1">Trailing {{ windowDays }}-day window, scoped to the departments you have access to.</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -61,7 +64,7 @@ function formatPercent(rate) {
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
                 <div>
                     <h2 class="font-title-lg text-title-lg text-primary font-bold">Root Cause Distribution</h2>
-                    <p class="font-body-sm text-body-sm text-outline">Contributing factors recorded on incidents in the last 90 days, by category.</p>
+                    <p class="font-body-sm text-body-sm text-outline">Contributing factors recorded on incidents in the last {{ windowDays }} days, by category.</p>
                 </div>
                 <StackedBarChart :segments="rootCauseDistribution" />
             </div>
@@ -69,7 +72,7 @@ function formatPercent(rate) {
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
                 <div>
                     <h2 class="font-title-lg text-title-lg text-primary font-bold">Incident Volume by Hour of Day</h2>
-                    <p class="font-body-sm text-body-sm text-outline">Last 90 days, by the hour the incident occurred.</p>
+                    <p class="font-body-sm text-body-sm text-outline">Last {{ windowDays }} days, by the hour the incident occurred.</p>
                 </div>
                 <HourlyVolumeChart :hours="hourlyVolume" />
             </div>
@@ -124,7 +127,7 @@ function formatPercent(rate) {
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
                 <div>
                     <h2 class="font-title-lg text-title-lg text-primary font-bold">Recurring Pattern Alerts</h2>
-                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, 3+ times in the last 90 days. A grouped count, not an AI-generated inference.</p>
+                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, {{ recurringPatternMinCount }}+ times in the last {{ recurringPatternWindowDays }} days. A grouped count, not an AI-generated inference.</p>
                 </div>
                 <div v-if="!recurringPatterns.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
                     No recurring patterns detected in this window.

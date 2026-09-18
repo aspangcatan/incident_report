@@ -46,6 +46,13 @@ class AnalyticsService
             'departmentSafety' => $this->departmentSafety($user),
             'hourlyVolume' => $this->hourlyVolume($user),
             'recurringPatterns' => $this->recurringPatterns($user),
+            // Surfaced so the frontend's copy ("90 days", "3+") is
+            // interpolated from these constants rather than a second,
+            // hardcoded copy that would silently drift if either constant
+            // ever changes (raised in Task 7's review, closed here).
+            'windowDays' => self::WINDOW_DAYS,
+            'recurringPatternWindowDays' => self::REPEAT_PATTERN_WINDOW_DAYS,
+            'recurringPatternMinCount' => self::REPEAT_PATTERN_MIN_COUNT,
         ];
     }
 
