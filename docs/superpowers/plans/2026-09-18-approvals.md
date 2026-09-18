@@ -971,7 +971,7 @@ use App\Enums\ApprovalStatus;
     {
         $pendingApproval = $incident->approvals()->where('status', ApprovalStatus::Pending->value)->first();
 
-        return $pendingApproval === null || $pendingApproval->requested_by !== $user->id;
+        return $pendingApproval !== null && $pendingApproval->requested_by !== $user->id;
     }
 ```
 

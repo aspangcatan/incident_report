@@ -79,7 +79,7 @@ class IncidentPolicy
             return false;
         }
 
-        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true)) {
+        if ($this->isQualityStaff($user)) {
             return true;
         }
 
@@ -88,7 +88,7 @@ class IncidentPolicy
 
     private function hasReviewOrAssignAccess(User $user, Incident $incident): bool
     {
-        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true)) {
+        if ($this->isQualityStaff($user)) {
             return true;
         }
 
@@ -171,10 +171,17 @@ class IncidentPolicy
         return false;
     }
 
+    /**
+     * Fails closed: callers already guard on IncidentStatus::ForApproval,
+     * which should never coexist with a missing pending Approval row, but
+     * if that invariant is ever violated by a bug elsewhere, deny rather
+     * than grant - the wrong default for an authorization check is never
+     * "allow when confused".
+     */
     private function isNotTheRequester(User $user, Incident $incident): bool
     {
         $pendingApproval = $incident->approvals()->where('status', ApprovalStatus::Pending->value)->first();
 
-        return $pendingApproval === null || $pendingApproval->requested_by !== $user->id;
+        return $pendingApproval !== null && $pendingApproval->requested_by !== $user->id;
     }
 }
