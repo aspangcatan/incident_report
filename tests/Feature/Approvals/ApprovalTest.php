@@ -181,4 +181,92 @@ class ApprovalTest extends TestCase
         $this->assertSame(2, $incident->fresh()->approvals()->count());
         $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
     }
+
+    public function test_qso_can_request_approval_once_the_incident_is_verified(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->assertTrue($qso->can('requestApproval', $incident));
+    }
+
+    public function test_an_investigator_cannot_request_approval(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+
+        $this->assertFalse($investigator->can('requestApproval', $incident));
+    }
+
+    public function test_nobody_can_request_approval_before_the_incident_is_verified(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->assertFalse($qso->can('requestApproval', $incident->fresh()));
+    }
+
+    public function test_qso_can_mark_no_corrective_action_needed_when_zero_capas_exist(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->assertTrue($qso->can('markNoCorrectiveActionNeeded', $incident));
+    }
+
+    public function test_marking_no_corrective_action_needed_is_rejected_once_a_corrective_action_exists(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+        app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
+            'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->assertFalse($qso->can('markNoCorrectiveActionNeeded', $incident->fresh()));
+    }
+
+    public function test_management_and_administrator_can_approve_closure_hospital_wide(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $management = User::factory()->create(['role' => Role::Management]);
+        $admin = User::factory()->create(['role' => Role::Administrator]);
+
+        $this->assertTrue($management->can('approveClosure', $incident->fresh()));
+        $this->assertTrue($admin->can('approveClosure', $incident->fresh()));
+    }
+
+    public function test_a_department_head_can_only_approve_closure_for_their_own_department(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $sameDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $otherDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
+
+        $this->assertTrue($sameDeptHead->can('approveClosure', $incident->fresh()));
+        $this->assertFalse($otherDeptHead->can('approveClosure', $incident->fresh()));
+    }
+
+    public function test_a_supervisor_cannot_approve_closure(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
+
+        $this->assertFalse($supervisor->can('approveClosure', $incident->fresh()));
+    }
+
+    public function test_the_requester_cannot_approve_or_return_their_own_request_even_as_administrator(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $admin = User::factory()->create(['role' => Role::Administrator]);
+        app(ApprovalService::class)->requestApproval($incident, $admin);
+        $otherAdmin = User::factory()->create(['role' => Role::Administrator]);
+
+        $this->assertFalse($admin->can('approveClosure', $incident->fresh()));
+        $this->assertFalse($admin->can('returnFromApproval', $incident->fresh()));
+        $this->assertTrue($otherAdmin->can('approveClosure', $incident->fresh()));
+        $this->assertTrue($otherAdmin->can('returnFromApproval', $incident->fresh()));
+    }
 }
