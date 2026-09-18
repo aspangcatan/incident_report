@@ -451,4 +451,37 @@ class CorrectiveActionTest extends TestCase
 
         $this->assertSame(\App\Enums\CorrectiveActionStatus::Verified, $capa->fresh()->status);
     }
+
+    public function test_the_incident_show_page_exposes_resource_shaped_corrective_actions_with_per_item_can_flags(): void
+    {
+        // $responsible also plays the incident's assigned investigator so that
+        // IncidentPolicy::view() lets them load the show page (a plain, unrelated
+        // user has no view access to someone else's incident) - this doesn't
+        // affect the CorrectiveActionPolicy checks under test, which key off
+        // role and responsible_user_id, not investigator assignment.
+        $responsible = User::factory()->create();
+        $incident = $this->incidentReadyForCapa($responsible);
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
+
+        $this->actingAs($qso)
+            ->get("/incidents/{$incident->id}?tab=capa")
+            ->assertInertia(fn ($page) => $page
+                ->where('can.createCorrectiveAction', true)
+                ->where('correctiveActions.0.id', $capa->id)
+                ->where('correctiveActions.0.capa_number', $capa->capa_number)
+                ->where('correctiveActions.0.can.update', true)
+                // QSO also has "responsible" access per CorrectiveActionPolicy::hasResponsibleAccess()
+                // (quality staff bypass the responsible_user_id check), so progress is true here too -
+                // it's the "update" flag that distinguishes the QSO from the responsible user below.
+                ->where('correctiveActions.0.can.progress', true)
+            );
+
+        $this->actingAs($responsible)
+            ->get("/incidents/{$incident->id}?tab=capa")
+            ->assertInertia(fn ($page) => $page
+                ->where('correctiveActions.0.can.update', false)
+                ->where('correctiveActions.0.can.progress', true)
+            );
+    }
 }

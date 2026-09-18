@@ -6,8 +6,11 @@ use App\Enums\IncidentStatus;
 use App\Enums\Role;
 use App\Http\Requests\Incidents\StoreIncidentRequest;
 use App\Http\Requests\Incidents\UpdateIncidentRequest;
+use App\Http\Resources\CorrectiveActionResource;
+use App\Http\Resources\InvestigationFindingResource;
 use App\Http\Resources\InvestigationResource;
 use App\Models\ContributingFactor;
+use App\Models\CorrectiveAction;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
@@ -131,6 +134,11 @@ class IncidentController extends Controller
         $incident->unsetRelation('investigation');
         $canManageInvestigationTeam = $investigation && $user->can('manageTeam', $investigation);
 
+        $correctiveActions = $incident->correctiveActions()
+            ->with(['responsibleUser', 'responsibleDepartment', 'completedBy', 'verifiedBy'])
+            ->latest('id')
+            ->get();
+
         return Inertia::render('Incidents/Show', [
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
@@ -150,6 +158,12 @@ class IncidentController extends Controller
             'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
                 ? User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'role'])
                 : [],
+            'correctiveActions' => CorrectiveActionResource::collection($correctiveActions),
+            'investigationFindings' => $investigation
+                ? InvestigationFindingResource::collection($investigation->findings)
+                : [],
+            'potentialResponsibleUsers' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'departments' => Department::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'can' => [
                 'update' => $user->can('update', $incident),
                 'review' => $user->can('review', $incident),
@@ -158,6 +172,7 @@ class IncidentController extends Controller
                 'manageInvestigationTeam' => $canManageInvestigationTeam,
                 'recordFindings' => $investigation && $user->can('recordFindings', $investigation),
                 'completeInvestigation' => $investigation && $user->can('complete', $investigation),
+                'createCorrectiveAction' => $user->can('create', [CorrectiveAction::class, $incident]),
             ],
         ]);
     }
