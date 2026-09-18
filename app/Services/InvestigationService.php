@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\DataTransferObjects\Investigations\CompleteInvestigationData;
+use App\DataTransferObjects\Investigations\FindingData;
+use App\DataTransferObjects\Investigations\StartInvestigationData;
 use App\Enums\IncidentStatus;
 use App\Enums\InvestigationMethodology;
 use App\Enums\InvestigationStatus;
@@ -11,34 +14,44 @@ use App\Models\Investigation;
 use App\Models\InvestigationFinding;
 use App\Models\InvestigationTeamMember;
 use App\Models\User;
+use App\Repositories\InvestigationFindingRepository;
+use App\Repositories\InvestigationRepository;
+use App\Repositories\InvestigationTeamMemberRepository;
 use Illuminate\Support\Facades\DB;
 
 class InvestigationService
 {
-    public function start(Incident $incident, User $leadInvestigator, array $data): Investigation
+    public function __construct(
+        private InvestigationRepository $investigations,
+        private InvestigationTeamMemberRepository $teamMembers,
+        private InvestigationFindingRepository $findings,
+    ) {
+    }
+
+    public function start(Incident $incident, User $leadInvestigator, StartInvestigationData $data): Investigation
     {
         return DB::transaction(function () use ($incident, $leadInvestigator, $data) {
-            $investigation = Investigation::create([
+            $investigation = $this->investigations->create([
                 'incident_id' => $incident->id,
                 'lead_investigator_id' => $leadInvestigator->id,
-                'objective' => $data['objective'],
-                'methodology' => $data['methodology'],
+                'objective' => $data->objective,
+                'methodology' => $data->methodology,
                 'started_at' => now(),
-                'target_completion_at' => $data['target_completion_at'] ?? $incident->target_closure_date,
+                'target_completion_at' => $data->targetCompletionAt ?? $incident->target_closure_date,
                 'status' => InvestigationStatus::InProgress,
             ]);
 
-            $investigation->teamMembers()->create([
+            $this->teamMembers->create($investigation, [
                 'user_id' => $leadInvestigator->id,
                 'role_in_team' => 'Lead Investigator',
             ]);
 
-            foreach ($data['team_members'] ?? [] as $member) {
+            foreach ($data->teamMembers as $member) {
                 if ((int) $member['user_id'] === $leadInvestigator->id) {
                     continue;
                 }
 
-                $investigation->teamMembers()->create([
+                $this->teamMembers->create($investigation, [
                     'user_id' => $member['user_id'],
                     'role_in_team' => $member['role_in_team'],
                 ]);
@@ -47,7 +60,7 @@ class InvestigationService
             $incident->status = IncidentStatus::UnderInvestigation;
             $incident->save();
 
-            AuditLog::record($incident, 'investigation_started', $data['objective']);
+            AuditLog::record($incident, 'investigation_started', $data->objective);
 
             return $investigation->fresh(['teamMembers']);
         });
@@ -55,7 +68,7 @@ class InvestigationService
 
     public function addTeamMember(Investigation $investigation, User $user, string $roleInTeam): InvestigationTeamMember
     {
-        return $investigation->teamMembers()->create([
+        return $this->teamMembers->create($investigation, [
             'user_id' => $user->id,
             'role_in_team' => $roleInTeam,
         ]);
@@ -63,54 +76,55 @@ class InvestigationService
 
     public function removeTeamMember(InvestigationTeamMember $teamMember): void
     {
-        $teamMember->delete();
+        $this->teamMembers->delete($teamMember);
     }
 
-    public function addFinding(Investigation $investigation, array $data): InvestigationFinding
+    public function addFinding(Investigation $investigation, FindingData $data): InvestigationFinding
     {
+        $attributes = $data->toAttributes();
+
         if ($investigation->methodology === InvestigationMethodology::FiveWhys) {
-            $data['sequence'] = $investigation->findings()->count() + 1;
+            $attributes['sequence'] = $this->findings->countFor($investigation) + 1;
         }
 
-        $finding = $investigation->findings()->create($data);
+        $finding = $this->findings->create($investigation, $attributes);
 
-        AuditLog::record($investigation->incident, 'finding_added', $data['finding']);
+        AuditLog::record($investigation->incident, 'finding_added', $data->finding);
 
         return $finding;
     }
 
-    public function updateFinding(InvestigationFinding $finding, array $data): InvestigationFinding
+    public function updateFinding(InvestigationFinding $finding, FindingData $data): InvestigationFinding
     {
-        $finding->update($data);
-
-        return $finding;
+        return $this->findings->update($finding, $data->toAttributes());
     }
 
     public function deleteFinding(InvestigationFinding $finding): void
     {
         $investigation = $finding->investigation;
-        $finding->delete();
+        $this->findings->delete($finding);
 
         if ($investigation->methodology === InvestigationMethodology::FiveWhys) {
-            $investigation->findings()->get()->values()->each(
-                fn (InvestigationFinding $remaining, int $index) => $remaining->update(['sequence' => $index + 1])
+            $this->findings->allFor($investigation)->values()->each(
+                fn (InvestigationFinding $remaining, int $index) => $this->findings->update($remaining, ['sequence' => $index + 1])
             );
         }
     }
 
-    public function complete(Investigation $investigation, string $conclusion): Investigation
+    public function complete(Investigation $investigation, CompleteInvestigationData $data): Investigation
     {
-        return DB::transaction(function () use ($investigation, $conclusion) {
-            $investigation->status = InvestigationStatus::Completed;
-            $investigation->conclusion = $conclusion;
-            $investigation->completed_at = now();
-            $investigation->save();
+        return DB::transaction(function () use ($investigation, $data) {
+            $investigation = $this->investigations->update($investigation, [
+                'status' => InvestigationStatus::Completed,
+                'conclusion' => $data->conclusion,
+                'completed_at' => now(),
+            ]);
 
             $incident = $investigation->incident;
             $incident->status = IncidentStatus::CorrectiveAction;
             $incident->save();
 
-            AuditLog::record($incident, 'investigation_completed', $conclusion);
+            AuditLog::record($incident, 'investigation_completed', $data->conclusion);
 
             return $investigation;
         });

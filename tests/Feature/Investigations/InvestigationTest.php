@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Investigations;
 
+use App\DataTransferObjects\Investigations\CompleteInvestigationData;
+use App\DataTransferObjects\Investigations\FindingData;
+use App\DataTransferObjects\Investigations\StartInvestigationData;
 use App\Enums\IncidentStatus;
 use App\Enums\InvestigationMethodology;
 use App\Enums\InvestigationStatus;
@@ -10,7 +13,6 @@ use App\Enums\Severity;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
-use App\Models\Investigation;
 use App\Models\User;
 use App\Services\IncidentService;
 use App\Services\InvestigationService;
@@ -52,15 +54,27 @@ class InvestigationTest extends TestCase
         return $incident->fresh();
     }
 
+    private function startData(string $methodology = 'five_whys', array $extra = []): StartInvestigationData
+    {
+        return StartInvestigationData::fromArray(array_merge([
+            'objective' => 'Determine root cause.',
+            'methodology' => $methodology,
+        ], $extra));
+    }
+
+    private function findingData(array $data): FindingData
+    {
+        return FindingData::fromArray($data);
+    }
+
     public function test_starting_an_investigation_sets_status_and_moves_the_incident_to_under_investigation(): void
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys', [
             'objective' => 'Determine why the pump was double-rated.',
-            'methodology' => InvestigationMethodology::FiveWhys->value,
-        ]);
+        ]));
 
         $this->assertSame(InvestigationStatus::InProgress, $investigation->status);
         $this->assertSame($investigator->id, $investigation->lead_investigator_id);
@@ -73,10 +87,7 @@ class InvestigationTest extends TestCase
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'Determine root cause.',
-            'methodology' => InvestigationMethodology::Fishbone->value,
-        ]);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone'));
 
         $this->assertCount(1, $investigation->teamMembers);
         $this->assertSame($investigator->id, $investigation->teamMembers->first()->user_id);
@@ -89,14 +100,12 @@ class InvestigationTest extends TestCase
         $nurse = User::factory()->create();
         $incident = $this->assignedIncident($investigator);
 
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'Determine root cause.',
-            'methodology' => InvestigationMethodology::Fishbone->value,
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone', [
             'team_members' => [
                 ['user_id' => $investigator->id, 'role_in_team' => 'Duplicate of lead'],
                 ['user_id' => $nurse->id, 'role_in_team' => 'Nursing Service Rep'],
             ],
-        ]);
+        ]));
 
         $this->assertCount(2, $investigation->teamMembers);
         $this->assertSame('Nursing Service Rep', $investigation->teamMembers->firstWhere('user_id', $nurse->id)->role_in_team);
@@ -107,10 +116,7 @@ class InvestigationTest extends TestCase
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'Determine root cause.',
-            'methodology' => InvestigationMethodology::Hfacs->value,
-        ]);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('hfacs'));
 
         $this->assertSame(
             $incident->target_closure_date->timestamp,
@@ -123,10 +129,9 @@ class InvestigationTest extends TestCase
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
-        app(InvestigationService::class)->start($incident, $investigator, [
+        app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys', [
             'objective' => 'Determine root cause.',
-            'methodology' => InvestigationMethodology::FiveWhys->value,
-        ]);
+        ]));
 
         $this->assertDatabaseHas('audit_logs', [
             'auditable_type' => Incident::class,
@@ -139,16 +144,14 @@ class InvestigationTest extends TestCase
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
-        ]);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
 
-        $first = app(InvestigationService::class)->addFinding($investigation, [
+        $first = app(InvestigationService::class)->addFinding($investigation, $this->findingData([
             'question' => 'Why did X happen?', 'finding' => 'Because Y.', 'is_root_cause' => false,
-        ]);
-        $second = app(InvestigationService::class)->addFinding($investigation->fresh(), [
+        ]));
+        $second = app(InvestigationService::class)->addFinding($investigation->fresh(), $this->findingData([
             'question' => 'Why did Y happen?', 'finding' => 'Because Z.', 'is_root_cause' => true,
-        ]);
+        ]));
 
         $this->assertSame(1, $first->sequence);
         $this->assertSame(2, $second->sequence);
@@ -158,13 +161,11 @@ class InvestigationTest extends TestCase
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'x', 'methodology' => InvestigationMethodology::Fishbone->value,
-        ]);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone'));
 
-        app(InvestigationService::class)->addFinding($investigation, [
+        app(InvestigationService::class)->addFinding($investigation, $this->findingData([
             'category' => 'Equipment', 'finding' => 'Pump firmware outdated.', 'is_root_cause' => false,
-        ]);
+        ]));
 
         $this->assertDatabaseHas('audit_logs', [
             'auditable_type' => Incident::class,
@@ -177,13 +178,11 @@ class InvestigationTest extends TestCase
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
-        ]);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
         $service = app(InvestigationService::class);
-        $one = $service->addFinding($investigation, ['question' => 'Q1', 'finding' => 'F1', 'is_root_cause' => false]);
-        $two = $service->addFinding($investigation->fresh(), ['question' => 'Q2', 'finding' => 'F2', 'is_root_cause' => false]);
-        $three = $service->addFinding($investigation->fresh(), ['question' => 'Q3', 'finding' => 'F3', 'is_root_cause' => true]);
+        $one = $service->addFinding($investigation, $this->findingData(['question' => 'Q1', 'finding' => 'F1', 'is_root_cause' => false]));
+        $two = $service->addFinding($investigation->fresh(), $this->findingData(['question' => 'Q2', 'finding' => 'F2', 'is_root_cause' => false]));
+        $three = $service->addFinding($investigation->fresh(), $this->findingData(['question' => 'Q3', 'finding' => 'F3', 'is_root_cause' => true]));
 
         $service->deleteFinding($two);
 
@@ -193,18 +192,33 @@ class InvestigationTest extends TestCase
         $this->assertSame([$one->id, $three->id], $remaining->pluck('id')->all());
     }
 
+    public function test_updating_a_finding(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+        $service = app(InvestigationService::class);
+        $finding = $service->addFinding($investigation, $this->findingData(['question' => 'Q', 'finding' => 'Original', 'is_root_cause' => false]));
+
+        $updated = $service->updateFinding($finding, $this->findingData(['question' => 'Q', 'finding' => 'Corrected.', 'is_root_cause' => true]));
+
+        $this->assertSame('Corrected.', $updated->finding);
+        $this->assertTrue($updated->is_root_cause);
+    }
+
     public function test_completing_an_investigation_sets_status_and_moves_the_incident_to_corrective_action(): void
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
-        ]);
-        app(InvestigationService::class)->addFinding($investigation, [
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+        app(InvestigationService::class)->addFinding($investigation, $this->findingData([
             'question' => 'Why?', 'finding' => 'Root cause found.', 'is_root_cause' => true,
-        ]);
+        ]));
 
-        $completed = app(InvestigationService::class)->complete($investigation->fresh(), 'Root cause: pump miscalibration.');
+        $completed = app(InvestigationService::class)->complete(
+            $investigation->fresh(),
+            CompleteInvestigationData::fromArray(['conclusion' => 'Root cause: pump miscalibration.'])
+        );
 
         $this->assertSame(InvestigationStatus::Completed, $completed->status);
         $this->assertNotNull($completed->completed_at);
@@ -217,10 +231,9 @@ class InvestigationTest extends TestCase
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $nurse = User::factory()->create();
         $incident = $this->assignedIncident($investigator);
-        $investigation = app(InvestigationService::class)->start($incident, $investigator, [
-            'objective' => 'x', 'methodology' => InvestigationMethodology::Fishbone->value,
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone', [
             'team_members' => [['user_id' => $nurse->id, 'role_in_team' => 'Nursing Service Rep']],
-        ]);
+        ]));
         $member = $investigation->teamMembers->firstWhere('user_id', $nurse->id);
 
         app(InvestigationService::class)->removeTeamMember($member);
