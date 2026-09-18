@@ -823,6 +823,36 @@ Append to `AnalyticsTest`:
         $this->assertSame(3, $patterns[0]['incidentCount']);
         $this->assertSame($incidentType->name, $patterns[0]['incidentTypeName']);
     }
+
+    /**
+     * The single-qualifying-group test above can't catch a regression in
+     * orderByDesc('incidentCount') - with only one row there's nothing to
+     * order. This uses two qualifying groups with different counts to
+     * prove descending order is real, not incidental.
+     */
+    public function test_recurring_patterns_are_ordered_by_incident_count_descending(): void
+    {
+        $department = Department::factory()->create();
+        $smallerType = IncidentType::factory()->create();
+        $this->incidentThroughReview($department, $smallerType);
+        $this->incidentThroughReview($department, $smallerType);
+        $this->incidentThroughReview($department, $smallerType);
+        $largerType = IncidentType::factory()->create();
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $patterns = app(AnalyticsService::class)->overview($qso)['recurringPatterns'];
+
+        $this->assertCount(2, $patterns);
+        $this->assertSame($largerType->name, $patterns[0]['incidentTypeName']);
+        $this->assertSame(5, $patterns[0]['incidentCount']);
+        $this->assertSame($smallerType->name, $patterns[1]['incidentTypeName']);
+        $this->assertSame(3, $patterns[1]['incidentCount']);
+    }
 ```
 
 - [ ] **Step 2: Run to confirm they fail**
@@ -846,12 +876,25 @@ Add `'hourlyVolume' => $this->hourlyVolume($user),` and `'recurringPatterns' => 
 Add the two private methods plus one private constant:
 
 ```php
+    /**
+     * Same value as WINDOW_DAYS today, but kept as its own named constant
+     * (not a reuse of WINDOW_DAYS) since a "how far back counts as a
+     * recurring pattern" window is a distinct business question from "how
+     * far back for a trailing KPI" and may need to move independently.
+     */
     private const REPEAT_PATTERN_WINDOW_DAYS = 90;
     private const REPEAT_PATTERN_MIN_COUNT = 3;
 
     /**
      * Day shift 07:00-18:59, night shift 19:00-06:59 - a fixed convention
      * documented here since no shift-schedule table exists in this app.
+     *
+     * Fetched as one query (occurred_at only) and bucketed in PHP rather
+     * than a SQL GROUP BY HOUR(occurred_at) - that function isn't portable
+     * between this project's SQLite test driver and MySQL production
+     * (SQLite needs strftime('%H', ...) instead), and a grouped query would
+     * still need this same PHP-side zero-fill afterward anyway, since SQL
+     * GROUP BY only returns hours that actually have rows.
      */
     private function hourlyVolume(User $user): array
     {
@@ -916,7 +959,7 @@ Add the two private methods plus one private constant:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `13 passed` (11 from Task 3 + 2 new).
+Expected: `14 passed` (11 from Task 3 + 3 new).
 
 ```bash
 php artisan test
@@ -1024,7 +1067,7 @@ Inside the `auth` middleware group, after the notifications routes:
 php artisan test --filter=AnalyticsTest
 ```
 
-Expected: `15 passed` (13 from Task 4 + 2 new).
+Expected: `16 passed` (14 from Task 4 + 2 new).
 
 ```bash
 php artisan test

@@ -295,4 +295,34 @@ class AnalyticsTest extends TestCase
         $this->assertSame(3, $patterns[0]['incidentCount']);
         $this->assertSame($incidentType->name, $patterns[0]['incidentTypeName']);
     }
+
+    /**
+     * The single-qualifying-group test above can't catch a regression in
+     * orderByDesc('incidentCount') - with only one row there's nothing to
+     * order. This uses two qualifying groups with different counts to
+     * prove descending order is real, not incidental.
+     */
+    public function test_recurring_patterns_are_ordered_by_incident_count_descending(): void
+    {
+        $department = Department::factory()->create();
+        $smallerType = IncidentType::factory()->create();
+        $this->incidentThroughReview($department, $smallerType);
+        $this->incidentThroughReview($department, $smallerType);
+        $this->incidentThroughReview($department, $smallerType);
+        $largerType = IncidentType::factory()->create();
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+        $this->incidentThroughReview($department, $largerType);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $patterns = app(AnalyticsService::class)->overview($qso)['recurringPatterns'];
+
+        $this->assertCount(2, $patterns);
+        $this->assertSame($largerType->name, $patterns[0]['incidentTypeName']);
+        $this->assertSame(5, $patterns[0]['incidentCount']);
+        $this->assertSame($smallerType->name, $patterns[1]['incidentTypeName']);
+        $this->assertSame(3, $patterns[1]['incidentCount']);
+    }
 }

@@ -23,6 +23,12 @@ class AnalyticsService
     /** Sentinel events are rare; a shorter window would too often read zero. */
     private const SENTINEL_WINDOW_DAYS = 180;
 
+    /**
+     * Same value as WINDOW_DAYS today, but kept as its own named constant
+     * (not a reuse of WINDOW_DAYS) since a "how far back counts as a
+     * recurring pattern" window is a distinct business question from "how
+     * far back for a trailing KPI" and may need to move independently.
+     */
     private const REPEAT_PATTERN_WINDOW_DAYS = 90;
     private const REPEAT_PATTERN_MIN_COUNT = 3;
 
@@ -296,6 +302,13 @@ class AnalyticsService
     /**
      * Day shift 07:00-18:59, night shift 19:00-06:59 - a fixed convention
      * documented here since no shift-schedule table exists in this app.
+     *
+     * Fetched as one query (occurred_at only) and bucketed in PHP rather
+     * than a SQL GROUP BY HOUR(occurred_at) - that function isn't portable
+     * between this project's SQLite test driver and MySQL production
+     * (SQLite needs strftime('%H', ...) instead), and a grouped query would
+     * still need this same PHP-side zero-fill afterward anyway, since SQL
+     * GROUP BY only returns hours that actually have rows.
      */
     private function hourlyVolume(User $user): array
     {
