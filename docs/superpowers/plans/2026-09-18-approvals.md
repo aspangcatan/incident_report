@@ -290,6 +290,13 @@ git commit -m "feat: add Approval model and Incident::approvals() relation"
 
 namespace App\DataTransferObjects\Approvals;
 
+/**
+ * `justification` maps to the `approvals.request_comments` column at the
+ * Service layer - named for what the requester is actually asked to type
+ * on this specific form ("why does this incident need no corrective
+ * action?"), not for the generic column it's stored in, which stays null
+ * on the ordinary CAPA-verified request path.
+ */
 final class MarkNoCorrectiveActionNeededData
 {
     public function __construct(
@@ -313,6 +320,14 @@ Shared by both `approve()` and `returnForRevision()` on the Service — same sha
 
 namespace App\DataTransferObjects\Approvals;
 
+/**
+ * `comments` maps to the `approvals.decision_comments` column at the
+ * Service layer, not a same-named one - that column was deliberately
+ * renamed away from a bare "comments" so it wouldn't sit ambiguously next
+ * to `request_comments` on the same row. This DTO's own scope (deciding
+ * one approval) is narrow enough that "comments" alone isn't ambiguous
+ * here.
+ */
 final class DecideApprovalData
 {
     public function __construct(
