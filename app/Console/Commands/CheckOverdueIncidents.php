@@ -4,8 +4,11 @@ namespace App\Console\Commands;
 
 use App\Enums\IncidentStatus;
 use App\Models\Incident;
+use App\Models\Investigation;
 use App\Models\User;
 use App\Notifications\IncidentEscalationNotification;
+use App\Queries\OverdueInvestigationsQuery;
+use App\Repositories\InvestigationRepository;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -15,6 +18,13 @@ class CheckOverdueIncidents extends Command
     protected $signature = 'incidents:check-overdue';
 
     protected $description = 'Escalate incidents that have breached their review or assignment SLA';
+
+    public function __construct(
+        private OverdueInvestigationsQuery $overdueInvestigations,
+        private InvestigationRepository $investigations,
+    ) {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -28,6 +38,7 @@ class CheckOverdueIncidents extends Command
 
         $this->escalateOverdueReviews($recipients);
         $this->escalateOverdueAssignments($recipients);
+        $this->escalateOverdueInvestigations($recipients);
 
         return self::SUCCESS;
     }
@@ -61,5 +72,13 @@ class CheckOverdueIncidents extends Command
                 Notification::send($recipients, new IncidentEscalationNotification($incident, 'Assignment SLA breached'));
                 $incident->forceFill(['assignment_escalated_at' => now()])->save();
             });
+    }
+
+    private function escalateOverdueInvestigations(Collection $recipients): void
+    {
+        $this->overdueInvestigations->get()->each(function (Investigation $investigation) use ($recipients) {
+            Notification::send($recipients, new IncidentEscalationNotification($investigation->incident, 'Investigation SLA breached'));
+            $this->investigations->markEscalated($investigation);
+        });
     }
 }
