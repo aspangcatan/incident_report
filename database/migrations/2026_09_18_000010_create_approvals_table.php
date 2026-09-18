@@ -14,10 +14,10 @@ return new class extends Migration
             $table->foreignId('requested_by')->constrained('users')->restrictOnDelete();
             $table->text('request_comments')->nullable();
             $table->string('status');
-            $table->dateTime('due_at')->nullable();
+            $table->timestamp('due_at')->nullable();
             $table->foreignId('approver_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->text('comments')->nullable();
-            $table->dateTime('decided_at')->nullable();
+            $table->text('decision_comments')->nullable();
+            $table->timestamp('decided_at')->nullable();
             $table->timestamp('escalated_at')->nullable();
             $table->timestamps();
         });
