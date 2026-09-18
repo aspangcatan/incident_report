@@ -81,6 +81,11 @@ class Incident extends Model
         return $this->hasOne(Investigation::class);
     }
 
+    public function correctiveActions(): HasMany
+    {
+        return $this->hasMany(CorrectiveAction::class);
+    }
+
     public function individuals(): HasMany
     {
         return $this->hasMany(IncidentIndividual::class);
