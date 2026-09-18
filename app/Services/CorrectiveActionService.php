@@ -83,6 +83,13 @@ class CorrectiveActionService
         });
     }
 
+    /**
+     * Takes an explicit $verifier rather than reading Auth::id() the way
+     * complete() does, because CorrectiveActionPolicy::verify() must compare
+     * the acting user against completed_by to enforce "never
+     * self-verification" — that check needs the user available to it, not
+     * just implicitly resolved deep inside this method.
+     */
     public function verify(CorrectiveAction $correctiveAction, User $verifier, VerifyCorrectiveActionData $data): CorrectiveAction
     {
         return DB::transaction(function () use ($correctiveAction, $verifier, $data) {
