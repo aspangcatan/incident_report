@@ -1,6 +1,6 @@
 # Phase 8: Analytics & Organizational Learning Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build the "Learn" dashboard (`/analytics`, `Analytics/Index.vue`) — a single read-only executive overview page showing real, query-backed metrics over existing incident/investigation/CAPA/approval data: five headline KPIs, a root-cause distribution breakdown, a per-department safety/CAPA-compliance table, an incident-volume-by-hour chart split by shift, and a "recurring pattern" alert list. Visible to QSO/Administrator/Management hospital-wide and to Supervisor/DepartmentHead scoped to their own department (reusing `Incident::scopeVisibleTo()`), hidden from Staff/Investigator.
 
@@ -48,7 +48,7 @@
 - Modify: `app/Policies/IncidentPolicy.php`
 - Create: `tests/Feature/Analytics/AnalyticsTest.php`
 
-- [ ] **Step 1: Write the failing test file**
+- [x] **Step 1: Write the failing test file**
 
 ```php
 <?php
@@ -86,7 +86,7 @@ class AnalyticsTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -95,7 +95,7 @@ php artisan test --filter=AnalyticsTest
 
 Expected: FAIL — `viewAnalytics` isn't a registered ability yet, so `can()` returns `false` for every case, including the ones expected to be `true`.
 
-- [ ] **Step 3: Add `viewAnalytics()` to `IncidentPolicy`**
+- [x] **Step 3: Add `viewAnalytics()` to `IncidentPolicy`**
 
 In `app/Policies/IncidentPolicy.php`, add (near `viewAny()`):
 
@@ -116,7 +116,7 @@ This is a `viewAny()`-style ability — it doesn't gate on any specific `Inciden
 
 Which *department* a Supervisor/DepartmentHead actually sees is a query-scoping concern handled by `AnalyticsService` (via the existing `Incident::scopeVisibleTo()`), not by this ability — this ability only decides "can this role open the page at all."
 
-- [ ] **Step 4: Run tests, then the full suite**
+- [x] **Step 4: Run tests, then the full suite**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -130,7 +130,7 @@ php artisan test
 
 Expected: all green (161 prior + these 3).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Policies/IncidentPolicy.php tests/Feature/Analytics/AnalyticsTest.php
@@ -145,7 +145,7 @@ git commit -m "feat: add IncidentPolicy::viewAnalytics ability"
 - Create: `app/Services/AnalyticsService.php`
 - Modify: `tests/Feature/Analytics/AnalyticsTest.php`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `AnalyticsTest` (add these `use` imports at the top of the file first):
 
@@ -294,7 +294,7 @@ Add these test methods to the class:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -302,7 +302,7 @@ php artisan test --filter=AnalyticsTest
 
 Expected: FAIL — `App\Services\AnalyticsService` doesn't exist yet.
 
-- [ ] **Step 3: Write `AnalyticsService`**
+- [x] **Step 3: Write `AnalyticsService`**
 
 ```php
 <?php
@@ -476,7 +476,7 @@ class AnalyticsService
 
 `Incident::scopeVisibleTo()` already exists (Phase 3) and is called here exactly the way `IncidentController::index()` already calls it — QSO/Administrator/Management get an unscoped query, Supervisor/DepartmentHead get `where('department_id', $user->department_id)` (or a guaranteed-empty query if their `department_id` is null), everyone else gets scoped to their own reported/assigned incidents. Since `viewAnalytics()` (Task 1) already excludes Staff/Investigator from reaching this Service at all, the "everyone else" branch of `scopeVisibleTo()` never actually executes for an analytics request — included here only because it's the same shared scope, not because this phase relies on it.
 
-- [ ] **Step 4: Run tests to see them pass**
+- [x] **Step 4: Run tests to see them pass**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -484,7 +484,7 @@ php artisan test --filter=AnalyticsTest
 
 Expected: `8 passed` (3 from Task 1 + 5 new).
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 ```bash
 php artisan test
@@ -492,7 +492,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Services/AnalyticsService.php tests/Feature/Analytics/AnalyticsTest.php
@@ -507,7 +507,7 @@ git commit -m "feat: add AnalyticsService with headline KPI metrics"
 - Modify: `app/Services/AnalyticsService.php`
 - Modify: `tests/Feature/Analytics/AnalyticsTest.php`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add this import to `AnalyticsTest.php`:
 
@@ -608,7 +608,7 @@ Append these test methods:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -616,7 +616,7 @@ php artisan test --filter=AnalyticsTest
 
 Expected: FAIL — `rootCauseDistribution`/`departmentSafety` keys don't exist in `overview()`'s return array yet.
 
-- [ ] **Step 3: Add the two methods to `AnalyticsService`**
+- [x] **Step 3: Add the two methods to `AnalyticsService`**
 
 Add these imports to the top of `AnalyticsService.php`:
 
@@ -751,7 +751,7 @@ Add the two private methods:
 
 **Fixed during this task's own code-quality review**: the first draft of this method ran a per-department loop issuing 6 queries per department (unbounded by any time window), which would scale linearly with department count. Rewritten above to fetch everything in a small constant number of queries (one incident-to-department lookup, one CorrectiveAction fetch, one Approval fetch) and aggregate in PHP using each model's own `isOverdue()` — this also avoids duplicating the overdue business rule as a second, database-driver-specific copy (a raw SQL `CASE ... NOW() ...` aggregation would need to differ between this project's SQLite test environment and its MySQL production environment).
 
-- [ ] **Step 4: Run tests, then the full suite**
+- [x] **Step 4: Run tests, then the full suite**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -765,7 +765,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Services/AnalyticsService.php tests/Feature/Analytics/AnalyticsTest.php
@@ -780,7 +780,7 @@ git commit -m "feat: add root-cause distribution and department safety table to 
 - Modify: `app/Services/AnalyticsService.php`
 - Modify: `tests/Feature/Analytics/AnalyticsTest.php`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `AnalyticsTest`:
 
@@ -855,7 +855,7 @@ Append to `AnalyticsTest`:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -863,7 +863,7 @@ php artisan test --filter=AnalyticsTest
 
 Expected: FAIL — `hourlyVolume`/`recurringPatterns` keys don't exist yet.
 
-- [ ] **Step 3: Add the two methods to `AnalyticsService`**
+- [x] **Step 3: Add the two methods to `AnalyticsService`**
 
 Add this import:
 
@@ -953,7 +953,7 @@ Add the two private methods plus one private constant:
     }
 ```
 
-- [ ] **Step 4: Run tests, then the full suite**
+- [x] **Step 4: Run tests, then the full suite**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -967,7 +967,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Services/AnalyticsService.php tests/Feature/Analytics/AnalyticsTest.php
@@ -984,7 +984,7 @@ git commit -m "feat: add hourly incident volume and recurring-pattern grouping t
 - Modify: `routes/web.php`
 - Modify: `tests/Feature/Analytics/AnalyticsTest.php`
 
-- [ ] **Step 1: Add failing HTTP-level tests**
+- [x] **Step 1: Add failing HTTP-level tests**
 
 Append to `AnalyticsTest`:
 
@@ -1016,7 +1016,7 @@ Append to `AnalyticsTest`:
     }
 ```
 
-- [ ] **Step 2: Run to confirm they fail**
+- [x] **Step 2: Run to confirm they fail**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -1024,7 +1024,7 @@ php artisan test --filter=AnalyticsTest
 
 Expected: FAIL — `/analytics` doesn't exist yet (404).
 
-- [ ] **Step 3: Write `AnalyticsController`**
+- [x] **Step 3: Write `AnalyticsController`**
 
 ```php
 <?php
@@ -1048,7 +1048,7 @@ class AnalyticsController extends Controller
 }
 ```
 
-- [ ] **Step 3a: Add a placeholder `Analytics/Index.vue`**
+- [x] **Step 3a: Add a placeholder `Analytics/Index.vue`**
 
 The HTTP test above asserts `->component('Analytics/Index')` via `assertInertia()`, and Inertia's testing helper verifies that page component actually exists on disk (`config('inertia.testing.ensure_pages_exist')` defaults to `true` and isn't overridden in this app) — so `test_qso_can_load_the_analytics_page_via_http` will fail with "Inertia page component file [Analytics/Index] does not exist" even after the controller/route are wired, until *some* file exists at this path. Every prior phase's equivalent HTTP test could rely on that phase's Vue page already existing from an earlier task in the same phase; this is the first phase where the controller task (this one) and the UI task (Task 6) are split, so create a minimal placeholder now:
 
@@ -1077,7 +1077,7 @@ defineProps({
 
 Task 6 **modifies** this same file (its `<template>` body and script) rather than creating a fresh one — the `defineProps` block above already matches the 5 keys `AnalyticsService::overview()` returns, so Task 6 shouldn't need to touch it, just fill in the template.
 
-- [ ] **Step 4: Add the route**
+- [x] **Step 4: Add the route**
 
 In `routes/web.php`, add the import:
 
@@ -1091,7 +1091,7 @@ Inside the `auth` middleware group, after the notifications routes:
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```bash
 php artisan test --filter=AnalyticsTest
@@ -1105,7 +1105,7 @@ php artisan test
 
 Expected: all green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/AnalyticsController.php resources/js/Pages/Analytics/Index.vue routes/web.php tests/Feature/Analytics/AnalyticsTest.php
@@ -1124,7 +1124,7 @@ git commit -m "feat: add /analytics route and controller"
 
 This task establishes the page's color tokens and the two simplest sections. Per the `dataviz` skill: color comes last, and the categorical/status palettes below are the skill's own validated default (`references/palette.md`), used unmodified — not added to the shared `tailwind.config.js` (which has no categorical/status color set of its own to extend), but factored into one shared `resources/js/Utils/chartPalette.js` module so every chart component in this phase references the same array rather than each hardcoding its own copy (Task 7's `HourlyVolumeChart.vue` reuses two of these same slots for its day/night shift colors — without a shared source, that would be a third hardcoded copy of the same hex values).
 
-- [ ] **Step 0: Write `chartPalette.js`**
+- [x] **Step 0: Write `chartPalette.js`**
 
 ```js
 /**
@@ -1151,7 +1151,7 @@ export const dayShiftColor = categoricalPalette[0];
 export const nightShiftColor = categoricalPalette[1];
 ```
 
-- [ ] **Step 1: Write `KpiStatTile.vue`**
+- [x] **Step 1: Write `KpiStatTile.vue`**
 
 A stat tile per the skill's figure contract: `label` (sentence case, no trailing colon), a semibold proportional-figure `value`, and an optional signed `delta` colored by direction × whether up is good.
 
@@ -1182,7 +1182,7 @@ defineProps({
 
 `text-[#006300]` is the `dataviz` skill's own "delta up good" ink token (`references/palette.md`, Chart chrome & ink table) — used here as a one-off arbitrary Tailwind value rather than a new shared token, since this is the only place in the app this specific shade is needed.
 
-- [ ] **Step 2: Write `StackedBarChart.vue`**
+- [x] **Step 2: Write `StackedBarChart.vue`**
 
 A single horizontal stacked bar for part-to-whole data (root-cause distribution), per the skill's `references/marks-and-anatomy.md` mark specs: 24px thick, 2px surface-color gaps between segments, a legend (always present for 2+ series), and direct labels only where they fit.
 
@@ -1238,7 +1238,7 @@ function widthPercent(count) {
 
 An inline label is shown only when a segment's own width comfortably fits a short "NN%" string (>=12% of the bar) — per the skill's "a label that won't fit doesn't get clipped" rule, narrower segments skip the inline label and rely on the legend (which always carries the exact count) instead of truncating or overflowing text inside a thin sliver. A native `title` attribute gives every segment a hover tooltip regardless of width, without building a custom tooltip component for what is otherwise a fairly simple, low-interaction chart.
 
-- [ ] **Step 3: Write `Analytics/Index.vue` (KPI row + root-cause section)**
+- [x] **Step 3: Write `Analytics/Index.vue` (KPI row + root-cause section)**
 
 ```vue
 <script setup>
@@ -1314,7 +1314,7 @@ function formatPercent(rate) {
 
 This intentionally omits `departmentSafety`/`hourlyVolume`/`recurringPatterns` rendering for now — they're accepted as props (so the component doesn't warn about missing required props) but not yet used in the template; Task 7 adds those three sections.
 
-- [ ] **Step 4: Build frontend assets**
+- [x] **Step 4: Build frontend assets**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -1323,7 +1323,7 @@ npm run build
 
 Expected: no errors (a Vue "declared but not used" warning for the three not-yet-rendered props is expected and harmless at this point — Task 7 resolves it).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/js/Components/Analytics resources/js/Pages/Analytics/Index.vue
@@ -1338,7 +1338,7 @@ git commit -m "feat: add Analytics/Index.vue KPI row and root-cause distribution
 - Create: `resources/js/Components/Analytics/HourlyVolumeChart.vue`
 - Modify: `resources/js/Pages/Analytics/Index.vue`
 
-- [ ] **Step 1: Write `HourlyVolumeChart.vue`**
+- [x] **Step 1: Write `HourlyVolumeChart.vue`**
 
 A 24-bar column chart, one bar per hour, colored by shift bucket (day/night) — a categorical 2-series job per the `dataviz` skill, using categorical slots 1 (blue) and 2 (orange) from the skill's validated default palette, both already confirmed as an adjacent-safe pair. Bars follow the mark spec: <=24px thick, 4px rounded data-end, square at the baseline, with a legend since there are 2 series.
 
@@ -1398,7 +1398,7 @@ function formatHourLabel(hour) {
 
 Only every third hour label is printed (`0/3/6/9/...`) to avoid 24 overlapping labels on a narrow axis — the full value is still available per-bar via the native `title` tooltip, consistent with how `StackedBarChart.vue` handles the same "label doesn't fit" case.
 
-- [ ] **Step 2: Add the department table, hourly chart, and recurring-patterns sections to `Analytics/Index.vue`**
+- [x] **Step 2: Add the department table, hourly chart, and recurring-patterns sections to `Analytics/Index.vue`**
 
 Insert after the Root Cause Distribution `</div>` block, before the closing `</div>` of the outer `flex flex-col gap-space-lg`:
 
@@ -1484,7 +1484,7 @@ Add the import at the top of the `<script setup>` block:
 import HourlyVolumeChart from '@/Components/Analytics/HourlyVolumeChart.vue';
 ```
 
-- [ ] **Step 3: Build frontend assets**
+- [x] **Step 3: Build frontend assets**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -1493,7 +1493,7 @@ npm run build
 
 Expected: no errors, no unused-prop warnings now that all five props are rendered.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/Components/Analytics/HourlyVolumeChart.vue resources/js/Pages/Analytics/Index.vue
@@ -1507,7 +1507,7 @@ git commit -m "feat: add department safety table, hourly volume chart, and recur
 **Files:**
 - Modify: `resources/js/Layouts/AuthenticatedLayout.vue`
 
-- [ ] **Step 1: Point "Executive Overview" at the real route**
+- [x] **Step 1: Point "Executive Overview" at the real route**
 
 In `resources/js/Layouts/AuthenticatedLayout.vue`'s `navGroups` array, change:
 
@@ -1523,7 +1523,7 @@ to:
 
 The other three "Analytics & Learning" items (`Trends & Sentinels`, `Unit & Severity Heatmap`, `Resolution Times`) stay `href: '#'` per this plan's scope decision 2. This app's sidebar has no active-link highlighting for any item (confirmed by reading the rest of the file - every nav item, wired or not, renders via a plain `<a>` with no current-route class binding), so nothing else needs to change for this link to behave consistently with its already-wired siblings (`All Incidents`, `My Reports`, `Draft Reports`).
 
-- [ ] **Step 2: Build frontend assets**
+- [x] **Step 2: Build frontend assets**
 
 ```bash
 cd C:\wamp64\projects\incident-report
@@ -1532,7 +1532,7 @@ npm run build
 
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/js/Layouts/AuthenticatedLayout.vue
@@ -1545,7 +1545,7 @@ git commit -m "feat: link the Executive Overview sidebar item to /analytics"
 
 **Files:** none (verification-only task).
 
-- [ ] **Step 1: Run the full backend test suite**
+- [x] **Step 1: Run the full backend test suite**
 
 ```bash
 php artisan test
@@ -1553,7 +1553,7 @@ php artisan test
 
 Expected: all green — every prior phase's tests plus all new Phase 8 tests.
 
-- [ ] **Step 2: Holistic cross-task code review**
+- [x] **Step 2: Holistic cross-task code review**
 
 Read across the full diff for this phase (`git log --oneline <first-Phase-8-commit>..HEAD`), not just each task's own delta. Specifically check:
 
@@ -1564,19 +1564,19 @@ Read across the full diff for this phase (`git log --oneline <first-Phase-8-comm
 5. **Static "3+"/"90 days" copy drift risk (raised in Task 7's own review) — decided during this task: fixed, not deferred.** Low-risk and mechanical enough to just close: `overview()` now also returns `windowDays`, `recurringPatternWindowDays`, and `recurringPatternMinCount` (the existing private constants, unchanged in value), and `Analytics/Index.vue` interpolates all four "90 days"/"3+" copy instances from these props instead of hardcoding them a second time. Covered by `test_overview_surfaces_the_window_and_recurring_pattern_constants_for_frontend_copy` and an extra `->has()` assertion on the existing HTTP test.
 6. Re-run `php artisan test` and `npm run build` yourself — don't just trust individual task reports.
 
-- [ ] **Step 3: Browser verification**
+- [x] **Step 3: Browser verification**
 
 A headless Chromium (Playwright) has been available and used for Phases 6 & 7's own final verification. Seed a handful of incidents across 2+ departments and severities via `php artisan tinker` (through review/investigation/CAPA to a mix of statuses - a full walkthrough isn't necessary, just enough real data for each KPI/chart/table to render something other than "No data yet"), then drive the browser: log in as a QSO/Administrator/Management user and confirm all five sections render with real numbers and zero console errors; log in as a Supervisor/DepartmentHead scoped to one of the seeded departments and confirm the KPIs/table only reflect that department; log in as Staff and confirm `/analytics` returns a 403 (both via a direct visit and by confirming the sidebar link, while still visible, correctly leads to the same 403 rather than a client-side-only hidden state). Screenshot the fully-rendered dashboard as evidence.
 
-- [ ] **Step 4: Update `docs/architecture.md`**
+- [x] **Step 4: Update `docs/architecture.md`**
 
 Add a `§9i` entry (following the `§9e`-`§9h` pattern) documenting: what shipped, the confirmed scope decisions from this plan's header (dropped fabricated elements, one-page scope, access model, chart-form choices, the Safety Index/recurring-pattern heuristics being this project's own invented definitions), any bugs the holistic review caught, and the browser verification outcome.
 
-- [ ] **Step 5: Update memory**
+- [x] **Step 5: Update memory**
 
 Per the standing instruction, update `project_state.md` and `MEMORY.md` in `C:\Users\DOH\.claude\projects\c--wamp64-projects-incident-report\memory\` with a "Phase 8 (Analytics) complete" entry. Note in `feedback_architecture.md` that this phase used a deliberately *leaner* slice of the layered pattern (Service + reused Policy only, no DTO/Repository/Action/Resource, since the phase is 100% read-only) - worth flagging to the user as an observation, not necessarily a question, since the scope note in this plan's own header already explains why.
 
-- [ ] **Step 6: Final commit**
+- [x] **Step 6: Final commit**
 
 ```bash
 git add docs/architecture.md
