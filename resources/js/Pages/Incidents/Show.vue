@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import WorkflowActionsPanel from '@/Components/Incidents/WorkflowActionsPanel.vue';
+import InvestigationPanel from '@/Components/Incidents/InvestigationPanel.vue';
 import { formatDate } from '@/Utils/formatDate';
 
 const props = defineProps({
@@ -12,6 +13,8 @@ const props = defineProps({
     tab: { type: String, required: true },
     can: { type: Object, required: true },
     investigators: { type: Array, default: () => [] },
+    investigation: { type: Object, default: null },
+    potentialTeamMembers: { type: Array, default: () => [] },
     auditLogs: { type: Array, required: true },
 });
 
@@ -190,6 +193,14 @@ function switchTab(value) {
                 </div>
             </div>
         </div>
+
+        <InvestigationPanel
+            v-else-if="activeTab === 'investigation'"
+            :incident="incident"
+            :investigation="investigation"
+            :can="can"
+            :potential-team-members="potentialTeamMembers"
+        />
 
         <div v-else class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm text-center">
             <FontAwesomeIcon icon="circle-info" class="text-primary text-title-lg mb-2" />
