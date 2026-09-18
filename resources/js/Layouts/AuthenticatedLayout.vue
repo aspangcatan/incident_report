@@ -62,7 +62,7 @@ const navGroups = [
     {
         label: 'Analytics & Learning',
         items: [
-            { label: 'Executive Overview', icon: 'chart-line', href: '#', count: null },
+            { label: 'Executive Overview', icon: 'chart-line', href: '/analytics', count: null },
             { label: 'Trends & Sentinels', icon: 'arrow-trend-up', href: '#', count: null },
             { label: 'Unit & Severity Heatmap', icon: 'table-cells', href: '#', count: null },
             { label: 'Resolution Times', icon: 'stopwatch', href: '#', count: null },
