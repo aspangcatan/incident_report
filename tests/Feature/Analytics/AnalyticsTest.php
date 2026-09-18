@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Analytics;
 
+use App\DataTransferObjects\Approvals\DecideApprovalData;
 use App\DataTransferObjects\CorrectiveActions\CompleteCorrectiveActionData;
 use App\DataTransferObjects\CorrectiveActions\CorrectiveActionData;
 use App\DataTransferObjects\CorrectiveActions\VerifyCorrectiveActionData;
@@ -16,6 +17,7 @@ use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
 use App\Services\AnalyticsService;
+use App\Services\ApprovalService;
 use App\Services\CorrectiveActionService;
 use App\Services\IncidentService;
 use App\Services\InvestigationService;
@@ -165,5 +167,50 @@ class AnalyticsTest extends TestCase
         $kpis = app(AnalyticsService::class)->overview($deptHeadA)['kpis'];
 
         $this->assertSame(4.0, $kpis['meanHoursToReview']);
+    }
+
+    public function test_root_cause_distribution_groups_by_contributing_factor_category(): void
+    {
+        $department = Department::factory()->create();
+        $incident = $this->incidentThroughReview($department);
+        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
+        $equipment = \App\Models\ContributingFactor::create(['label' => 'Device malfunction', 'category' => 'Equipment']);
+        $incident->contributingFactors()->sync([$humanFactors->id, $equipment->id]);
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $distribution = app(AnalyticsService::class)->overview($qso)['rootCauseDistribution'];
+
+        $categories = collect($distribution)->pluck('category')->all();
+        $this->assertContains('Human Factors', $categories);
+        $this->assertContains('Equipment', $categories);
+    }
+
+    public function test_department_safety_table_reports_capa_resolution_per_department(): void
+    {
+        $department = Department::factory()->create(['name' => 'Emergency Medicine']);
+        $incident = $this->incidentThroughReview($department);
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incident->fresh(), $investigator);
+        $investigation = app(InvestigationService::class)->start($incident->fresh(), $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
+        ]));
+        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        $capa = app(CorrectiveActionService::class)->create($incident->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+        $this->actingAs(User::factory()->create());
+        app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        app(CorrectiveActionService::class)->verify($capa->fresh(), User::factory()->create(['role' => Role::QualitySafetyOfficer]), VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $table = app(AnalyticsService::class)->overview($qso)['departmentSafety'];
+
+        $row = collect($table)->firstWhere('departmentName', 'Emergency Medicine');
+        $this->assertNotNull($row);
+        $this->assertSame(1, $row['capasVerified']);
+        $this->assertSame(1, $row['capasTotal']);
+        $this->assertSame(100, $row['safetyIndex']);
+        $this->assertSame('Exemplary', $row['statusLabel']);
     }
 }

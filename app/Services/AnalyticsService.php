@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Enums\CorrectiveActionStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\Severity;
+use App\Models\Approval;
+use App\Models\CorrectiveAction;
+use App\Models\Department;
 use App\Models\Incident;
 use App\Models\Investigation;
 use App\Models\User;
@@ -29,6 +32,8 @@ class AnalyticsService
                 'sentinelRecurrence' => $this->sentinelRecurrenceRate($user),
                 'nearMissVelocityPercent' => $this->nearMissVelocity($user),
             ],
+            'rootCauseDistribution' => $this->rootCauseDistribution($user),
+            'departmentSafety' => $this->departmentSafety($user),
         ];
     }
 
@@ -163,5 +168,91 @@ class AnalyticsService
         }
 
         return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    /**
+     * Grouped by contributing_factors.category (captured on the report
+     * form at submission time, Phase 3) rather than investigation finding
+     * category - every incident has contributing factors regardless of
+     * which RCA methodology its investigation used, so this source is
+     * complete where finding-category data would have gaps (five_whys
+     * findings never set a category at all).
+     */
+    private function rootCauseDistribution(User $user): array
+    {
+        $visibleIncidentIds = $this->baseQuery($user)
+            ->where('reported_at', '>=', now()->subDays(self::WINDOW_DAYS))
+            ->pluck('id');
+
+        return DB::table('incident_contributing_factor')
+            ->join('contributing_factors', 'contributing_factors.id', '=', 'incident_contributing_factor.contributing_factor_id')
+            ->whereIn('incident_contributing_factor.incident_id', $visibleIncidentIds)
+            ->whereNotNull('contributing_factors.category')
+            ->groupBy('contributing_factors.category')
+            ->selectRaw('contributing_factors.category as category, COUNT(DISTINCT incident_contributing_factor.incident_id) as incidentCount')
+            ->orderByDesc('incidentCount')
+            ->get()
+            ->map(fn ($row) => ['category' => $row->category, 'incidentCount' => (int) $row->incidentCount])
+            ->all();
+    }
+
+    /**
+     * "Safety Index" here is this project's own simple, documented
+     * heuristic - not a validated clinical instrument: 100 minus the
+     * percentage of the department's ever-created CorrectiveActions and
+     * Approvals that are currently overdue. A department with zero
+     * CorrectiveActions/Approvals ever is trivially "Exemplary" (nothing
+     * to be overdue on). Status labels: >=95 Exemplary, >=85 Optimal,
+     * >=70 Compliant, else "Needs Attention" - thresholds are a reasonable
+     * starting point, worth confirming with a real patient-safety officer
+     * before anyone treats the exact numbers as authoritative.
+     */
+    private function departmentSafety(User $user): array
+    {
+        $departmentIds = $this->baseQuery($user)->whereNotNull('department_id')->distinct()->pluck('department_id');
+
+        return Department::query()
+            ->whereIn('id', $departmentIds)
+            ->orderBy('name')
+            ->get()
+            ->map(function (Department $department) {
+                // Not routed through baseQuery()/visibleTo() here: $department
+                // is already one of $departmentIds, which was itself derived
+                // from baseQuery($user) above, so this can never reach a
+                // department the caller isn't allowed to see. Draft incidents
+                // are also safe to leave in this particular id set (unlike
+                // hourlyVolume()) since a draft can never have a
+                // CorrectiveAction/Approval row pointing at it - the counts
+                // below would be identical either way.
+                $incidentIds = Incident::where('department_id', $department->id)->pluck('id');
+
+                $capasTotal = CorrectiveAction::whereIn('incident_id', $incidentIds)->count();
+                $capasVerified = CorrectiveAction::whereIn('incident_id', $incidentIds)
+                    ->where('status', CorrectiveActionStatus::Verified->value)
+                    ->count();
+                $capasOverdue = CorrectiveAction::whereIn('incident_id', $incidentIds)->overdue()->count();
+
+                $approvalsTotal = Approval::whereIn('incident_id', $incidentIds)->count();
+                $approvalsOverdue = Approval::whereIn('incident_id', $incidentIds)->overdue()->count();
+
+                $everCreated = $capasTotal + $approvalsTotal;
+                $everOverdue = $capasOverdue + $approvalsOverdue;
+                $safetyIndex = $everCreated > 0 ? (int) round(100 * (1 - $everOverdue / $everCreated)) : 100;
+
+                return [
+                    'departmentId' => $department->id,
+                    'departmentName' => $department->name,
+                    'capasVerified' => $capasVerified,
+                    'capasTotal' => $capasTotal,
+                    'safetyIndex' => $safetyIndex,
+                    'statusLabel' => match (true) {
+                        $safetyIndex >= 95 => 'Exemplary',
+                        $safetyIndex >= 85 => 'Optimal',
+                        $safetyIndex >= 70 => 'Compliant',
+                        default => 'Needs Attention',
+                    },
+                ];
+            })
+            ->all();
     }
 }
