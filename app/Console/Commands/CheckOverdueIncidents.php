@@ -3,13 +3,16 @@
 namespace App\Console\Commands;
 
 use App\Enums\IncidentStatus;
+use App\Models\Approval;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\Investigation;
 use App\Models\User;
 use App\Notifications\IncidentEscalationNotification;
+use App\Queries\OverdueApprovalsQuery;
 use App\Queries\OverdueCorrectiveActionsQuery;
 use App\Queries\OverdueInvestigationsQuery;
+use App\Repositories\ApprovalRepository;
 use App\Repositories\CorrectiveActionRepository;
 use App\Repositories\InvestigationRepository;
 use Illuminate\Console\Command;
@@ -27,6 +30,8 @@ class CheckOverdueIncidents extends Command
         private InvestigationRepository $investigations,
         private OverdueCorrectiveActionsQuery $overdueCorrectiveActions,
         private CorrectiveActionRepository $correctiveActions,
+        private OverdueApprovalsQuery $overdueApprovals,
+        private ApprovalRepository $approvals,
     ) {
         parent::__construct();
     }
@@ -45,6 +50,7 @@ class CheckOverdueIncidents extends Command
         $this->escalateOverdueAssignments($recipients);
         $this->escalateOverdueInvestigations($recipients);
         $this->escalateOverdueCorrectiveActions($recipients);
+        $this->escalateOverdueApprovals($recipients);
 
         return self::SUCCESS;
     }
@@ -96,6 +102,17 @@ class CheckOverdueIncidents extends Command
                 new IncidentEscalationNotification($correctiveAction->incident, "Corrective action {$correctiveAction->capa_number} SLA breached")
             );
             $this->correctiveActions->markEscalated($correctiveAction);
+        });
+    }
+
+    private function escalateOverdueApprovals(Collection $recipients): void
+    {
+        $this->overdueApprovals->get()->each(function (Approval $approval) use ($recipients) {
+            Notification::send(
+                $recipients,
+                new IncidentEscalationNotification($approval->incident, 'Closure approval SLA breached')
+            );
+            $this->approvals->markEscalated($approval);
         });
     }
 }
