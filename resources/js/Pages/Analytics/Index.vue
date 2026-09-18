@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import KpiStatTile from '@/Components/Analytics/KpiStatTile.vue';
 import StackedBarChart from '@/Components/Analytics/StackedBarChart.vue';
+import HourlyVolumeChart from '@/Components/Analytics/HourlyVolumeChart.vue';
 
 const props = defineProps({
     kpis: { type: Object, required: true },
@@ -63,6 +64,79 @@ function formatPercent(rate) {
                     <p class="font-body-sm text-body-sm text-outline">Contributing factors recorded on incidents in the last 90 days, by category.</p>
                 </div>
                 <StackedBarChart :segments="rootCauseDistribution" />
+            </div>
+
+            <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
+                <div>
+                    <h2 class="font-title-lg text-title-lg text-primary font-bold">Incident Volume by Hour of Day</h2>
+                    <p class="font-body-sm text-body-sm text-outline">Last 90 days, by the hour the incident occurred.</p>
+                </div>
+                <HourlyVolumeChart :hours="hourlyVolume" />
+            </div>
+
+            <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
+                <div>
+                    <h2 class="font-title-lg text-title-lg text-primary font-bold">Departmental Safety Index &amp; CAPA Compliance</h2>
+                    <p class="font-body-sm text-body-sm text-outline">A simple, transparent internal heuristic - not a validated clinical index.</p>
+                </div>
+                <div v-if="!departmentSafety.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
+                    No department data available yet.
+                </div>
+                <table v-else class="w-full text-left">
+                    <thead>
+                        <tr class="font-label-sm text-body-sm uppercase text-outline">
+                            <th class="pb-2">Department</th>
+                            <th class="pb-2">CAPA Resolution</th>
+                            <th class="pb-2">Safety Index</th>
+                            <th class="pb-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="row in departmentSafety" :key="row.departmentId" class="border-t border-outline-variant">
+                            <td class="py-2 font-body-md text-body-md text-on-surface">{{ row.departmentName }}</td>
+                            <td class="py-2 font-code-tabular text-body-sm text-on-surface-variant">{{ row.capasVerified }} / {{ row.capasTotal }}</td>
+                            <td class="py-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-24 h-2 rounded-full bg-surface-container overflow-hidden">
+                                        <div class="h-full rounded-full bg-primary" :style="{ width: row.safetyIndex + '%' }" />
+                                    </div>
+                                    <span class="font-code-tabular text-body-sm text-on-surface-variant">{{ row.safetyIndex }}/100</span>
+                                </div>
+                            </td>
+                            <td class="py-2">
+                                <span
+                                    class="px-2.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold"
+                                    :class="{
+                                        'bg-secondary-container text-on-secondary-container': row.statusLabel === 'Exemplary' || row.statusLabel === 'Optimal',
+                                        'bg-surface-container text-on-surface': row.statusLabel === 'Compliant',
+                                        'bg-error-container text-on-error-container': row.statusLabel === 'Needs Attention',
+                                    }"
+                                >
+                                    {{ row.statusLabel }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
+                <div>
+                    <h2 class="font-title-lg text-title-lg text-primary font-bold">Recurring Pattern Alerts</h2>
+                    <p class="font-body-sm text-body-sm text-outline">Same department + incident type, {{ 3 }}+ times in the last 90 days. A grouped count, not an AI-generated inference.</p>
+                </div>
+                <div v-if="!recurringPatterns.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
+                    No recurring patterns detected in this window.
+                </div>
+                <div v-for="pattern in recurringPatterns" :key="`${pattern.departmentName}-${pattern.incidentTypeName}`" class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ pattern.incidentTypeName }}</span>
+                        <span class="font-body-sm text-body-sm text-on-surface-variant">{{ pattern.departmentName }}</span>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">
+                        {{ pattern.incidentCount }} incidents
+                    </span>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
