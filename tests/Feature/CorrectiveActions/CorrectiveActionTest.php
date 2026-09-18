@@ -224,6 +224,50 @@ class CorrectiveActionTest extends TestCase
         ]);
     }
 
+    public function test_a_third_capa_created_after_the_first_two_reach_for_verification_does_not_get_stuck(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $service = app(CorrectiveActionService::class);
+        $capaOne = $service->create($incident, $this->capaData());
+        $capaTwo = $service->create($incident->fresh(), $this->capaData());
+        $completer = User::factory()->create();
+        $this->actingAs($completer);
+
+        $service->complete($capaOne, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        $service->complete($capaTwo, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+
+        // Both CAPAs are now for_verification, so the incident has already
+        // rolled forward - before the third CAPA even exists.
+        $this->assertSame(IncidentStatus::ForVerification, $incident->fresh()->status);
+
+        // A QSO now opens a third CAPA on the same incident. create() never
+        // touches incident status, so the incident stays at for_verification
+        // even though CAPA #3 is freshly Open - it does not revert, but it
+        // must not get permanently stuck there either.
+        $capaThree = $service->create($incident->fresh(), $this->capaData());
+        $this->assertSame(CorrectiveActionStatus::Open, $capaThree->status);
+        $this->assertSame(IncidentStatus::ForVerification, $incident->fresh()->status);
+
+        // Completing CAPA #3 re-checks maybeAdvanceToForVerification(), but its
+        // guard (status !== CorrectiveAction) makes this a no-op since the
+        // incident already passed that stage - it must not error or misfire.
+        $service->complete($capaThree, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        $this->assertSame(IncidentStatus::ForVerification, $incident->fresh()->status);
+
+        $verifier = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $service->verify($capaOne->fresh(), $verifier, VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+        $service->verify($capaTwo->fresh(), $verifier, VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+
+        // Two of three verified: the incident must not advance to Verified yet.
+        $this->assertSame(IncidentStatus::ForVerification, $incident->fresh()->status);
+
+        $service->verify($capaThree->fresh(), $verifier, VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+
+        // All three verified: the incident correctly self-corrects to Verified,
+        // proving it never got permanently stuck despite the late-added CAPA.
+        $this->assertSame(IncidentStatus::Verified, $incident->fresh()->status);
+    }
+
     public function test_qso_can_create_a_corrective_action_once_the_incident_is_at_corrective_action_stage(): void
     {
         $incident = $this->incidentReadyForCapa();
@@ -357,6 +401,25 @@ class CorrectiveActionTest extends TestCase
         $this->actingAs($qso)
             ->post("/incidents/{$incident->id}/corrective-actions", [])
             ->assertSessionHasErrors(['description', 'action_type', 'priority', 'due_date']);
+    }
+
+    public function test_root_cause_finding_id_cannot_reference_a_different_incidents_investigation(): void
+    {
+        $incidentA = $this->incidentReadyForCapa();
+        $incidentB = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $foreignFindingId = $incidentB->fresh()->investigation->findings->first()->id;
+
+        $response = $this->actingAs($qso)->post("/incidents/{$incidentA->id}/corrective-actions", [
+            'description' => 'Implement double-check checklist.',
+            'action_type' => 'corrective',
+            'priority' => 'high',
+            'due_date' => now()->addDays(14)->toDateString(),
+            'root_cause_finding_id' => $foreignFindingId,
+        ]);
+
+        $response->assertSessionHasErrors(['root_cause_finding_id']);
+        $this->assertDatabaseMissing('corrective_actions', ['incident_id' => $incidentA->id]);
     }
 
     public function test_an_investigator_cannot_create_a_corrective_action_via_http(): void
