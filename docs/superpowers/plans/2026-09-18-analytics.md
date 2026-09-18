@@ -980,6 +980,7 @@ git commit -m "feat: add hourly incident volume and recurring-pattern grouping t
 
 **Files:**
 - Create: `app/Http/Controllers/AnalyticsController.php`
+- Create: `resources/js/Pages/Analytics/Index.vue` (placeholder — see Step 3a)
 - Modify: `routes/web.php`
 - Modify: `tests/Feature/Analytics/AnalyticsTest.php`
 
@@ -1047,6 +1048,35 @@ class AnalyticsController extends Controller
 }
 ```
 
+- [ ] **Step 3a: Add a placeholder `Analytics/Index.vue`**
+
+The HTTP test above asserts `->component('Analytics/Index')` via `assertInertia()`, and Inertia's testing helper verifies that page component actually exists on disk (`config('inertia.testing.ensure_pages_exist')` defaults to `true` and isn't overridden in this app) — so `test_qso_can_load_the_analytics_page_via_http` will fail with "Inertia page component file [Analytics/Index] does not exist" even after the controller/route are wired, until *some* file exists at this path. Every prior phase's equivalent HTTP test could rely on that phase's Vue page already existing from an earlier task in the same phase; this is the first phase where the controller task (this one) and the UI task (Task 6) are split, so create a minimal placeholder now:
+
+```vue
+<script setup>
+import { Head } from '@inertiajs/vue3';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+
+defineProps({
+    kpis: { type: Object, required: true },
+    rootCauseDistribution: { type: Array, required: true },
+    departmentSafety: { type: Array, required: true },
+    hourlyVolume: { type: Array, required: true },
+    recurringPatterns: { type: Array, required: true },
+});
+</script>
+
+<template>
+    <Head title="Analytics" />
+
+    <AuthenticatedLayout>
+        <!-- Placeholder: UI built out in later tasks of this phase. -->
+    </AuthenticatedLayout>
+</template>
+```
+
+Task 6 **modifies** this same file (its `<template>` body and script) rather than creating a fresh one — the `defineProps` block above already matches the 5 keys `AnalyticsService::overview()` returns, so Task 6 shouldn't need to touch it, just fill in the template.
+
 - [ ] **Step 4: Add the route**
 
 In `routes/web.php`, add the import:
@@ -1078,7 +1108,7 @@ Expected: all green.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/Http/Controllers/AnalyticsController.php routes/web.php tests/Feature/Analytics/AnalyticsTest.php
+git add app/Http/Controllers/AnalyticsController.php resources/js/Pages/Analytics/Index.vue routes/web.php tests/Feature/Analytics/AnalyticsTest.php
 git commit -m "feat: add /analytics route and controller"
 ```
 
@@ -1089,7 +1119,7 @@ git commit -m "feat: add /analytics route and controller"
 **Files:**
 - Create: `resources/js/Components/Analytics/KpiStatTile.vue`
 - Create: `resources/js/Components/Analytics/StackedBarChart.vue`
-- Create: `resources/js/Pages/Analytics/Index.vue` (partial — KPI row + root-cause section only; the rest is Task 7)
+- Modify: `resources/js/Pages/Analytics/Index.vue` (placeholder from Task 5 — filling in the KPI row + root-cause section only; the rest is Task 7)
 
 This task establishes the page's color tokens and the two simplest sections. Per the `dataviz` skill: color comes last, and the categorical/status palettes below are the skill's own validated default (`references/palette.md`), used unmodified — scoped to this page only via CSS custom properties, not added to the shared `tailwind.config.js` (which has no categorical/status color set of its own to extend).
 
