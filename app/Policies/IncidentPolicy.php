@@ -72,6 +72,19 @@ class IncidentPolicy
         return $this->hasReviewOrAssignAccess($user, $incident);
     }
 
+    public function start(User $user, Incident $incident): bool
+    {
+        if ($incident->status !== IncidentStatus::Assigned) {
+            return false;
+        }
+
+        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true)) {
+            return true;
+        }
+
+        return $incident->assigned_investigator_id === $user->id;
+    }
+
     private function hasReviewOrAssignAccess(User $user, Incident $incident): bool
     {
         if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true)) {

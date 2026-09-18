@@ -240,4 +240,104 @@ class InvestigationTest extends TestCase
 
         $this->assertDatabaseMissing('investigation_team_members', ['id' => $member->id]);
     }
+
+    public function test_the_assigned_investigator_can_start_an_investigation(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+
+        $this->assertTrue($investigator->can('start', $incident));
+    }
+
+    public function test_a_different_investigator_cannot_start_the_investigation(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $otherInvestigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+
+        $this->assertFalse($otherInvestigator->can('start', $incident));
+    }
+
+    public function test_qso_can_start_any_assigned_incidents_investigation(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $incident = $this->assignedIncident($investigator);
+
+        $this->assertTrue($qso->can('start', $incident));
+    }
+
+    public function test_nobody_can_start_an_investigation_before_the_incident_is_assigned(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $incidentType = IncidentType::factory()->create();
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+
+        $incident = app(IncidentService::class)->createDraft($reporter, [
+            'department_id' => $department->id,
+            'incident_type_id' => $incidentType->id,
+            'severity' => Severity::Level2Moderate->value,
+            'occurred_at' => now(),
+            'location' => 'Ward 3',
+            'summary' => 'Test incident.',
+        ]);
+        app(IncidentService::class)->submit($incident);
+
+        $this->assertFalse($investigator->can('start', $incident->fresh()));
+    }
+
+    public function test_only_the_lead_investigator_or_qso_can_manage_the_team(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $teamMember = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone', [
+            'team_members' => [['user_id' => $teamMember->id, 'role_in_team' => 'Rep']],
+        ]));
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->assertTrue($investigator->can('manageTeam', $investigation));
+        $this->assertTrue($qso->can('manageTeam', $investigation));
+        $this->assertFalse($teamMember->can('manageTeam', $investigation));
+    }
+
+    public function test_a_team_member_can_record_findings_but_a_stranger_cannot(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $teamMember = User::factory()->create();
+        $stranger = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone', [
+            'team_members' => [['user_id' => $teamMember->id, 'role_in_team' => 'Rep']],
+        ]));
+
+        $this->assertTrue($investigator->can('recordFindings', $investigation));
+        $this->assertTrue($teamMember->can('recordFindings', $investigation));
+        $this->assertFalse($stranger->can('recordFindings', $investigation));
+    }
+
+    public function test_nobody_can_record_findings_on_a_completed_investigation(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('five_whys'));
+        app(InvestigationService::class)->addFinding($investigation, $this->findingData(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+
+        $this->assertFalse($investigator->can('recordFindings', $investigation->fresh()));
+    }
+
+    public function test_only_the_lead_investigator_or_qso_can_complete_the_investigation(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $teamMember = User::factory()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone', [
+            'team_members' => [['user_id' => $teamMember->id, 'role_in_team' => 'Rep']],
+        ]));
+
+        $this->assertTrue($investigator->can('complete', $investigation));
+        $this->assertFalse($teamMember->can('complete', $investigation));
+    }
 }
