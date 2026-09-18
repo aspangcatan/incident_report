@@ -269,4 +269,97 @@ class ApprovalTest extends TestCase
         $this->assertTrue($otherAdmin->can('approveClosure', $incident->fresh()));
         $this->assertTrue($otherAdmin->can('returnFromApproval', $incident->fresh()));
     }
+
+    public function test_qso_can_request_approval_via_http(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($qso)
+            ->post("/incidents/{$incident->id}/request-approval")
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('approvals', ['incident_id' => $incident->id, 'requested_by' => $qso->id]);
+        $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
+    }
+
+    public function test_an_investigator_cannot_request_approval_via_http(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+
+        $this->actingAs($investigator)
+            ->post("/incidents/{$incident->id}/request-approval")
+            ->assertForbidden();
+    }
+
+    public function test_marking_no_corrective_action_needed_via_http_requires_a_justification(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($qso)
+            ->post("/incidents/{$incident->id}/no-corrective-action-needed", [])
+            ->assertSessionHasErrors(['justification']);
+    }
+
+    public function test_marking_no_corrective_action_needed_via_http(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($qso)
+            ->post("/incidents/{$incident->id}/no-corrective-action-needed", ['justification' => 'Near miss, no fix needed.'])
+            ->assertRedirect();
+
+        $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
+    }
+
+    public function test_approving_via_http_requires_comments(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $management = User::factory()->create(['role' => Role::Management]);
+
+        $this->actingAs($management)
+            ->post("/approvals/{$approval->id}/approve", [])
+            ->assertSessionHasErrors(['comments']);
+    }
+
+    public function test_approving_via_http(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $management = User::factory()->create(['role' => Role::Management]);
+
+        $this->actingAs($management)
+            ->post("/approvals/{$approval->id}/approve", ['comments' => 'Confirmed effective.'])
+            ->assertRedirect();
+
+        $this->assertSame(IncidentStatus::Closed, $incident->fresh()->status);
+    }
+
+    public function test_the_requester_cannot_approve_their_own_request_via_http(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $admin = User::factory()->create(['role' => Role::Administrator]);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $admin);
+
+        $this->actingAs($admin)
+            ->post("/approvals/{$approval->id}/approve", ['comments' => 'x'])
+            ->assertForbidden();
+    }
+
+    public function test_returning_via_http(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
+        $management = User::factory()->create(['role' => Role::Management]);
+
+        $this->actingAs($management)
+            ->post("/approvals/{$approval->id}/return", ['comments' => 'Needs more work.'])
+            ->assertRedirect();
+
+        $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
+    }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CorrectiveActionController;
@@ -40,6 +41,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/corrective-actions/{correctiveAction}/progress', [CorrectiveActionController::class, 'progress'])->name('corrective-actions.progress');
     Route::post('/corrective-actions/{correctiveAction}/complete', [CorrectiveActionController::class, 'complete'])->name('corrective-actions.complete');
     Route::post('/corrective-actions/{correctiveAction}/verify', [CorrectiveActionController::class, 'verify'])->name('corrective-actions.verify');
+    Route::post('/incidents/{incident}/request-approval', [ApprovalController::class, 'requestApproval'])->name('approvals.request');
+    Route::post('/incidents/{incident}/no-corrective-action-needed', [ApprovalController::class, 'markNoCorrectiveActionNeeded'])->name('approvals.no-corrective-action');
+    Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
+    Route::post('/approvals/{approval}/return', [ApprovalController::class, 'returnForRevision'])->name('approvals.return');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
