@@ -34,7 +34,7 @@ class ApprovalTest extends TestCase
      * An incident with a completed investigation, sitting at
      * IncidentStatus::CorrectiveAction with zero corrective actions.
      */
-    private function incidentThroughInvestigation(): Incident
+    private function incidentThroughInvestigation(Severity $severity = Severity::Level2Moderate): Incident
     {
         $department = Department::factory()->create();
         $incidentType = IncidentType::factory()->create();
@@ -45,7 +45,7 @@ class ApprovalTest extends TestCase
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
             'incident_type_id' => $incidentType->id,
-            'severity' => Severity::Level2Moderate->value,
+            'severity' => $severity->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',
             'summary' => 'Test incident.',
@@ -65,9 +65,9 @@ class ApprovalTest extends TestCase
     }
 
     /** An incident with one verified CAPA, sitting at IncidentStatus::Verified. */
-    private function incidentReadyForApproval(): Incident
+    private function incidentReadyForApproval(Severity $severity = Severity::Level2Moderate): Incident
     {
-        $incident = $this->incidentThroughInvestigation();
+        $incident = $this->incidentThroughInvestigation($severity);
 
         $capa = app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
             'description' => 'Retrain staff.', 'action_type' => 'corrective', 'priority' => 'high',
@@ -93,6 +93,38 @@ class ApprovalTest extends TestCase
         $this->assertNull($approval->request_comments);
         $this->assertNotNull($approval->due_at);
         $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
+    }
+
+    /**
+     * config('incident_workflow.approval_sla_hours') is keyed by every
+     * Severity case's own ->value, not just Level2Moderate - confirm the
+     * lookup actually resolves per-severity instead of silently falling
+     * through to the default every time.
+     */
+    public function test_due_at_uses_the_sla_hours_configured_for_the_incidents_own_severity(): void
+    {
+        $cases = [
+            Severity::Level1Low,
+            Severity::Level2Moderate,
+            Severity::Level3High,
+            Severity::Level4CriticalSentinel,
+        ];
+
+        foreach ($cases as $severity) {
+            $incident = $this->incidentReadyForApproval($severity);
+            $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+            $expectedHours = config('incident_workflow.approval_sla_hours.' . $severity->value);
+            $this->assertNotNull($expectedHours, "No SLA hours configured for {$severity->value}");
+
+            $before = now();
+            $approval = app(ApprovalService::class)->requestApproval($incident, $qso);
+
+            $this->assertNotNull($approval->due_at);
+            $this->assertTrue(
+                $approval->due_at->between($before->copy()->addHours($expectedHours)->subMinute(), $before->copy()->addHours($expectedHours)->addMinute()),
+                "due_at for {$severity->value} did not resolve to the configured {$expectedHours}-hour SLA."
+            );
+        }
     }
 
     public function test_marking_no_corrective_action_needed_creates_a_pending_approval_with_the_justification(): void
@@ -224,6 +256,43 @@ class ApprovalTest extends TestCase
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->assertFalse($qso->can('markNoCorrectiveActionNeeded', $incident->fresh()));
+    }
+
+    /**
+     * After a no-CAPA-needed request is Returned, the incident is back at
+     * CorrectiveAction with (still) zero corrective actions - the ability
+     * must be usable a second time, producing a second Approval row while
+     * the first, already-Returned row remains permanently undecidable
+     * (same row-scoped guard as the CAPA-verified resubmission path).
+     */
+    public function test_marking_no_corrective_action_needed_can_be_used_again_after_a_return_with_still_zero_capas(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $first = app(ApprovalService::class)->markNoCorrectiveActionNeeded(
+            $incident,
+            $qso,
+            MarkNoCorrectiveActionNeededData::fromArray(['justification' => 'Initial call: no CAPA needed.'])
+        );
+        $approver = User::factory()->create(['role' => Role::Management]);
+        app(ApprovalService::class)->returnForRevision($first, $approver, DecideApprovalData::fromArray(['comments' => 'Disagree, please reconsider.']));
+
+        $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
+        $this->assertFalse($incident->fresh()->correctiveActions()->exists());
+        $this->assertTrue($qso->can('markNoCorrectiveActionNeeded', $incident->fresh()));
+
+        $second = app(ApprovalService::class)->markNoCorrectiveActionNeeded(
+            $incident->fresh(),
+            $qso,
+            MarkNoCorrectiveActionNeededData::fromArray(['justification' => 'Reconsidered: still no CAPA needed.'])
+        );
+
+        $this->assertNotSame($first->id, $second->id);
+        $this->assertSame(2, $incident->fresh()->approvals()->count());
+        $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
+        $this->assertFalse($approver->can('approveClosure', [$incident->fresh(), $first]));
+        $this->assertFalse($approver->can('returnFromApproval', [$incident->fresh(), $first]));
+        $this->assertTrue($approver->can('approveClosure', [$incident->fresh(), $second]));
     }
 
     public function test_management_and_administrator_can_approve_closure_hospital_wide(): void
