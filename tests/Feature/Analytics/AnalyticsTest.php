@@ -325,4 +325,30 @@ class AnalyticsTest extends TestCase
         $this->assertSame($smallerType->name, $patterns[1]['incidentTypeName']);
         $this->assertSame(3, $patterns[1]['incidentCount']);
     }
+
+    public function test_qso_can_load_the_analytics_page_via_http(): void
+    {
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($qso)
+            ->get('/analytics')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Analytics/Index')
+                ->has('kpis')
+                ->has('rootCauseDistribution')
+                ->has('departmentSafety')
+                ->has('hourlyVolume')
+                ->has('recurringPatterns')
+            );
+    }
+
+    public function test_staff_cannot_load_the_analytics_page_via_http(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+
+        $this->actingAs($staff)
+            ->get('/analytics')
+            ->assertForbidden();
+    }
 }
