@@ -41,6 +41,9 @@ class Incident extends Model
     ];
 
     protected $casts = [
+        'reporter_id' => 'integer',
+        'department_id' => 'integer',
+        'assigned_investigator_id' => 'integer',
         'severity' => Severity::class,
         'status' => IncidentStatus::class,
         'is_sentinel_event' => 'boolean',

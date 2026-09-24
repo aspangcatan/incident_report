@@ -32,6 +32,8 @@ class CorrectiveAction extends Model
     ];
 
     protected $casts = [
+        'responsible_user_id' => 'integer',
+        'completed_by' => 'integer',
         'action_type' => CorrectiveActionType::class,
         'priority' => CorrectiveActionPriority::class,
         'status' => CorrectiveActionStatus::class,

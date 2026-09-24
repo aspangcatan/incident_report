@@ -14,13 +14,15 @@ class NotifyReviewersOfSubmittedIncident
     {
         $incident = $event->incident;
 
-        $recipients = User::where(function ($query) {
-            $query->whereIn('role', [Role::QualitySafetyOfficer, Role::Administrator]);
-        })->when($incident->department_id !== null, function ($query) use ($incident) {
-            $query->orWhere(function ($query) use ($incident) {
-                $query->whereIn('role', [Role::Supervisor, Role::DepartmentHead])
-                    ->where('department_id', $incident->department_id);
-            });
+        $recipients = User::active()->where(function ($query) use ($incident) {
+            $query->withRole([Role::QualitySafetyOfficer, Role::Administrator]);
+
+            if ($incident->department_id !== null) {
+                $query->orWhere(function ($query) use ($incident) {
+                    $query->withRole([Role::Supervisor, Role::DepartmentHead])
+                        ->where('section', $incident->department_id);
+                });
+            }
         })->get();
 
         if ($recipients->isNotEmpty()) {

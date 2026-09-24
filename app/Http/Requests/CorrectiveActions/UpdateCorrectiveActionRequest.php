@@ -23,7 +23,7 @@ class UpdateCorrectiveActionRequest extends FormRequest
             'action_type' => ['required', new Enum(CorrectiveActionType::class)],
             'priority' => ['required', new Enum(CorrectiveActionPriority::class)],
             'due_date' => ['required', 'date'],
-            'responsible_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'responsible_user_id' => ['nullable', Rule::exists(config('tdh.connection') . '.users', 'id')],
             'responsible_department_id' => ['nullable', Rule::exists(config('tdh.connection') . '.section', 'id')],
             'root_cause_finding_id' => [
                 'nullable',

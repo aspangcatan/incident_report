@@ -159,17 +159,17 @@ class IncidentController extends Controller
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
             'investigation' => $investigation ? new InvestigationResource($investigation) : null,
             'investigators' => $user->can('assign', $incident)
-                ? User::where('role', Role::Investigator)->where('is_active', true)->get(['id', 'name'])
+                ? User::active()->withRole(Role::Investigator)->orderByName()->get()
                 : [],
             'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
-                ? User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'role'])
+                ? User::active()->orderByName()->get()
                 : [],
             'correctiveActions' => CorrectiveActionResource::collection($correctiveActions),
             'approvals' => ApprovalResource::collection($approvals),
             'investigationFindings' => $investigation
                 ? InvestigationFindingResource::collection($investigation->findings)
                 : [],
-            'potentialResponsibleUsers' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'potentialResponsibleUsers' => User::active()->orderByName()->get(),
             'departments' => Department::options(),
             'can' => [
                 'update' => $user->can('update', $incident),

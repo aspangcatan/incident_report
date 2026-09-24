@@ -23,6 +23,7 @@ class Investigation extends Model
     ];
 
     protected $casts = [
+        'lead_investigator_id' => 'integer',
         'methodology' => InvestigationMethodology::class,
         'status' => InvestigationStatus::class,
         'started_at' => 'datetime',

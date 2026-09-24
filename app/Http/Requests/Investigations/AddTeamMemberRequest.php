@@ -18,7 +18,7 @@ class AddTeamMemberRequest extends FormRequest
         return [
             'user_id' => [
                 'required',
-                Rule::exists('users', 'id'),
+                Rule::exists(config('tdh.connection') . '.users', 'id'),
                 Rule::unique('investigation_team_members', 'user_id')
                     ->where('investigation_id', $this->route('investigation')->id),
             ],

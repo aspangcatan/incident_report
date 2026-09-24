@@ -21,6 +21,7 @@ class Approval extends Model
     ];
 
     protected $casts = [
+        'requested_by' => 'integer',
         'status' => ApprovalStatus::class,
         'due_at' => 'datetime',
         'decided_at' => 'datetime',

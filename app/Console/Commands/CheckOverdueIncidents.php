@@ -38,7 +38,7 @@ class CheckOverdueIncidents extends Command
 
     public function handle(): int
     {
-        $recipients = User::whereIn('role', config('incident_workflow.escalation_recipient_roles'))->get();
+        $recipients = User::active()->withRole(config('incident_workflow.escalation_recipient_roles'))->get();
 
         if ($recipients->isEmpty()) {
             $this->warn('No escalation recipients configured/found; skipping.');

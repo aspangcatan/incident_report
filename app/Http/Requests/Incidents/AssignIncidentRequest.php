@@ -18,7 +18,9 @@ class AssignIncidentRequest extends FormRequest
         return [
             'assigned_investigator_id' => [
                 'required',
-                Rule::exists('users', 'id')->where(fn ($query) => $query->where('role', Role::Investigator->value)),
+                Rule::exists(config('tdh.connection') . '.user_priv', 'user_id')
+                    ->where('syscode', config('tdh.syscode'))
+                    ->where('level', Role::Investigator->value),
             ],
             'target_closure_date' => ['nullable', 'date', 'after:today'],
         ];
