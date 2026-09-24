@@ -49,7 +49,7 @@ return [
 - `level` values are exactly the `App\Enums\Role` backing values: `staff`, `supervisor`, `investigator`, `department_head`, `quality_safety_officer`, `administrator`, `management`. Longest is 22 chars; `level` is varchar(30). A unit test asserts every `Role` case value is ≤ 30 chars.
 - **No IR row → `Role::Staff`.** Any active tdh user may log in and file a report.
 - **Unrecognised level → `Role::Staff`** plus a `Log::warning` naming the user id and the raw level. Fails closed (least privilege), never errors.
-- If a user has multiple IR rows (not expected), the highest-privilege one is **not** guessed — the lowest `user_priv.id` wins, and a warning is logged.
+- If a user has multiple IR rows (not expected), the highest-privilege one is **not** guessed — the lowest `user_priv.id` wins (the `privilege` relation orders by `id`). Duplicate detection/logging is out of scope.
 
 ### 4.3 Models
 
@@ -59,7 +59,8 @@ return [
   - `name` — `"{title} {fname} {mname-initial}. {lname} {suffix}"`, blanks collapsed.
   - `role` — `Role` enum per §4.2, loaded via a `hasOne` `privilege()` relation scoped to the IR syscode (eager-loadable to avoid N+1).
   - `department_id` — `section`.
-  - `designation` — `designation` relation's `description`, falling back to `other_designation`.
+  - `designation_title` — `designationRecord` relation's `description`, falling back to `other_designation`. (Named `designation_title`, not `designation`, because `designation` is the raw FK column the relation reads; an accessor of the same name would break the relation. The shared Inertia `auth.user.designation` key is filled from it, so the frontend is unchanged.)
+  - Serialization is a **whitelist** (`$visible`): `id, username, name, role, department_id, designation_title`. tdh rows carry `password`, `api_token`, `security_pin`, `signature`, `picture`, `remember_token` — none may ever reach an Inertia prop. A global select scope loads only the columns this app needs (skipping the longtext `signature`/`picture`).
   - `is_active` — `status === '1'`.
 - Scopes replacing the six existing column queries:
   - `scopeActive()` → `where('status', '1')`
@@ -92,7 +93,7 @@ One new migration on the default connection:
 1. Drop every foreign-key **constraint** pointing at `users` or `departments` (~20 columns across incidents, incident_individuals, incident_actions, attachments, audit_logs, investigations, investigation_team_members, corrective_actions, approvals). **Columns are kept** as indexed unsigned integers — MySQL cannot enforce FKs across databases, and referential integrity to tdh ids is now an application concern.
 2. Drop tables `users`, `departments`, `password_resets`, `personal_access_tokens`.
 
-Because `incident_report` may be wiped, `down()` recreates the tables and constraints on a best-effort basis only; it is not expected to be used.
+The migration is a forward migration (`php artisan migrate`), **not** a rewrite of old migrations + `migrate:fresh`. `down()` throws — this change is one-way. On SQLite (tests only) the FK drops are skipped because Laravel 9 cannot drop SQLite foreign keys; `phpunit.xml` sets `DB_FOREIGN_KEYS=false` so the now-dangling references are not enforced in tests, matching production MySQL after the migration.
 
 Validation rules referencing these tables (e.g. `Rule::exists('users', 'id')`) switch to `Rule::exists(config('tdh.connection').'.users', 'id')` (and `.section` for departments), with role constraints expressed via the model scope rather than a `where('role', …)` column clause.
 
