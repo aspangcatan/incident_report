@@ -127,7 +127,7 @@ class User extends Authenticatable
             return Role::Staff;
         }
 
-        $role = Role::tryFrom($level);
+        $role = Role::tryFrom(strtolower(trim($level)));
 
         if ($role === null) {
             Log::warning('Unrecognised IR privilege level in tdh_user.user_priv; treating as Staff.', [

@@ -49,6 +49,24 @@ class TdhUserTest extends TestCase
         Log::shouldHaveReceived('warning')->once();
     }
 
+    /**
+     * Live user_priv.level is latin1_swedish_ci, so MySQL matches levels
+     * case- and trailing-space-insensitively (scopeWithRole, exists rules);
+     * the PHP side must resolve the same rows to the same role. The SQLite
+     * replica compares case-sensitively, so only the PHP side is tested here —
+     * and that is what the policies use.
+     */
+    public function test_the_level_is_matched_case_and_space_insensitively(): void
+    {
+        $admin = User::factory()->create();
+        UserPrivilege::create(['user_id' => $admin->id, 'syscode' => 'IR', 'level' => 'Administrator ']);
+        $investigator = User::factory()->create();
+        UserPrivilege::create(['user_id' => $investigator->id, 'syscode' => 'IR', 'level' => 'INVESTIGATOR']);
+
+        $this->assertSame(Role::Administrator, $admin->fresh()->role);
+        $this->assertSame(Role::Investigator, $investigator->fresh()->role);
+    }
+
     public function test_the_role_is_resolved_once_per_instance(): void
     {
         Log::spy();
