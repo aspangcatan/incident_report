@@ -177,4 +177,16 @@ class AuthenticationTest extends TestCase
         $this->post('/login', ['username' => 'apangcatan', 'password' => 'password'])->assertSessionHasNoErrors();
         $this->assertAuthenticated();
     }
+
+    public function test_a_user_deactivated_in_tdh_is_logged_out_on_the_next_request(): void
+    {
+        $user = User::factory()->inactive()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertRedirect('/login')
+            ->assertSessionHas('error');
+
+        $this->assertGuest();
+    }
 }

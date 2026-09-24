@@ -1,10 +1,12 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 
 defineProps({
     canResetPassword: { type: Boolean, default: false },
 });
+
+const page = usePage();
 
 const form = useForm({
     username: '',
@@ -25,6 +27,10 @@ function submit() {
         <h1 class="font-headline-sm text-headline-sm text-on-surface mb-1">Sign in</h1>
         <p class="font-body-sm text-body-sm text-outline mb-space-lg">
             Sign in with your hospital (tdh) username and password.
+        </p>
+
+        <p v-if="page.props.flash?.error" class="font-body-sm text-body-sm text-error mb-space-md" role="alert">
+            {{ page.props.flash.error }}
         </p>
 
         <form class="flex flex-col gap-space-md" @submit.prevent="submit">
