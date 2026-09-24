@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Tdh;
 
+use App\Models\UserPrivilege;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -24,5 +26,16 @@ class TdhTestHarnessTest extends TestCase
         foreach (['users', 'user_priv', 'section', 'designation'] as $table) {
             $this->assertTrue($schema->hasTable($table), "Missing replica table {$table}");
         }
+    }
+
+    /** Mirrors the live UNIQUE KEY (user_id, syscode): one IR row per user. */
+    public function test_user_priv_allows_one_row_per_user_and_system(): void
+    {
+        UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'staff']);
+        UserPrivilege::create(['user_id' => 5, 'syscode' => 'hris', 'level' => 'admin']);
+
+        $this->expectException(QueryException::class);
+
+        UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'investigator']);
     }
 }

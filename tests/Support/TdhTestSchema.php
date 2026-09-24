@@ -66,6 +66,7 @@ final class TdhTestSchema
             $table->integer('user_id');
             $table->string('syscode', 20);
             $table->string('level', 30);
+            $table->unique(['user_id', 'syscode']); // live: UNIQUE KEY (user_id, syscode)
         });
 
         $schema->create('section', function (Blueprint $table) {
