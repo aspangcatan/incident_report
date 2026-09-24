@@ -10,9 +10,11 @@ class NotifyReporterOfReturnForRevision
 {
     public function handle(IncidentReturnedForRevision $event): void
     {
-        Notification::send(
-            $event->incident->reporter,
-            new IncidentReturnedForRevisionNotification($event->incident, $event->comments)
-        );
+        // tdh_user hard-deletes users; a stale id resolves to null.
+        $reporter = $event->incident->reporter;
+
+        if ($reporter !== null) {
+            Notification::send($reporter, new IncidentReturnedForRevisionNotification($event->incident, $event->comments));
+        }
     }
 }

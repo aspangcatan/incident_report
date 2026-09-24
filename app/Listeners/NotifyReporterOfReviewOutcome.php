@@ -10,6 +10,11 @@ class NotifyReporterOfReviewOutcome
 {
     public function handle(IncidentReviewed $event): void
     {
-        Notification::send($event->incident->reporter, new IncidentReviewedNotification($event->incident));
+        // tdh_user hard-deletes users; a stale id resolves to null.
+        $reporter = $event->incident->reporter;
+
+        if ($reporter !== null) {
+            Notification::send($reporter, new IncidentReviewedNotification($event->incident));
+        }
     }
 }

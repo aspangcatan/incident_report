@@ -10,6 +10,11 @@ class NotifyInvestigatorOfAssignment
 {
     public function handle(IncidentAssigned $event): void
     {
-        Notification::send($event->incident->assignedInvestigator, new IncidentAssignedNotification($event->incident));
+        // tdh_user hard-deletes users; a stale id resolves to null.
+        $investigator = $event->incident->assignedInvestigator;
+
+        if ($investigator !== null) {
+            Notification::send($investigator, new IncidentAssignedNotification($event->incident));
+        }
     }
 }

@@ -34,10 +34,11 @@ class InvestigationResource extends JsonResource
             'target_completion_at' => $this->target_completion_at,
             'completed_at' => $this->completed_at,
             'conclusion' => $this->conclusion,
-            'lead_investigator' => $this->whenLoaded('leadInvestigator', fn () => [
+            // Null when the lead was deleted from tdh_user (no FK guards it).
+            'lead_investigator' => $this->whenLoaded('leadInvestigator', fn () => $this->leadInvestigator ? [
                 'id' => $this->leadInvestigator->id,
                 'name' => $this->leadInvestigator->name,
-            ]),
+            ] : null),
             'team_members' => InvestigationTeamMemberResource::collection($this->whenLoaded('teamMembers')),
             'findings' => InvestigationFindingResource::collection($this->whenLoaded('findings')),
         ];
