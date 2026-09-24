@@ -9,17 +9,28 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * UserPrivilege::forThisSystem()->update(...)/->delete(), Designation::
  * insert(...)/insertOrIgnore(...)/insertGetId(...)/insertUsing(...)/
- * upsert(...)/truncate() and increment()/decrement() called on the
+ * upsert(...)/truncate()/touch() and increment()/decrement() called on the
  * builder all act straight on the query builder without ever
  * saving/deleting a hydrated model, so they bypass performInsert/
  * performUpdate/performDeleteOnModel/incrementOrDecrement on the model
  * itself. insert/insertOrIgnore/insertGetId/insertUsing are additionally
  * forwarded by the base Eloquent\Builder to the underlying query builder
  * via its $passthru list, so they need an explicit override here too —
- * there is no perform*() hook to lean on for them.
+ * there is no perform*() hook to lean on for them. updateOrInsert/
+ * incrementEach/decrementEach/updateFrom aren't defined on Eloquent\Builder
+ * at all (and aren't in $passthru), so Eloquent's __call() forwards them
+ * straight to the base query builder — guarded via a __call() override
+ * below instead of individual method overrides.
  */
 class ReadOnlyTdhBuilder extends Builder
 {
+    /**
+     * Write methods that Eloquent\Builder has no method of its own for,
+     * and so forwards to the base query builder via __call(). None of
+     * these are in Eloquent\Builder's $passthru list.
+     */
+    private const FORWARDED_WRITES = ['updateOrInsert', 'incrementEach', 'decrementEach', 'updateFrom'];
+
     public function update(array $values)
     {
         $this->guardTdhWrite();
@@ -95,6 +106,28 @@ class ReadOnlyTdhBuilder extends Builder
         $this->guardTdhWrite();
 
         $this->toBase()->truncate();
+    }
+
+    public function touch($column = null)
+    {
+        $this->guardTdhWrite();
+
+        return parent::touch($column);
+    }
+
+    /**
+     * updateOrInsert/incrementEach/decrementEach/updateFrom have no method
+     * of their own on Eloquent\Builder and aren't in its $passthru list,
+     * so the base __call() would otherwise forward them straight to the
+     * underlying query builder, unguarded.
+     */
+    public function __call($method, $parameters)
+    {
+        if (in_array($method, self::FORWARDED_WRITES, true)) {
+            $this->guardTdhWrite();
+        }
+
+        return parent::__call($method, $parameters);
     }
 
     private function guardTdhWrite(): void

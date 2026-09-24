@@ -53,33 +53,52 @@ class ReadOnlyTdhModelTest extends TestCase
     public function test_builder_update_is_blocked_outside_testing(): void
     {
         $privilege = UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'staff']);
-        $this->app['env'] = 'production';
 
-        try {
-            UserPrivilege::where('id', $privilege->id)->update(['level' => 'changed']);
-            $this->fail('Expected a LogicException from the builder-level update.');
-        } catch (LogicException $e) {
-            // expected
-        }
+        $this->assertTdhWriteBlocked(fn () => UserPrivilege::where('id', $privilege->id)->update(['level' => 'changed']));
 
-        $this->app['env'] = 'testing';
         $this->assertDatabaseHas('user_priv', ['id' => $privilege->id, 'level' => 'staff'], config('tdh.connection'));
     }
 
     public function test_builder_delete_is_blocked_outside_testing(): void
     {
         $privilege = UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'staff']);
-        $this->app['env'] = 'production';
 
-        try {
-            UserPrivilege::where('id', $privilege->id)->delete();
-            $this->fail('Expected a LogicException from the builder-level delete.');
-        } catch (LogicException $e) {
-            // expected
-        }
+        $this->assertTdhWriteBlocked(fn () => UserPrivilege::where('id', $privilege->id)->delete());
 
-        $this->app['env'] = 'testing';
         $this->assertDatabaseHas('user_priv', ['id' => $privilege->id, 'level' => 'staff'], config('tdh.connection'));
+    }
+
+    public function test_builder_touch_is_blocked_outside_testing(): void
+    {
+        $designation = Designation::create(['description' => 'Nurse I']);
+        $originalUpdatedAt = $designation->updated_at;
+
+        $this->assertTdhWriteBlocked(fn () => Designation::where('id', $designation->id)->touch());
+
+        $this->assertDatabaseHas('designation', [
+            'id' => $designation->id,
+            'updated_at' => $originalUpdatedAt,
+        ], config('tdh.connection'));
+    }
+
+    public function test_builder_update_or_insert_is_blocked_outside_testing(): void
+    {
+        $privilege = UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'staff']);
+
+        $this->assertTdhWriteBlocked(
+            fn () => UserPrivilege::where('id', $privilege->id)->updateOrInsert(['id' => $privilege->id], ['level' => 'changed'])
+        );
+
+        $this->assertDatabaseHas('user_priv', ['id' => $privilege->id, 'level' => 'staff'], config('tdh.connection'));
+    }
+
+    public function test_builder_increment_each_is_blocked_outside_testing(): void
+    {
+        $privilege = UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'staff']);
+
+        $this->assertTdhWriteBlocked(fn () => UserPrivilege::where('id', $privilege->id)->incrementEach(['user_id' => 1]));
+
+        $this->assertDatabaseHas('user_priv', ['id' => $privilege->id, 'user_id' => 5], config('tdh.connection'));
     }
 
     public function test_builder_insert_is_blocked_outside_testing(): void
@@ -103,16 +122,9 @@ class ReadOnlyTdhModelTest extends TestCase
     public function test_increment_is_blocked_outside_testing(): void
     {
         $privilege = UserPrivilege::create(['user_id' => 5, 'syscode' => 'IR', 'level' => 'staff']);
-        $this->app['env'] = 'production';
 
-        try {
-            $privilege->increment('user_id');
-            $this->fail('Expected a LogicException from increment().');
-        } catch (LogicException $e) {
-            // expected
-        }
+        $this->assertTdhWriteBlocked(fn () => $privilege->increment('user_id'));
 
-        $this->app['env'] = 'testing';
         $this->assertDatabaseHas('user_priv', ['id' => $privilege->id, 'user_id' => 5], config('tdh.connection'));
     }
 
@@ -140,5 +152,24 @@ class ReadOnlyTdhModelTest extends TestCase
         $this->expectException(LogicException::class);
 
         (new UserPrivilege(['user_id' => 1, 'syscode' => 'IR', 'level' => 'staff']))->save();
+    }
+
+    /**
+     * Runs $write with the app in the production environment, asserting it
+     * throws LogicException, then resets the environment to testing so the
+     * caller can assert the row was left unchanged.
+     */
+    private function assertTdhWriteBlocked(callable $write): void
+    {
+        $this->app['env'] = 'production';
+
+        try {
+            $write();
+            $this->fail('Expected a LogicException from a blocked tdh write.');
+        } catch (LogicException $e) {
+            // expected
+        }
+
+        $this->app['env'] = 'testing';
     }
 }
