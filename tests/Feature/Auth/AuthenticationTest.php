@@ -137,4 +137,44 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/login');
     }
+
+    public function test_login_is_throttled_after_five_failed_attempts(): void
+    {
+        User::factory()->create(['username' => 'apangcatan']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['username' => 'apangcatan', 'password' => 'wrong-password'])
+                ->assertSessionHasErrors('username');
+        }
+
+        // Even the correct password is refused while locked out; the key is
+        // case-insensitive on the username so casing can't dodge the limit.
+        $this->post('/login', ['username' => 'APangcatan', 'password' => 'password'])
+            ->assertSessionHasErrors('username');
+        $this->assertStringContainsString('try again', session('errors')->first('username'));
+        $this->post('/login', ['username' => 'apangcatan', 'password' => 'password'])
+            ->assertSessionHasErrors('username');
+
+        $this->assertGuest();
+    }
+
+    public function test_a_successful_login_clears_the_failed_attempt_counter(): void
+    {
+        User::factory()->create(['username' => 'apangcatan']);
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->post('/login', ['username' => 'apangcatan', 'password' => 'wrong-password']);
+        }
+
+        $this->post('/login', ['username' => 'apangcatan', 'password' => 'password']);
+        $this->assertAuthenticated();
+        $this->post('/logout');
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->post('/login', ['username' => 'apangcatan', 'password' => 'wrong-password']);
+        }
+
+        $this->post('/login', ['username' => 'apangcatan', 'password' => 'password'])->assertSessionHasNoErrors();
+        $this->assertAuthenticated();
+    }
 }
