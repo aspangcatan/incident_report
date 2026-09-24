@@ -145,6 +145,31 @@ class TdhUserTest extends TestCase
         $this->assertSame('Dr. Juan S. Dela Cruz Jr.', $user->fresh()->name);
     }
 
+    public function test_name_skips_placeholder_parts_from_tdh_data(): void
+    {
+        $dashMiddle = User::factory()->create(['fname' => 'Juan', 'mname' => '-', 'lname' => 'Cruz', 'suffix' => 'N/A']);
+        $junk = User::factory()->create(['title' => '.', 'fname' => ' Maria', 'mname' => 'none', 'lname' => 'Santos ', 'suffix' => '--']);
+
+        $this->assertSame('Juan Cruz', $dashMiddle->fresh()->name);
+        $this->assertSame('Maria Santos', $junk->fresh()->name);
+    }
+
+    public function test_a_non_honorific_title_is_rendered_as_post_nominals(): void
+    {
+        $user = User::factory()->create(['title' => 'MD, FPCHA', 'fname' => 'Juan', 'mname' => 'Dela', 'lname' => 'Cruz', 'suffix' => null]);
+
+        $this->assertSame('Juan D. Cruz, MD, FPCHA', $user->fresh()->name);
+    }
+
+    public function test_order_by_name_ignores_leading_spaces(): void
+    {
+        $b = User::factory()->create(['fname' => 'Ana', 'lname' => 'Bautista']);
+        $a = User::factory()->create(['fname' => 'Ana', 'lname' => ' Abad']);
+        $c = User::factory()->create(['fname' => ' Carlo', 'lname' => 'Bautista']);
+
+        $this->assertSame([$a->id, $b->id, $c->id], User::orderByName()->pluck('id')->all());
+    }
+
     public function test_designation_title_prefers_the_designation_table(): void
     {
         $designation = Designation::create(['description' => 'Nurse II']);

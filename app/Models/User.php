@@ -20,7 +20,8 @@ use Illuminate\Validation\Rules\Exists;
  * A person = a row in the shared tdh_user.users table (read-only).
  *
  * - role: tdh_user.user_priv.level for this system's syscode (config('tdh.syscode'));
- *   no row, or an unrecognised level, means Role::Staff.
+ *   no row, or an unrecognised level, means Role::Staff. Matched case- and
+ *   surrounding-space-insensitively, as the latin1_swedish_ci column does in SQL.
  * - department_id: tdh_user.users.section (0 = none).
  * - is_active: status === '1'.
  *
@@ -95,14 +96,39 @@ class User extends Authenticatable
         return $this->morphMany(DatabaseNotification::class, 'notifiable')->latest();
     }
 
+    /**
+     * tdh_user name columns hold junk ('-', '.', 'N/A', leading spaces), and
+     * `title` holds either an honorific ('Dr.') or post-nominals ('MD, FPSGS').
+     * Honorifics prefix the name; anything else is appended after a comma.
+     */
     public function getNameAttribute(): string
     {
-        $middleInitial = filled($this->mname) ? mb_substr(trim($this->mname), 0, 1) . '.' : null;
+        $title = self::namePart($this->title);
+        $mname = self::namePart($this->mname);
+        $middleInitial = $mname !== null && preg_match('/\p{L}/u', $mname, $letter) ? mb_strtoupper($letter[0]) . '.' : null;
+        $honorific = $title !== null && preg_match('/^(Dr|Engr|Atty|Arch|Mr|Mrs|Ms|Prof|Rev|Hon)\.?$/i', $title);
 
-        return collect([$this->title, $this->fname, $middleInitial, $this->lname, $this->suffix])
-            ->map(fn ($part) => is_string($part) ? trim($part) : $part)
-            ->filter()
-            ->implode(' ');
+        $name = collect([
+            $honorific ? $title : null,
+            self::namePart($this->fname),
+            $middleInitial,
+            self::namePart($this->lname),
+            self::namePart($this->suffix),
+        ])->filter()->implode(' ');
+
+        return $title !== null && ! $honorific ? "{$name}, {$title}" : $name;
+    }
+
+    /** A trimmed name part, or null when it is empty, punctuation only, or a N/A-style placeholder. */
+    private static function namePart(?string $part): ?string
+    {
+        $part = trim((string) $part);
+
+        if ($part === '' || preg_match('/^[\p{P}\s]+$/u', $part) || in_array(strtolower($part), ['n/a', 'na', 'none'], true)) {
+            return null;
+        }
+
+        return $part;
     }
 
     /**
@@ -178,7 +204,10 @@ class User extends Authenticatable
 
     public function scopeOrderByName(Builder $query): Builder
     {
-        return $query->orderBy($this->qualifyColumn('lname'))->orderBy($this->qualifyColumn('fname'));
+        // TRIM: some tdh names carry leading spaces, which would sort them first.
+        return $query
+            ->orderByRaw('TRIM(' . $query->getQuery()->getGrammar()->wrap($this->qualifyColumn('lname')) . ')')
+            ->orderByRaw('TRIM(' . $query->getQuery()->getGrammar()->wrap($this->qualifyColumn('fname')) . ')');
     }
 
     /**
