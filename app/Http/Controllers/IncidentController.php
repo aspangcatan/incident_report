@@ -142,11 +142,15 @@ class IncidentController extends Controller
 
         // The active-user directory (~1600 people) is loaded at most once, and
         // only when a list the viewer can actually use needs it. Each list is
-        // reduced to the fields its panel reads - never the full User shape.
+        // reduced to the fields its panel reads - never the full User shape -
+        // plus a 'label' that tells same-name people apart (see pickerLabel()).
         $activeUsers = null;
         $directory = function () use (&$activeUsers) {
-            return $activeUsers ??= User::active()->orderByName()->get();
+            return $activeUsers ??= User::active()->with('department')->orderByName()->get();
         };
+        $pickerEntries = fn ($users, array $fields) => $users
+            ->map(fn (User $candidate) => $candidate->only($fields) + ['label' => $this->pickerLabel($candidate)])
+            ->values();
 
         $canCreateCorrectiveAction = $user->can('create', [CorrectiveAction::class, $incident]);
         $canEditAnyCorrectiveAction = $correctiveActions->contains(fn (CorrectiveAction $action) => $user->can('update', $action));
@@ -170,11 +174,10 @@ class IncidentController extends Controller
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
             'investigation' => $investigation ? new InvestigationResource($investigation) : null,
             'investigators' => $user->can('assign', $incident)
-                ? $directory()->filter(fn (User $candidate) => $candidate->role === Role::Investigator)
-                    ->map->only(['id', 'name'])->values()
+                ? $pickerEntries($directory()->filter(fn (User $candidate) => $candidate->role === Role::Investigator), ['id', 'name'])
                 : [],
             'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
-                ? $directory()->map->only(['id', 'name', 'role'])->values()
+                ? $pickerEntries($directory(), ['id', 'name', 'role'])
                 : [],
             'correctiveActions' => CorrectiveActionResource::collection($correctiveActions),
             'approvals' => ApprovalResource::collection($approvals),
@@ -184,7 +187,7 @@ class IncidentController extends Controller
             // Only CapaPanel's create form (can.createCorrectiveAction) and per-action
             // edit form (action.can.update) read this list.
             'potentialResponsibleUsers' => ($canCreateCorrectiveAction || $canEditAnyCorrectiveAction)
-                ? $directory()->map->only(['id', 'name'])->values()
+                ? $pickerEntries($directory(), ['id', 'name'])
                 : [],
             'departments' => Department::options(),
             'can' => [
@@ -200,6 +203,27 @@ class IncidentController extends Controller
                 'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),
             ],
         ]);
+    }
+
+    /**
+     * "Name — Section" for user pickers: tdh_user has many active people
+     * sharing a name (and leading-space username twins), so the name alone
+     * lets someone pick the wrong account. Falls back to the designation,
+     * then to the user id.
+     */
+    private function pickerLabel(User $user): string
+    {
+        $qualifier = trim((string) $user->department?->name);
+
+        if ($qualifier === '' || $qualifier === '-') {
+            $qualifier = trim((string) $user->designation_title);
+        }
+
+        if ($qualifier === '') {
+            $qualifier = "#{$user->id}";
+        }
+
+        return "{$user->name} — {$qualifier}";
     }
 
     private function storeAttachments(Incident $incident, Request $request): void

@@ -184,7 +184,7 @@ function completeInvestigation() {
                             <label class="font-label-sm text-body-sm text-on-surface" for="member_user_id">Add member</label>
                             <select id="member_user_id" v-model="memberForm.user_id" class="p-2 rounded-lg bg-surface-container-low">
                                 <option :value="null" disabled>Select a user</option>
-                                <option v-for="option in potentialTeamMembers" :key="option.id" :value="option.id">{{ option.name }}</option>
+                                <option v-for="option in potentialTeamMembers" :key="option.id" :value="option.id">{{ option.label }}</option>
                             </select>
                             <span v-if="memberForm.errors.user_id" class="font-body-sm text-body-sm text-error">{{ memberForm.errors.user_id }}</span>
                         </div>

@@ -94,7 +94,7 @@ function assignInvestigator() {
         <select id="assigned_investigator_id" v-model="assignForm.assigned_investigator_id" class="w-full p-3 rounded-lg bg-surface-container-low">
             <option :value="null" disabled>Select an investigator</option>
             <option v-for="investigator in investigators" :key="investigator.id" :value="investigator.id">
-                {{ investigator.name }}
+                {{ investigator.label }}
             </option>
         </select>
         <span v-if="assignForm.errors.assigned_investigator_id" class="font-body-sm text-body-sm text-error">

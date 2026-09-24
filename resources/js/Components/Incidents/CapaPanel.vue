@@ -117,7 +117,7 @@ function verifyCorrectiveAction(actionId) {
                     <input v-model="createForm.due_date" type="date" class="p-2 rounded-lg bg-surface-container" />
                     <select v-model="createForm.responsible_user_id" class="p-2 rounded-lg bg-surface-container">
                         <option :value="null">No responsible person yet</option>
-                        <option v-for="option in potentialResponsibleUsers" :key="option.id" :value="option.id">{{ option.name }}</option>
+                        <option v-for="option in potentialResponsibleUsers" :key="option.id" :value="option.id">{{ option.label }}</option>
                     </select>
                     <select v-model="createForm.responsible_department_id" class="p-2 rounded-lg bg-surface-container">
                         <option :value="null">No responsible department</option>
@@ -152,7 +152,7 @@ function verifyCorrectiveAction(actionId) {
                         <input v-model="editForm.due_date" type="date" class="p-2 rounded-lg bg-surface-container" />
                         <select v-model="editForm.responsible_user_id" class="p-2 rounded-lg bg-surface-container">
                             <option :value="null">No responsible person yet</option>
-                            <option v-for="option in potentialResponsibleUsers" :key="option.id" :value="option.id">{{ option.name }}</option>
+                            <option v-for="option in potentialResponsibleUsers" :key="option.id" :value="option.id">{{ option.label }}</option>
                         </select>
                     </div>
                     <div class="flex gap-2">

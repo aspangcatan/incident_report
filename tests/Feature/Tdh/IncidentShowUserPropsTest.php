@@ -81,7 +81,7 @@ class IncidentShowUserPropsTest extends TestCase
                 ->where('investigators', []));
     }
 
-    public function test_a_qso_who_can_create_corrective_actions_gets_responsible_users_as_id_and_name_only(): void
+    public function test_a_qso_who_can_create_corrective_actions_gets_responsible_users_as_id_name_and_label_only(): void
     {
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $incident = $this->submittedIncident();
@@ -89,7 +89,7 @@ class IncidentShowUserPropsTest extends TestCase
 
         $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
 
-        $this->assertEntryKeys($props['potentialResponsibleUsers'], ['id', 'name']);
+        $this->assertEntryKeys($props['potentialResponsibleUsers'], ['id', 'name', 'label']);
     }
 
     public function test_a_qso_gets_no_responsible_users_when_no_corrective_action_can_be_created_or_edited(): void
@@ -102,7 +102,7 @@ class IncidentShowUserPropsTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('potentialResponsibleUsers', []));
     }
 
-    public function test_investigators_are_active_investigators_as_id_and_name_only(): void
+    public function test_investigators_are_active_investigators_as_id_name_and_label_only(): void
     {
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $investigator = User::factory()->create(['role' => Role::Investigator]);
@@ -111,11 +111,11 @@ class IncidentShowUserPropsTest extends TestCase
 
         $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
 
-        $this->assertEntryKeys($props['investigators'], ['id', 'name']);
+        $this->assertEntryKeys($props['investigators'], ['id', 'name', 'label']);
         $this->assertSame([$investigator->id], array_column($props['investigators'], 'id'));
     }
 
-    public function test_potential_team_members_are_id_name_and_role_only(): void
+    public function test_potential_team_members_are_id_name_role_and_label_only(): void
     {
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $investigator = User::factory()->create(['role' => Role::Investigator]);
@@ -124,6 +124,30 @@ class IncidentShowUserPropsTest extends TestCase
 
         $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
 
-        $this->assertEntryKeys($props['potentialTeamMembers'], ['id', 'name', 'role']);
+        $this->assertEntryKeys($props['potentialTeamMembers'], ['id', 'name', 'role', 'label']);
+    }
+
+    /**
+     * Real tdh data has many same-name people (and leading-space username
+     * twins), so pickers show "name — section" to tell them apart, falling
+     * back to the designation and then to the user id.
+     */
+    public function test_picker_labels_disambiguate_same_name_users(): void
+    {
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $incident = $this->submittedIncident();
+        $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
+
+        $pharmacy = Department::factory()->create(['description' => 'Pharmacy']);
+        $inSection = User::factory()->create(['fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => $pharmacy->id]);
+        $withDesignation = User::factory()->create(['fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => null, 'other_designation' => 'Nurse II']);
+        $bare = User::factory()->create(['fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => null]);
+
+        $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
+        $labels = array_column($props['potentialResponsibleUsers'], 'label', 'id');
+
+        $this->assertSame('Ana Reyes — Pharmacy', $labels[$inSection->id]);
+        $this->assertSame('Ana Reyes — Nurse II', $labels[$withDesignation->id]);
+        $this->assertSame("Ana Reyes — #{$bare->id}", $labels[$bare->id]);
     }
 }
