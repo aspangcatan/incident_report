@@ -29,7 +29,17 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, ReadOnlyTdhModel;
 
-    /** Columns this app reads. Never loads signature/picture/api_token/security_pin. */
+    /**
+     * Columns this app reads. Never loads signature/picture/api_token/security_pin.
+     *
+     * Applied by the 'tdhColumns' global scope below, with two caveats:
+     * - fresh()/refresh() bypass global scopes and so `select *`. That only
+     *   costs memory (the blobs are loaded); $visible still keeps every
+     *   sensitive field out of serialization.
+     * - The scope replaces the *implicit* column list, so an explicit
+     *   get(['id', ...]) / first([...]) column list is overridden by it.
+     *   Callers needing specific columns must use select() instead.
+     */
     private const COLUMNS = [
         'id', 'fname', 'mname', 'lname', 'suffix', 'title', 'username', 'password',
         'designation', 'other_designation', 'section', 'status',
@@ -47,7 +57,12 @@ class User extends Authenticatable
     protected $appends = ['name', 'role', 'department_id', 'designation_title'];
 
     /** Whitelist: tdh rows carry password hashes, tokens, PINs and signatures. */
-    protected $visible = ['id', 'username', 'name', 'role', 'department_id', 'designation_title'];
+    protected $visible = ['id', 'name', 'role', 'department_id', 'designation_title'];
+
+    /** Memo for getRoleAttribute(), valid only while $roleSource is the loaded privilege. */
+    private ?Role $resolvedRole = null;
+
+    private ?UserPrivilege $roleSource = null;
 
     protected static function booted(): void
     {
@@ -88,10 +103,26 @@ class User extends Authenticatable
             ->implode(' ');
     }
 
+    /**
+     * Memoized per instance, keyed on the loaded privilege model: the unknown-
+     * level warning logs once, while unsetRelation()/load()/setRelation() on
+     * 'privilege' (e.g. in UserFactory) swap in a new instance and so force a
+     * fresh resolution without any explicit reset.
+     */
     public function getRoleAttribute(): Role
     {
-        $level = $this->privilege?->level;
+        $privilege = $this->privilege;
 
+        if ($this->resolvedRole === null || $this->roleSource !== $privilege) {
+            $this->roleSource = $privilege;
+            $this->resolvedRole = $this->resolveRole($privilege?->level);
+        }
+
+        return $this->resolvedRole;
+    }
+
+    private function resolveRole(?string $level): Role
+    {
         if ($level === null) {
             return Role::Staff;
         }
@@ -155,7 +186,7 @@ class User extends Authenticatable
         $elevated = $roles->reject(fn (Role $role) => $role === Role::Staff)->map(fn (Role $role) => $role->value)->values()->all();
         $allElevated = collect(Role::cases())->reject(fn (Role $role) => $role === Role::Staff)->map(fn (Role $role) => $role->value)->values()->all();
 
-        $idsWithLevels = fn (array $levels) => UserPrivilege::query()->forThisSystem()->whereIn('level', $levels)->select('user_id');
+        $idsWithLevels = fn (array $levels) => UserPrivilege::query()->forThisSystem()->whereIn('level', $levels)->whereNotNull('user_id')->select('user_id');
 
         return $query->where(function (Builder $query) use ($roles, $elevated, $allElevated, $idsWithLevels) {
             if ($elevated !== []) {

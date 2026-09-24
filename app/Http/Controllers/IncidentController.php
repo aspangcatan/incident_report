@@ -140,6 +140,17 @@ class IncidentController extends Controller
             ->latest('id')
             ->get();
 
+        // The active-user directory (~1600 people) is loaded at most once, and
+        // only when a list the viewer can actually use needs it. Each list is
+        // reduced to the fields its panel reads - never the full User shape.
+        $activeUsers = null;
+        $directory = function () use (&$activeUsers) {
+            return $activeUsers ??= User::active()->orderByName()->get();
+        };
+
+        $canCreateCorrectiveAction = $user->can('create', [CorrectiveAction::class, $incident]);
+        $canEditAnyCorrectiveAction = $correctiveActions->contains(fn (CorrectiveAction $action) => $user->can('update', $action));
+
         $approvals = $incident->approvals()
             ->with(['requestedBy', 'approver', 'incident'])
             ->latest('id')
@@ -159,17 +170,22 @@ class IncidentController extends Controller
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
             'investigation' => $investigation ? new InvestigationResource($investigation) : null,
             'investigators' => $user->can('assign', $incident)
-                ? User::active()->withRole(Role::Investigator)->orderByName()->get()
+                ? $directory()->filter(fn (User $candidate) => $candidate->role === Role::Investigator)
+                    ->map->only(['id', 'name'])->values()
                 : [],
             'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
-                ? User::active()->orderByName()->get()
+                ? $directory()->map->only(['id', 'name', 'role'])->values()
                 : [],
             'correctiveActions' => CorrectiveActionResource::collection($correctiveActions),
             'approvals' => ApprovalResource::collection($approvals),
             'investigationFindings' => $investigation
                 ? InvestigationFindingResource::collection($investigation->findings)
                 : [],
-            'potentialResponsibleUsers' => User::active()->orderByName()->get(),
+            // Only CapaPanel's create form (can.createCorrectiveAction) and per-action
+            // edit form (action.can.update) read this list.
+            'potentialResponsibleUsers' => ($canCreateCorrectiveAction || $canEditAnyCorrectiveAction)
+                ? $directory()->map->only(['id', 'name'])->values()
+                : [],
             'departments' => Department::options(),
             'can' => [
                 'update' => $user->can('update', $incident),
@@ -179,7 +195,7 @@ class IncidentController extends Controller
                 'manageInvestigationTeam' => $canManageInvestigationTeam,
                 'recordFindings' => $investigation && $user->can('recordFindings', $investigation),
                 'completeInvestigation' => $investigation && $user->can('complete', $investigation),
-                'createCorrectiveAction' => $user->can('create', [CorrectiveAction::class, $incident]),
+                'createCorrectiveAction' => $canCreateCorrectiveAction,
                 'requestApproval' => $user->can('requestApproval', $incident),
                 'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),
             ],

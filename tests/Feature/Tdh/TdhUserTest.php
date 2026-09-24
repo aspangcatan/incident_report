@@ -49,6 +49,50 @@ class TdhUserTest extends TestCase
         Log::shouldHaveReceived('warning')->once();
     }
 
+    public function test_the_role_is_resolved_once_per_instance(): void
+    {
+        Log::spy();
+        $user = User::factory()->create();
+        UserPrivilege::create(['user_id' => $user->id, 'syscode' => 'IR', 'level' => 'DH']);
+        $fresh = $user->fresh();
+
+        $fresh->role;
+        $fresh->role;
+        $fresh->toArray();
+
+        Log::shouldHaveReceived('warning')->once();
+    }
+
+    public function test_reloading_the_privilege_relation_re_resolves_the_role(): void
+    {
+        $user = User::factory()->create();
+        $this->assertSame(Role::Staff, $user->role);
+
+        UserPrivilege::create(['user_id' => $user->id, 'syscode' => 'IR', 'level' => 'investigator']);
+        $user->unsetRelation('privilege');
+        $this->assertSame(Role::Investigator, $user->role);
+
+        $user->load('privilege');
+        $this->assertSame(Role::Investigator, $user->role);
+    }
+
+    public function test_the_factory_role_is_visible_on_the_created_instance(): void
+    {
+        $user = User::factory()->create();
+        $user->role; // resolve (and memoize) Staff before any row exists
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+
+        $this->assertSame(Role::Staff, $user->role);
+        $this->assertSame(Role::Investigator, $investigator->role);
+    }
+
+    public function test_the_staff_scope_ignores_null_user_ids_in_the_privilege_subquery(): void
+    {
+        $sql = User::withRole(Role::Staff)->toSql();
+
+        $this->assertStringContainsString('"user_id" is not null', $sql);
+    }
+
     public function test_every_role_value_fits_the_user_priv_level_column(): void
     {
         foreach (Role::cases() as $role) {
@@ -130,7 +174,7 @@ class TdhUserTest extends TestCase
         $array = User::find($user->id)->toArray();
 
         $this->assertEqualsCanonicalizing(
-            ['id', 'username', 'name', 'role', 'department_id', 'designation_title'],
+            ['id', 'name', 'role', 'department_id', 'designation_title'],
             array_keys($array)
         );
     }

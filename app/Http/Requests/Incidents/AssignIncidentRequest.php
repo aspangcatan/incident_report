@@ -21,6 +21,8 @@ class AssignIncidentRequest extends FormRequest
                 Rule::exists(config('tdh.connection') . '.user_priv', 'user_id')
                     ->where('syscode', config('tdh.syscode'))
                     ->where('level', Role::Investigator->value),
+                // The IR privilege row alone is not enough: the account must still be active.
+                Rule::exists(config('tdh.connection') . '.users', 'id')->where('status', '1'),
             ],
             'target_closure_date' => ['nullable', 'date', 'after:today'],
         ];

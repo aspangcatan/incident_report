@@ -356,6 +356,35 @@ class IncidentWorkflowTest extends TestCase
             ->assertSessionHasErrors(['assigned_investigator_id']);
     }
 
+    public function test_assigning_rejects_an_inactive_investigator(): void
+    {
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $inactiveInvestigator = User::factory()->inactive()->create(['role' => \App\Enums\Role::Investigator]);
+        $incident = $this->submittedIncident($this->makeReporter(), $department);
+        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
+
+        $this->actingAs($supervisor)
+            ->post("/incidents/{$incident->id}/assign", ['assigned_investigator_id' => $inactiveInvestigator->id])
+            ->assertSessionHasErrors(['assigned_investigator_id']);
+        $this->assertNull($incident->fresh()->assigned_investigator_id);
+    }
+
+    public function test_assigning_rejects_a_user_whose_elevated_privilege_belongs_to_another_system(): void
+    {
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $hrisAdmin = User::factory()->create();
+        \App\Models\UserPrivilege::create(['user_id' => $hrisAdmin->id, 'syscode' => 'hris', 'level' => 'investigator']);
+        $incident = $this->submittedIncident($this->makeReporter(), $department);
+        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
+
+        $this->actingAs($supervisor)
+            ->post("/incidents/{$incident->id}/assign", ['assigned_investigator_id' => $hrisAdmin->id])
+            ->assertSessionHasErrors(['assigned_investigator_id']);
+        $this->assertNull($incident->fresh()->assigned_investigator_id);
+    }
+
     public function test_a_supervisor_can_assign_a_reviewed_incident_via_http(): void
     {
         $reporter = $this->makeReporter();
