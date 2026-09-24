@@ -523,4 +523,16 @@ class IncidentReportingTest extends TestCase
             ->get("/attachments/{$attachment->id}")
             ->assertForbidden();
     }
+
+    public function test_an_incident_cannot_be_filed_against_a_placeholder_section(): void
+    {
+        $reporter = $this->makeReporter();
+        $placeholder = Department::factory()->create(['description' => '-']);
+
+        $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'draft',
+            'department_id' => $placeholder->id,
+            'individuals' => [['person_type' => 'patient', 'name' => 'X', 'department_id' => $placeholder->id]],
+        ])->assertSessionHasErrors(['department_id', 'individuals.0.department_id']);
+    }
 }

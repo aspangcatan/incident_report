@@ -13,6 +13,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 /**
  * A person = a row in the shared tdh_user.users table (read-only).
@@ -166,6 +168,12 @@ class User extends Authenticatable
     public function scopeActive(Builder $query): Builder
     {
         return $query->where($this->qualifyColumn('status'), '1');
+    }
+
+    /** Validation: an id of an active tdh user (see scopeActive()). */
+    public static function activeRule(): Exists
+    {
+        return Rule::exists(config('tdh.connection') . '.users', 'id')->where('status', '1');
     }
 
     public function scopeOrderByName(Builder $query): Builder

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Investigations;
 
 use App\DataTransferObjects\Investigations\AddTeamMemberData;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +19,7 @@ class AddTeamMemberRequest extends FormRequest
         return [
             'user_id' => [
                 'required',
-                Rule::exists(config('tdh.connection') . '.users', 'id'),
+                User::activeRule(),
                 Rule::unique('investigation_team_members', 'user_id')
                     ->where('investigation_id', $this->route('investigation')->id),
             ],

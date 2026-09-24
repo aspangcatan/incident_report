@@ -547,4 +547,50 @@ class CorrectiveActionTest extends TestCase
                 ->where('correctiveActions.0.can.progress', true)
             );
     }
+
+    public function test_a_corrective_action_cannot_be_assigned_to_an_inactive_tdh_user(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $retired = User::factory()->inactive()->create();
+
+        $this->actingAs($qso)->post("/incidents/{$incident->id}/corrective-actions", [
+            'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->addDays(14)->toDateString(),
+            'responsible_user_id' => $retired->id,
+        ])->assertSessionHasErrors(['responsible_user_id']);
+    }
+
+    public function test_a_corrective_action_cannot_be_assigned_to_a_placeholder_section(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $placeholder = Department::factory()->create(['description' => '-']);
+
+        $this->actingAs($qso)->post("/incidents/{$incident->id}/corrective-actions", [
+            'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->addDays(14)->toDateString(),
+            'responsible_department_id' => $placeholder->id,
+        ])->assertSessionHasErrors(['responsible_department_id']);
+    }
+
+    public function test_updating_may_keep_a_responsible_user_who_has_since_been_deactivated(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $responsible = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $retired = User::factory()->inactive()->create();
+        $responsible->forceFill(['status' => '0'])->save();
+
+        $payload = [
+            'description' => 'Revised.', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->addDays(7)->toDateString(),
+        ];
+
+        $this->actingAs($qso)->patch("/corrective-actions/{$capa->id}", $payload + ['responsible_user_id' => $responsible->id])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($qso)->patch("/corrective-actions/{$capa->id}", $payload + ['responsible_user_id' => $retired->id])
+            ->assertSessionHasErrors(['responsible_user_id']);
+    }
 }

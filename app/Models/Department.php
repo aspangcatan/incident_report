@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 /**
  * A hospital unit = a row in tdh_user.section (read-only). Users belong to
@@ -52,6 +54,13 @@ class Department extends Model
     public function scopeSelectable(Builder $query): Builder
     {
         return $query->where('description', '!=', '-')->orderBy('description');
+    }
+
+    /** Validation: an id of a real (non-placeholder) section, like options(). */
+    public static function selectableRule(): Exists
+    {
+        return Rule::exists(config('tdh.connection') . '.section', 'id')
+            ->where(fn ($query) => $query->where('description', '!=', '-'));
     }
 
     /** @return Collection<int, array{id: int, name: string}> dropdown options */

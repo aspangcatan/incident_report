@@ -589,4 +589,17 @@ class InvestigationTest extends TestCase
                 ->missing('incident.investigation')
             );
     }
+
+    public function test_an_inactive_tdh_user_cannot_be_added_to_the_team(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $retired = User::factory()->inactive()->create();
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('fishbone'));
+
+        $this->actingAs($investigator)->post("/investigations/{$investigation->id}/team-members", [
+            'user_id' => $retired->id,
+            'role_in_team' => 'Nursing Service Rep',
+        ])->assertSessionHasErrors(['user_id']);
+    }
 }

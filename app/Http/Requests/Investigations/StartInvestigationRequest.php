@@ -4,8 +4,8 @@ namespace App\Http\Requests\Investigations;
 
 use App\DataTransferObjects\Investigations\StartInvestigationData;
 use App\Enums\InvestigationMethodology;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class StartInvestigationRequest extends FormRequest
@@ -22,7 +22,7 @@ class StartInvestigationRequest extends FormRequest
             'methodology' => ['required', new Enum(InvestigationMethodology::class)],
             'target_completion_at' => ['nullable', 'date', 'after:today'],
             'team_members' => ['nullable', 'array'],
-            'team_members.*.user_id' => ['required_with:team_members', 'distinct', Rule::exists(config('tdh.connection') . '.users', 'id')],
+            'team_members.*.user_id' => ['required_with:team_members', 'distinct', User::activeRule()],
             'team_members.*.role_in_team' => ['required_with:team_members', 'string'],
         ];
     }

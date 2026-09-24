@@ -6,6 +6,8 @@ use App\DataTransferObjects\CorrectiveActions\CorrectiveActionData;
 use App\Enums\CorrectiveActionPriority;
 use App\Enums\CorrectiveActionType;
 use App\Models\CorrectiveAction;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -24,8 +26,8 @@ class CreateCorrectiveActionRequest extends FormRequest
             'action_type' => ['required', new Enum(CorrectiveActionType::class)],
             'priority' => ['required', new Enum(CorrectiveActionPriority::class)],
             'due_date' => ['required', 'date', 'after:today'],
-            'responsible_user_id' => ['nullable', Rule::exists(config('tdh.connection') . '.users', 'id')],
-            'responsible_department_id' => ['nullable', Rule::exists(config('tdh.connection') . '.section', 'id')],
+            'responsible_user_id' => ['nullable', User::activeRule()],
+            'responsible_department_id' => ['nullable', Department::selectableRule()],
             'root_cause_finding_id' => [
                 'nullable',
                 Rule::exists('investigation_findings', 'id')
