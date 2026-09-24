@@ -1,19 +1,14 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| Loaded by the RouteServiceProvider under the "api" middleware group.
+|
+| There are deliberately no API routes. Do not add auth:sanctum routes:
+| personal_access_tokens was dropped with the tdh_user integration, so a
+| bearer token would make Sanctum query a missing table.
 |
 */
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
