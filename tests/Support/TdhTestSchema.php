@@ -32,6 +32,9 @@ final class TdhTestSchema
 
         $schema = Schema::connection($name);
 
+        // Defensive only: each test normally gets a fresh :memory: database,
+        // so this table shouldn't already exist, but skip re-creating it if
+        // the connection is ever reused across tests.
         if ($schema->hasTable('users')) {
             return;
         }

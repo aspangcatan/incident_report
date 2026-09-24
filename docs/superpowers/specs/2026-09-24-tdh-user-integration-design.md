@@ -53,7 +53,7 @@ return [
 
 ### 4.3 Models
 
-**`App\Models\User`** — `$connection = config('tdh.connection')`, `$table = 'users'`.
+**`App\Models\User`** — binds to the connection via the `ReadOnlyTdhModel` trait's `getConnectionName()`, `$table = 'users'`.
 
 - Accessors (appended, so existing `user.name` / `user.role` / `user.designation` / `user.department_id` / `user.is_active` consumers keep working):
   - `name` — `"{title} {fname} {mname-initial}. {lname} {suffix}"`, blanks collapsed.
@@ -67,12 +67,12 @@ return [
   - `scopeWithRole(Role|array)` → `whereIn('id', user_priv subquery for syscode IR and level IN …)`. For `Role::Staff` the scope must also match users with **no** IR row (`whereNotIn` on the IR subquery OR level = staff).
   - `scopeOrderByName()` → `orderBy('lname')->orderBy('fname')` (replaces `orderBy('name')`).
 - Relation `department()` → `belongsTo(Department::class, 'section')`.
-- **Read-only enforcement:** a shared `ReadOnlyTdhModel` trait registers `saving` and `deleting` model-event listeners that **throw** `LogicException('tdh_user is read-only from incident-report')` (throwing, not returning `false`, so a write can never fail silently). Skipped when `app()->environment('testing')` so factories can seed the replica. Raw query-builder writes are not intercepted; the plan forbids them against the `user` connection.
+- **Read-only enforcement:** a shared `ReadOnlyTdhModel` trait guards both halves of Eloquent's write surface and **throws** `LogicException('tdh_user is read-only from incident-report')` (throwing, not returning `false`, so a write can never fail silently): (1) model writes — `performInsert`/`performUpdate`/`performDeleteOnModel`/`incrementOrDecrement` overrides, so `save`/`create`/`update`/`delete`/`increment`/`decrement` are covered even via `saveQuietly`/`deleteQuietly`/`Model::withoutEvents()`, which suppress events but not these methods; `saving`/`deleting` event listeners are kept as redundant belt-and-braces; and (2) query-builder writes — `newEloquentBuilder()` returns a `ReadOnlyTdhBuilder` that guards `update`/`delete`/`forceDelete`/`increment`/`decrement`/`upsert`/`truncate`/`insert`/`insertOrIgnore`/`insertGetId`/`insertUsing` (the last four are otherwise forwarded straight to the base query builder by Eloquent's `$passthru`, bypassing any model-instance hook). The exemption requires **both** `app()->environment('testing')` **and** the connection's driver being `sqlite`, so factories can seed the in-memory replica but a misconfigured test connection cannot silently write to a real database. Only raw `DB::connection('user')->...` query-builder statements are not intercepted by any of this — the plan forbids issuing them, and production's `USER_USERNAME` account must be SELECT-only as the actual enforcement boundary for that gap (see `.env.example`, §5).
 - **Remember-me disabled:** `getRememberTokenName()` returns `''`. Laravel's `SessionGuard` then never reads or rotates `remember_token`, so logging out of this app cannot invalidate "remember me" in other systems sharing the column. The login form's remember checkbox is removed.
 - `HasApiTokens` (Sanctum) is removed — no API tokens are issued by this app.
 - Notifications (`Notifiable`) keep working: `notifications.notifiable_id` stores the tdh user id in `incident_report`.
 
-**`App\Models\Department`** — `$connection = config('tdh.connection')`, `$table = 'section'`, read-only as above.
+**`App\Models\Department`** — binds to the connection via the `ReadOnlyTdhModel` trait's `getConnectionName()`, `$table = 'section'`, read-only as above.
 
 - Accessor `name` → `description`. `code` as-is. `head()` → `belongsTo(User::class, 'head')`. `users()` → `hasMany(User::class, 'section')`.
 - No `is_active` column exists: every section is treated as active. Existing `Department::where('is_active', true)` calls become `Department::query()->orderBy('description')`. Junk rows whose `description` is `'-'` are excluded by a `scopeSelectable()` used for dropdowns.
@@ -127,3 +127,5 @@ Browser pass via `php artisan serve` + Playwright (per project convention): log 
 | N+1 on role lookups in lists | `privilege` relation eager-loaded where users are listed |
 | Orphaned ids after a tdh user is deleted | `belongsTo` returns null; UI already tolerates null relations (`?.name`) |
 | Cross-DB `whereHas` on users/departments | None exist today (verified by grep); plan notes to avoid adding any |
+| Raw `DB::connection('user')` writes bypass model guards | SELECT-only MySQL account for `USER_USERNAME` (deployment requirement) |
+| `DB_FOREIGN_KEYS=false` disables ALL FK enforcement in tests, including incident-internal cascades (incident_id cascades, investigation_findings → corrective_actions.root_cause_finding_id nullOnDelete, restrictOnDelete on lead_investigator_id/requested_by) | No current test depends on them (verified); behaviour that needs cascades must be made explicit in services/tests |
