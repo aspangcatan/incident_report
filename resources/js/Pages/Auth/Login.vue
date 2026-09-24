@@ -7,9 +7,8 @@ defineProps({
 });
 
 const form = useForm({
-    email: '',
+    username: '',
     password: '',
-    remember: false,
 });
 
 function submit() {
@@ -25,23 +24,23 @@ function submit() {
     <GuestLayout>
         <h1 class="font-headline-sm text-headline-sm text-on-surface mb-1">Sign in</h1>
         <p class="font-body-sm text-body-sm text-outline mb-space-lg">
-            Use your hospital-issued account to access the incident management system.
+            Sign in with your hospital (tdh) username and password.
         </p>
 
         <form class="flex flex-col gap-space-md" @submit.prevent="submit">
             <div class="flex flex-col gap-1.5">
-                <label for="email" class="font-label-md text-label-md text-on-surface font-semibold">
-                    Email address
+                <label for="username" class="font-label-md text-label-md text-on-surface font-semibold">
+                    Username
                 </label>
                 <input
-                    id="email"
-                    v-model="form.email"
-                    type="email"
+                    id="username"
+                    v-model="form.username"
+                    type="text"
                     autofocus
                     autocomplete="username"
                     class="w-full p-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-sm"
                 />
-                <span v-if="form.errors.email" class="font-body-sm text-body-sm text-error">{{ form.errors.email }}</span>
+                <span v-if="form.errors.username" class="font-body-sm text-body-sm text-error">{{ form.errors.username }}</span>
             </div>
 
             <div class="flex flex-col gap-1.5">
@@ -57,11 +56,6 @@ function submit() {
                 />
                 <span v-if="form.errors.password" class="font-body-sm text-body-sm text-error">{{ form.errors.password }}</span>
             </div>
-
-            <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="form.remember" type="checkbox" class="w-4 h-4 rounded accent-primary" />
-                <span class="font-body-sm text-body-sm text-on-surface-variant">Remember me</span>
-            </label>
 
             <button
                 type="submit"

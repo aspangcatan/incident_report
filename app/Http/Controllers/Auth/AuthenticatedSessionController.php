@@ -21,13 +21,16 @@ class AuthenticatedSessionController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        // tdh_user accounts only; status '1' = active. No remember-me: the
+        // remember_token column is shared with other hospital systems, and
+        // the read-only User model would refuse the token write anyway.
+        if (! Auth::attempt($credentials + ['status' => '1'])) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'email' => 'These credentials do not match our records.',
+                'username' => 'These credentials do not match our records.',
             ]);
         }
 
