@@ -14,10 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        // Users and departments come from the shared tdh_user database
+        // (read-only); only this app's own reference data is seeded.
         $this->call([
-            DepartmentSeeder::class,
             IncidentTypeSeeder::class,
-            DevUserSeeder::class,
             ContributingFactorSeeder::class,
         ]);
     }

@@ -2,44 +2,64 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ReadOnlyTdhModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
+/**
+ * A hospital unit = a row in tdh_user.section (read-only). Users belong to
+ * one via tdh_user.users.section; incidents store its id in department_id.
+ * tdh_user.section has no active flag, so every section is selectable
+ * except placeholder rows whose description is '-'.
+ */
 class Department extends Model
 {
-    use HasFactory;
+    use HasFactory, ReadOnlyTdhModel;
 
-    protected $fillable = [
-        'name',
-        'code',
-        'parent_department_id',
-        'head_user_id',
-        'is_active',
-    ];
+    protected $table = 'section';
+
+    protected $fillable = ['division', 'description', 'code', 'head', 'subsection'];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'division' => 'integer',
+        'head' => 'integer',
     ];
 
-    public function parent(): BelongsTo
+    protected $appends = ['name'];
+
+    protected $visible = ['id', 'code', 'name'];
+
+    public function getNameAttribute(): string
     {
-        return $this->belongsTo(Department::class, 'parent_department_id');
+        return (string) $this->description;
     }
 
-    public function children(): HasMany
+    /** Named headUser, not head: `head` is the raw column this relation reads. */
+    public function headUser(): BelongsTo
     {
-        return $this->hasMany(Department::class, 'parent_department_id');
-    }
-
-    public function head(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'head_user_id');
+        return $this->belongsTo(User::class, 'head');
     }
 
     public function users(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class, 'section');
+    }
+
+    public function scopeSelectable(Builder $query): Builder
+    {
+        return $query->where('description', '!=', '-')->orderBy('description');
+    }
+
+    /** @return Collection<int, array{id: int, name: string}> dropdown options */
+    public static function options(): Collection
+    {
+        return static::selectable()
+            ->get(['id', 'description'])
+            ->map(fn (Department $department) => ['id' => $department->id, 'name' => $department->name])
+            ->values();
     }
 }

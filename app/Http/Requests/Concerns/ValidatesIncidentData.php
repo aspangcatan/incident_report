@@ -5,6 +5,7 @@ namespace App\Http\Requests\Concerns;
 use App\Enums\ActionStatus;
 use App\Enums\PersonType;
 use App\Enums\Severity;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 trait ValidatesIncidentData
@@ -17,7 +18,7 @@ trait ValidatesIncidentData
         return [
             'action' => ['required', 'in:draft,submit'],
             'incident_type_id' => [$required, 'exists:incident_types,id'],
-            'department_id' => [$required, 'exists:departments,id'],
+            'department_id' => [$required, Rule::exists(config('tdh.connection') . '.section', 'id')],
             'severity' => [$required, new Enum(Severity::class)],
             'occurred_at' => [$required, 'date'],
             'location' => [$required, 'string', 'max:255'],
@@ -36,7 +37,7 @@ trait ValidatesIncidentData
             'individuals.*.name' => ['required_with:individuals', 'string', 'max:255'],
             'individuals.*.identifier' => ['nullable', 'string', 'max:255'],
             'individuals.*.role_description' => ['nullable', 'string', 'max:255'],
-            'individuals.*.department_id' => ['nullable', 'exists:departments,id'],
+            'individuals.*.department_id' => ['nullable', Rule::exists(config('tdh.connection') . '.section', 'id')],
             'individuals.*.details' => ['nullable', 'string'],
 
             'witnesses' => ['array'],

@@ -230,7 +230,7 @@ class AnalyticsService
     {
         $departmentIds = $this->baseQuery($user)->whereNotNull('department_id')->distinct()->pluck('department_id');
 
-        $departments = Department::query()->whereIn('id', $departmentIds)->orderBy('name')->get();
+        $departments = Department::query()->whereIn('id', $departmentIds)->orderBy('description')->get();
 
         if ($departments->isEmpty()) {
             return [];
@@ -363,7 +363,7 @@ class AnalyticsService
             return [];
         }
 
-        $departments = Department::whereIn('id', $rows->pluck('department_id'))->pluck('name', 'id');
+        $departments = Department::whereIn('id', $rows->pluck('department_id'))->pluck('description', 'id');
         $incidentTypes = IncidentType::whereIn('id', $rows->pluck('incident_type_id'))->pluck('name', 'id');
 
         return $rows->map(fn ($row) => [

@@ -59,7 +59,7 @@ class IncidentController extends Controller
         return Inertia::render('Incidents/Wizard', [
             'incident' => null,
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
-            'departments' => Department::where('is_active', true)->get(['id', 'name']),
+            'departments' => Department::options(),
             'contributingFactors' => ContributingFactor::where('is_active', true)->get(['id', 'label', 'category']),
         ]);
     }
@@ -91,7 +91,7 @@ class IncidentController extends Controller
         return Inertia::render('Incidents/Wizard', [
             'incident' => $incident,
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
-            'departments' => Department::where('is_active', true)->get(['id', 'name']),
+            'departments' => Department::options(),
             'contributingFactors' => ContributingFactor::where('is_active', true)->get(['id', 'label', 'category']),
         ]);
     }
@@ -170,7 +170,7 @@ class IncidentController extends Controller
                 ? InvestigationFindingResource::collection($investigation->findings)
                 : [],
             'potentialResponsibleUsers' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'departments' => Department::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'departments' => Department::options(),
             'can' => [
                 'update' => $user->can('update', $incident),
                 'review' => $user->can('review', $incident),

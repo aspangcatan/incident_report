@@ -25,7 +25,7 @@ class CreateCorrectiveActionRequest extends FormRequest
             'priority' => ['required', new Enum(CorrectiveActionPriority::class)],
             'due_date' => ['required', 'date', 'after:today'],
             'responsible_user_id' => ['nullable', Rule::exists('users', 'id')],
-            'responsible_department_id' => ['nullable', Rule::exists('departments', 'id')],
+            'responsible_department_id' => ['nullable', Rule::exists(config('tdh.connection') . '.section', 'id')],
             'root_cause_finding_id' => [
                 'nullable',
                 Rule::exists('investigation_findings', 'id')
