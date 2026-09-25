@@ -78,20 +78,21 @@ class IncidentReportingTest extends TestCase
         $this->assertNotNull($second->fresh()->reported_at);
     }
 
-    public function test_submit_marks_level_4_incidents_as_sentinel_events(): void
+    public function test_submit_does_not_set_is_sentinel_event(): void
     {
+        // Severity is unknown at submission time; it's set later by the
+        // Department Head when completing the assessment (see Task 2).
         $reporter = $this->makeReporter();
         $service = app(IncidentService::class);
 
         $incident = $service->createDraft($reporter, [
-            'severity' => Severity::Level4CriticalSentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU Bed 2',
             'summary' => 'Sentinel event.',
         ]);
         $service->submit($incident);
 
-        $this->assertTrue($incident->fresh()->is_sentinel_event);
+        $this->assertFalse($incident->fresh()->is_sentinel_event);
     }
 
     public function test_submit_retries_incident_number_generation_on_unique_constraint_collision(): void
@@ -280,7 +281,7 @@ class IncidentReportingTest extends TestCase
             'action' => 'submit',
         ]);
 
-        $response->assertSessionHasErrors(['incident_type_id', 'department_id', 'severity', 'occurred_at', 'location', 'summary', 'legal_attestation']);
+        $response->assertSessionHasErrors(['incident_type_id', 'department_id', 'occurred_at', 'location', 'summary', 'legal_attestation']);
         $this->assertDatabaseCount('incidents', 0);
     }
 
@@ -534,5 +535,65 @@ class IncidentReportingTest extends TestCase
             'department_id' => $placeholder->id,
             'individuals' => [['person_type' => 'patient', 'name' => 'X', 'department_id' => $placeholder->id]],
         ])->assertSessionHasErrors(['department_id', 'individuals.0.department_id']);
+    }
+
+    public function test_the_reporter_can_submit_without_a_severity(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $type = IncidentType::factory()->create();
+
+        $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'submit',
+            'department_id' => $department->id,
+            'incident_type_id' => $type->id,
+            'occurred_at' => now()->subHour()->format('Y-m-d H:i'),
+            'location' => 'Ward 3',
+            'summary' => 'Patient slipped.',
+            'legal_attestation' => true,
+        ])->assertSessionHasNoErrors();
+
+        $incident = Incident::latest('id')->first();
+        $this->assertSame(IncidentStatus::Submitted, $incident->status);
+        $this->assertNull($incident->severity);
+        $this->assertFalse($incident->is_sentinel_event);
+    }
+
+    public function test_the_reporter_form_ignores_severity_actions_recommendations_and_factors(): void
+    {
+        $reporter = $this->makeReporter();
+        $department = Department::factory()->create();
+        $type = IncidentType::factory()->create();
+        $factor = ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors', 'is_active' => true]);
+
+        $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'draft',
+            'department_id' => $department->id,
+            'incident_type_id' => $type->id,
+            'severity' => Severity::Level4CriticalSentinel->value,
+            'recommendations' => 'Install rails.',
+            'actions_taken' => [['description' => 'Called doctor']],
+            'contributing_factor_ids' => [$factor->id],
+        ]);
+
+        $incident = Incident::latest('id')->first();
+        $this->assertNull($incident->severity);
+        $this->assertNull($incident->recommendations);
+        $this->assertSame(0, $incident->actions()->count());
+        $this->assertSame(0, $incident->contributingFactors()->count());
+    }
+
+    public function test_updating_a_returned_draft_keeps_department_entered_actions(): void
+    {
+        $reporter = $this->makeReporter();
+        $incident = app(IncidentService::class)->createDraft($reporter, ['location' => 'ER']);
+        $incident->actions()->create(['description' => 'Entered by the department']);
+
+        $this->actingAs($reporter)->patch("/incidents/{$incident->id}", [
+            'action' => 'draft',
+            'location' => 'ER bay 2',
+        ]);
+
+        $this->assertSame(['Entered by the department'], $incident->actions()->pluck('description')->all());
     }
 }

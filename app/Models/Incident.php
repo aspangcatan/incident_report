@@ -57,6 +57,9 @@ class Incident extends Model
         'legal_attestation_at' => 'datetime',
         'review_escalated_at' => 'datetime',
         'assignment_escalated_at' => 'datetime',
+        'assessed_by' => 'integer',
+        'assessed_at' => 'datetime',
+        'assessment_escalated_at' => 'datetime',
     ];
 
     public function reporter(): BelongsTo
@@ -77,6 +80,11 @@ class Incident extends Model
     public function assignedInvestigator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_investigator_id');
+    }
+
+    public function assessor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assessed_by');
     }
 
     public function investigation(): HasOne

@@ -3,6 +3,14 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Department assessment SLA (hours from submission; fixed — severity is
+    | only known once the Department Head completes the assessment)
+    |--------------------------------------------------------------------------
+    */
+    'assessment_sla_hours' => 72,
+
+    /*
+    |--------------------------------------------------------------------------
     | Review SLA (hours from submission to review, per severity)
     |--------------------------------------------------------------------------
     */

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\IncidentStatus;
-use App\Enums\Severity;
 use App\Events\IncidentAssigned;
 use App\Events\IncidentReturnedForRevision;
 use App\Events\IncidentReviewed;
@@ -58,7 +57,8 @@ class IncidentService
                     $incident->reported_at = now();
                     $incident->review_escalated_at = null;
                     $incident->legal_attestation_at = now();
-                    $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
+                    // Severity is set later by the Department Head (completeAssessment()).
+                    $incident->assessment_escalated_at = null;
                     $incident->save();
                 });
 

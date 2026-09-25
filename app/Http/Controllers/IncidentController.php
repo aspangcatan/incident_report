@@ -10,7 +10,6 @@ use App\Http\Resources\ApprovalResource;
 use App\Http\Resources\CorrectiveActionResource;
 use App\Http\Resources\InvestigationFindingResource;
 use App\Http\Resources\InvestigationResource;
-use App\Models\ContributingFactor;
 use App\Models\CorrectiveAction;
 use App\Models\Department;
 use App\Models\Incident;
@@ -60,7 +59,6 @@ class IncidentController extends Controller
             'incident' => null,
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
             'departments' => Department::options(),
-            'contributingFactors' => ContributingFactor::where('is_active', true)->get(['id', 'label', 'category']),
         ]);
     }
 
@@ -92,7 +90,6 @@ class IncidentController extends Controller
             'incident' => $incident,
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
             'departments' => Department::options(),
-            'contributingFactors' => ContributingFactor::where('is_active', true)->get(['id', 'label', 'category']),
         ]);
     }
 
