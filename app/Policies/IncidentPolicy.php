@@ -48,6 +48,15 @@ class IncidentPolicy
             return true;
         }
 
+        // People doing the work elsewhere in the lifecycle can open the incident.
+        if ($incident->investigation?->teamMembers()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        if ($incident->correctiveActions()->where('responsible_user_id', $user->id)->exists()) {
+            return true;
+        }
+
         if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator, Role::Management], true)) {
             return true;
         }

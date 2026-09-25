@@ -152,23 +152,28 @@ class Incident extends Model
             return $query;
         }
 
-        if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
-            if ($user->department_id === null) {
-                return $query->whereRaw('1 = 0');
-            }
-
-            return $query->where('department_id', $user->department_id);
-        }
-
         return $query->where(function (Builder $q) use ($user) {
-            $q->where('reporter_id', $user->id)
-                ->orWhere('assigned_investigator_id', $user->id);
+            if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+                // Without a department they match nothing here, only the shared clauses below.
+                if ($user->department_id !== null) {
+                    $q->where('department_id', $user->department_id);
+                }
+            } else {
+                $q->where('reporter_id', $user->id)
+                    ->orWhere('assigned_investigator_id', $user->id);
 
-            if ($user->department_id !== null) {
-                $q->orWhere(fn (Builder $q) => $q
-                    ->where('status', IncidentStatus::Submitted)
-                    ->where('department_id', $user->department_id));
+                if ($user->department_id !== null) {
+                    $q->orWhere(fn (Builder $q) => $q
+                        ->where('status', IncidentStatus::Submitted)
+                        ->where('department_id', $user->department_id));
+                }
             }
+
+            // Investigation team members and CAPA owners can open the incidents they work on.
+            $q->orWhereIn('id', Investigation::query()
+                ->select('incident_id')
+                ->whereIn('id', InvestigationTeamMember::query()->select('investigation_id')->where('user_id', $user->id)))
+                ->orWhereIn('id', CorrectiveAction::query()->select('incident_id')->where('responsible_user_id', $user->id));
         });
     }
 }
