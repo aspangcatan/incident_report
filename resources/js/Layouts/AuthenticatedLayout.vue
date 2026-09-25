@@ -105,6 +105,11 @@ function queryParam(url) {
 }
 
 function isActive(href) {
+    // Unwired placeholders ('#') would otherwise resolve to the current page.
+    if (!href || href === '#') {
+        return false;
+    }
+
     const target = new URL(href, window.location.origin);
     const current = new URL(page.url, window.location.origin);
 
