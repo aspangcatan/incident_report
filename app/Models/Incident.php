@@ -153,15 +153,16 @@ class Incident extends Model
         }
 
         return $query->where(function (Builder $q) use ($user) {
+            // Everyone sees what they reported or were assigned to investigate (mirrors view()).
+            $q->where('reporter_id', $user->id)
+                ->orWhere('assigned_investigator_id', $user->id);
+
             if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
-                // Without a department they match nothing here, only the shared clauses below.
+                // Without a department they get no department clause, only the shared ones.
                 if ($user->department_id !== null) {
-                    $q->where('department_id', $user->department_id);
+                    $q->orWhere('department_id', $user->department_id);
                 }
             } else {
-                $q->where('reporter_id', $user->id)
-                    ->orWhere('assigned_investigator_id', $user->id);
-
                 if ($user->department_id !== null) {
                     $q->orWhere(fn (Builder $q) => $q
                         ->where('status', IncidentStatus::Submitted)

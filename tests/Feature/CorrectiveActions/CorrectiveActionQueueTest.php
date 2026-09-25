@@ -176,4 +176,14 @@ class CorrectiveActionQueueTest extends TestCase
                 ->where('queue.title', 'For Verification')
                 ->where('queue.description', 'Completed actions waiting to be verified.'));
     }
+
+    public function test_a_capa_due_today_is_not_flagged_overdue(): void
+    {
+        // Same rule as the Overdue queue: overdue means due BEFORE today.
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $this->capaAtStatus(CorrectiveActionStatus::Open, ['due_date' => now()->toDateString()]);
+
+        $this->actingAs($qso)->get('/corrective-actions?queue=open')
+            ->assertInertia(fn ($page) => $page->where('actions.data.0.is_overdue', false));
+    }
 }

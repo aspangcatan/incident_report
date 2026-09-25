@@ -129,4 +129,20 @@ class IncidentAccessTest extends TestCase
         $this->assertNotVisible($supervisor, $noDepartment->fresh());
         $this->assertSame([$incident->id], Incident::visibleTo($supervisor)->pluck('id')->all());
     }
+
+    public function test_a_supervisor_sees_their_own_report_filed_in_another_department(): void
+    {
+        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => Department::factory()->create()->id]);
+        $incident = app(IncidentService::class)->createDraft($supervisor, [
+            'department_id' => Department::factory()->create()->id,
+            'incident_type_id' => IncidentType::factory()->create()->id,
+            'occurred_at' => now(),
+            'location' => 'Lobby',
+            'summary' => 'Filed in another department.',
+        ]);
+        app(IncidentService::class)->submit($incident);
+
+        $this->actingAs($supervisor)->get("/incidents/{$incident->id}")->assertOk();
+        $this->assertTrue(Incident::visibleTo($supervisor)->whereKey($incident->id)->exists());
+    }
 }

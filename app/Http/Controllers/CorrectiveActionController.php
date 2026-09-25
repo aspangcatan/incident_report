@@ -42,7 +42,8 @@ class CorrectiveActionController extends Controller
                 'responsible' => $action->responsibleUser?->name,
                 'priority' => $action->priority->label(),
                 'due_date' => $action->due_date?->toDateString(),
-                'is_overdue' => $action->due_date !== null && $action->due_date->isPast() && $action->status !== CorrectiveActionStatus::Verified,
+                // Same rule as the Overdue queue and escalation: due before today, not verified.
+                'is_overdue' => $action->due_date !== null && $action->isOverdue(),
                 'status' => ['value' => $action->status->value, 'label' => $action->status->label()],
             ]);
 
