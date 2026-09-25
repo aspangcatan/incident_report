@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import WorkflowActionsPanel from '@/Components/Incidents/WorkflowActionsPanel.vue';
+import AssessmentPanel from '@/Components/Incidents/AssessmentPanel.vue';
 import InvestigationPanel from '@/Components/Incidents/InvestigationPanel.vue';
 import CapaPanel from '@/Components/Incidents/CapaPanel.vue';
 import ApprovalPanel from '@/Components/Incidents/ApprovalPanel.vue';
@@ -49,7 +50,7 @@ function switchTab(value) {
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-sm">
             <div class="flex flex-wrap items-center gap-space-sm">
                 <StatusBadge :status="incident.status" />
-                <SeverityBadge v-if="incident.severity" :severity="incident.severity" />
+                <SeverityBadge :severity="incident.severity" />
                 <span v-if="incident.is_sentinel_event" class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">
                     Sentinel Event
                 </span>
@@ -103,6 +104,8 @@ function switchTab(value) {
         </div>
 
         <div v-if="activeTab === 'overview'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
+            <AssessmentPanel :incident="incident" :can="can" :departments="departments" />
+
             <div class="flex flex-col gap-1">
                 <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Executive Narrative Summary</span>
                 <p class="font-body-md text-body-md text-on-surface">{{ incident.summary || '—' }}</p>
@@ -152,19 +155,6 @@ function switchTab(value) {
                         {{ factor.label }}
                     </span>
                 </div>
-            </div>
-
-            <div v-if="incident.actions?.length" class="flex flex-col gap-2">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Immediate Actions Taken</span>
-                <div v-for="action in incident.actions" :key="action.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col">
-                    <span class="font-body-md text-body-md text-on-surface">{{ action.description }}</span>
-                    <span class="font-body-sm text-body-sm text-on-surface-variant">{{ action.responsible_name }} — {{ action.status }}</span>
-                </div>
-            </div>
-
-            <div v-if="incident.recommendations" class="flex flex-col gap-1">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Recommendations / Preventive Measures</span>
-                <p class="font-body-md text-body-md text-on-surface">{{ incident.recommendations }}</p>
             </div>
         </div>
 

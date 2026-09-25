@@ -21,7 +21,7 @@ function confirmMarkReviewed() {
 
 function confirmReturnForRevision() {
     if (!reviewForm.comments.trim()) {
-        reviewForm.setError('comments', 'A comment is required when returning an incident for revision.');
+        reviewForm.setError('comments', 'A comment is required when returning an incident to the department.');
         return;
     }
     showReturnConfirm.value = true;
@@ -36,7 +36,7 @@ function markReviewed() {
 }
 
 function returnForRevision() {
-    reviewForm.post(`/incidents/${props.incident.id}/return`, {
+    reviewForm.post(`/incidents/${props.incident.id}/return-to-department`, {
         preserveScroll: true,
         onFinish: () => (showReturnConfirm.value = false),
     });
@@ -52,7 +52,7 @@ function assignInvestigator() {
 
 <template>
     <div
-        v-if="can.review && ['submitted', 'for_review'].includes(incident.status)"
+        v-if="can.review && incident.status === 'for_review'"
         class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-sm"
     >
         <h2 class="font-title-lg text-title-lg text-primary font-bold">Review This Incident</h2>
@@ -61,7 +61,7 @@ function assignInvestigator() {
             id="review_comments"
             v-model="reviewForm.comments"
             rows="3"
-            placeholder="Review comments (required if returning for revision)"
+            placeholder="Review comments (required if returning to the department)"
             class="w-full p-3 rounded-lg bg-surface-container-low"
         />
         <span v-if="reviewForm.errors.comments" class="font-body-sm text-body-sm text-error">{{ reviewForm.errors.comments }}</span>
@@ -80,7 +80,7 @@ function assignInvestigator() {
                 class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md disabled:opacity-60"
                 @click="confirmReturnForRevision"
             >
-                Return for Revision
+                Return to Department
             </button>
         </div>
     </div>
@@ -124,9 +124,9 @@ function assignInvestigator() {
 
     <ConfirmationDialog
         :show="showReturnConfirm"
-        title="Return this incident for revision?"
-        message="This sends the report back to the reporter as a draft for editing. They will need to resubmit it."
-        confirm-label="Return for Revision"
+        title="Return this incident to the department?"
+        message="This sends the report back to the department's assessment stage for edits. They will need to complete the assessment again."
+        confirm-label="Return to Department"
         :processing="reviewForm.processing"
         @cancel="showReturnConfirm = false"
         @confirm="returnForRevision"

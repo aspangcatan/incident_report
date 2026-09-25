@@ -8,15 +8,12 @@ import Step2IncidentDetails from '@/Components/Incidents/Step2IncidentDetails.vu
 import Step3PeopleInvolved from '@/Components/Incidents/Step3PeopleInvolved.vue';
 import Step4WitnessesPolice from '@/Components/Incidents/Step4WitnessesPolice.vue';
 import Step5Description from '@/Components/Incidents/Step5Description.vue';
-import Step6ActionsTaken from '@/Components/Incidents/Step6ActionsTaken.vue';
-import Step7Recommendations from '@/Components/Incidents/Step7Recommendations.vue';
 import Step8Review from '@/Components/Incidents/Step8Review.vue';
 
 const props = defineProps({
     incident: { type: Object, default: null },
     incidentTypes: { type: Array, required: true },
     departments: { type: Array, required: true },
-    contributingFactors: { type: Array, required: true },
 });
 
 const steps = [
@@ -25,8 +22,6 @@ const steps = [
     { title: 'People Involved', component: Step3PeopleInvolved },
     { title: 'Witnesses & Police', component: Step4WitnessesPolice },
     { title: 'Description', component: Step5Description },
-    { title: 'Actions Taken', component: Step6ActionsTaken },
-    { title: 'Recommendations', component: Step7Recommendations },
     { title: 'Review & Submit', component: Step8Review },
 ];
 
@@ -35,12 +30,10 @@ const showConfirm = ref(false);
 
 const STEP_FIELDS = {
     1: ['legal_attestation'],
-    2: ['incident_type_id', 'department_id', 'occurred_at', 'location', 'severity'],
+    2: ['incident_type_id', 'department_id', 'occurred_at', 'location'],
     3: ['individuals'],
     4: ['witnesses', 'police_notified', 'police_station', 'police_officer_in_charge', 'police_blotter_no', 'police_notified_at'],
-    5: ['summary', 'narrative_events', 'contributing_factor_ids', 'attachments'],
-    6: ['actions_taken'],
-    7: ['recommendations'],
+    5: ['summary', 'narrative_events', 'attachments'],
 };
 
 function firstStepWithError() {
@@ -60,11 +53,9 @@ const form = useForm({
     action: 'draft',
     incident_type_id: props.incident?.incident_type_id ?? null,
     department_id: props.incident?.department_id ?? null,
-    severity: props.incident?.severity ?? null,
     occurred_at: props.incident?.occurred_at?.slice(0, 16) ?? '',
     location: props.incident?.location ?? '',
     summary: props.incident?.summary ?? '',
-    recommendations: props.incident?.recommendations ?? '',
     legal_attestation: !!props.incident?.legal_attestation_at,
     police_notified: props.incident?.police_notified ?? false,
     police_station: props.incident?.police_station ?? '',
@@ -74,8 +65,6 @@ const form = useForm({
     individuals: props.incident?.individuals ?? [],
     witnesses: props.incident?.witnesses ?? [],
     narrative_events: props.incident?.narrative_events ?? [],
-    actions_taken: props.incident?.actions ?? [],
-    contributing_factor_ids: props.incident?.contributing_factors?.map((f) => f.id) ?? [],
     attachments: [],
 });
 
@@ -153,7 +142,6 @@ function confirmSubmit() {
                 :form="form"
                 :incident-types="incidentTypes"
                 :departments="departments"
-                :contributing-factors="contributingFactors"
             />
         </div>
 

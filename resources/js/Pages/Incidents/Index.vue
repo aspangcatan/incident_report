@@ -71,8 +71,7 @@ function switchScope(value) {
                             <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ incident.incident_type?.name ?? '—' }}</td>
                             <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ incident.department?.name ?? '—' }}</td>
                             <td class="p-3">
-                                <SeverityBadge v-if="incident.severity" :severity="incident.severity" />
-                                <span v-else class="font-body-sm text-body-sm text-outline">—</span>
+                                <SeverityBadge :severity="incident.severity" />
                             </td>
                             <td class="p-3"><StatusBadge :status="incident.status" /></td>
                         </tr>

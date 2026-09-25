@@ -1,7 +1,6 @@
 <script setup>
 defineProps({
     form: { type: Object, required: true },
-    contributingFactors: { type: Array, required: true },
 });
 
 let nextEventKey = 0;
@@ -45,16 +44,6 @@ function removeAttachment(form, index) {
                 <label class="sr-only" :for="'event-description-' + index">What happened</label>
                 <input :id="'event-description-' + index" v-model="event.description" type="text" placeholder="What happened" class="flex-1 p-2 rounded bg-surface-container-lowest" />
                 <button type="button" class="text-error" @click="removeEvent(form, index)">✕</button>
-            </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-            <label class="font-label-md text-label-md text-on-surface font-semibold">Contributing Factors</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                <label v-for="factor in contributingFactors" :key="factor.id" class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low cursor-pointer">
-                    <input v-model="form.contributing_factor_ids" type="checkbox" :value="factor.id" class="accent-primary rounded" />
-                    <span class="font-body-sm text-body-sm text-on-surface">{{ factor.label }}</span>
-                </label>
             </div>
         </div>
 

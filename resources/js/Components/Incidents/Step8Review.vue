@@ -1,6 +1,4 @@
 <script setup>
-import SeverityBadge from '@/Components/SeverityBadge.vue';
-
 defineProps({
     form: { type: Object, required: true },
     incidentTypes: { type: Array, required: true },
@@ -18,7 +16,7 @@ function departmentName(departments, id) {
 
 <template>
     <div class="flex flex-col gap-space-lg">
-        <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 8: Review & Submit</h2>
+        <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 6: Review & Submit</h2>
 
         <div class="p-space-md rounded-lg bg-surface-container-low flex flex-col gap-2">
             <div class="flex items-center gap-2">
@@ -28,10 +26,6 @@ function departmentName(departments, id) {
             <div class="flex items-center gap-2">
                 <span class="font-label-sm text-body-sm text-outline">Department:</span>
                 <span class="font-body-md text-body-md text-on-surface">{{ departmentName(departments, form.department_id) }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="font-label-sm text-body-sm text-outline">Severity:</span>
-                <SeverityBadge v-if="form.severity" :severity="form.severity" />
             </div>
             <div class="flex items-center gap-2">
                 <span class="font-label-sm text-body-sm text-outline">Location:</span>
