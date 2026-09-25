@@ -6,6 +6,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CorrectiveActionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuestReportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentWorkflowController;
 use App\Http\Controllers\InvestigationController;
@@ -16,6 +17,12 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 });
+
+// Public incident reporting for patients, relatives and visitors (no login) —
+// intentionally outside both the 'guest' (unauthenticated-only) and 'auth' groups.
+Route::get('/report', [GuestReportController::class, 'create'])->name('guest-report.create');
+Route::post('/report', [GuestReportController::class, 'store'])->middleware('throttle:3,60')->name('guest-report.store');
+Route::get('/report/submitted', [GuestReportController::class, 'submitted'])->name('guest-report.submitted');
 
 Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');

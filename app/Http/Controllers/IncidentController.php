@@ -192,6 +192,7 @@ class IncidentController extends Controller
                 'review' => $user->can('review', $incident),
                 'assess' => $user->can('assess', $incident),
                 'completeAssessment' => $user->can('completeAssessment', $incident),
+                'returnToReporter' => $user->can('returnToReporter', $incident),
                 'changeDepartment' => $user->can('changeDepartment', $incident),
                 'assign' => $user->can('assign', $incident),
                 'startInvestigation' => $canStartInvestigation,

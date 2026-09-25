@@ -8,7 +8,7 @@ class ReturnIncidentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('completeAssessment', $this->route('incident'));
+        return $this->user()->can('returnToReporter', $this->route('incident'));
     }
 
     public function rules(): array

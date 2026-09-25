@@ -112,6 +112,12 @@ class IncidentPolicy
             && $incident->department_id === $user->department_id;
     }
 
+    /** Guests have no account, so their reports can't go back to them as a draft. */
+    public function returnToReporter(User $user, Incident $incident): bool
+    {
+        return $incident->reporter_id !== null && $this->completeAssessment($user, $incident);
+    }
+
     public function changeDepartment(User $user, Incident $incident): bool
     {
         return $incident->status === IncidentStatus::Submitted && $this->isQualityStaff($user);
