@@ -350,7 +350,7 @@ class IncidentWorkflowTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_assigning_requires_a_user_with_the_investigator_role(): void
+    public function test_assigning_rejects_someone_who_is_neither_an_investigator_nor_in_the_department(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
@@ -391,6 +391,26 @@ class IncidentWorkflowTest extends TestCase
             ->post("/incidents/{$incident->id}/assign", ['assigned_investigator_id' => $hrisAdmin->id])
             ->assertSessionHasErrors(['assigned_investigator_id']);
         $this->assertNull($incident->fresh()->assigned_investigator_id);
+    }
+
+    public function test_a_staff_member_of_the_incidents_department_can_be_assigned_and_finds_it_in_assigned_to_me(): void
+    {
+        $department = Department::factory()->create();
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $colleague = User::factory()->create(['department_id' => $department->id]);
+        $incident = $this->submittedIncident($this->makeReporter(), $department);
+        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
+
+        $this->actingAs($supervisor)
+            ->post("/incidents/{$incident->id}/assign", ['assigned_investigator_id' => $colleague->id])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($colleague->id, $incident->fresh()->assigned_investigator_id);
+        $this->actingAs($colleague)->get('/incidents?scope=assigned-to-me')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('incidents.data.0.id', $incident->id)
+                ->where('auth.can.investigationWorkspace', true));
     }
 
     public function test_a_supervisor_can_assign_a_reviewed_incident_via_http(): void

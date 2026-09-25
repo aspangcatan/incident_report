@@ -102,17 +102,23 @@ class IncidentShowUserPropsTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('potentialResponsibleUsers', []));
     }
 
-    public function test_investigators_are_active_investigators_as_id_name_and_label_only(): void
+    public function test_investigators_are_active_investigators_and_department_staff_as_id_name_and_label_only(): void
     {
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         User::factory()->inactive()->create(['role' => Role::Investigator]);
+        $colleague = User::factory()->create(['department_id' => $this->department->id]);
+        User::factory()->inactive()->create(['department_id' => $this->department->id]);
+        User::factory()->create(['department_id' => Department::factory()->create()->id]);
         $incident = $this->reviewedIncident();
 
         $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
 
         $this->assertEntryKeys($props['investigators'], ['id', 'name', 'label']);
-        $this->assertSame([$investigator->id], array_column($props['investigators'], 'id'));
+        // The reporter and the supervisor who reviewed it are department staff too.
+        $expected = User::active()->where('section', $this->department->id)->pluck('id')->push($investigator->id)->all();
+        $this->assertContains($colleague->id, $expected);
+        $this->assertEqualsCanonicalizing($expected, array_column($props['investigators'], 'id'));
     }
 
     public function test_potential_team_members_are_id_name_role_and_label_only(): void

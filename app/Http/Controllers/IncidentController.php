@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IncidentStatus;
-use App\Enums\Role;
 use App\Http\Requests\Incidents\StoreIncidentRequest;
 use App\Http\Requests\Incidents\UpdateIncidentRequest;
 use App\Http\Resources\ApprovalResource;
@@ -187,7 +186,7 @@ class IncidentController extends Controller
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
             'investigation' => $investigation ? new InvestigationResource($investigation) : null,
             'investigators' => $user->can('assign', $incident)
-                ? $pickerEntries($directory()->filter(fn (User $candidate) => $candidate->role === Role::Investigator), ['id', 'name'])
+                ? $pickerEntries($directory()->filter(fn (User $candidate) => $candidate->canInvestigate($incident)), ['id', 'name'])
                 : [],
             'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
                 ? $pickerEntries($directory(), ['id', 'name', 'role'])

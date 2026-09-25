@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Incidents;
 
-use App\Enums\Role;
+use App\Models\User;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class AssignIncidentRequest extends FormRequest
 {
@@ -18,11 +18,15 @@ class AssignIncidentRequest extends FormRequest
         return [
             'assigned_investigator_id' => [
                 'required',
-                Rule::exists(config('tdh.connection') . '.user_priv', 'user_id')
-                    ->where('syscode', config('tdh.syscode'))
-                    ->where('level', Role::Investigator->value),
-                // The IR privilege row alone is not enough: the account must still be active.
-                Rule::exists(config('tdh.connection') . '.users', 'id')->where('status', '1'),
+                'integer',
+                // Same rule as the picker on the incident page (User::canInvestigate()).
+                function (string $attribute, mixed $value, Closure $fail) {
+                    $candidate = User::find($value);
+
+                    if ($candidate === null || ! $candidate->canInvestigate($this->route('incident'))) {
+                        $fail("Choose an active investigator or a staff member of this incident's department.");
+                    }
+                },
             ],
             'target_closure_date' => ['nullable', 'date', 'after:today'],
         ];

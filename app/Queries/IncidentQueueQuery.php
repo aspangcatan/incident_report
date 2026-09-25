@@ -45,7 +45,9 @@ final class IncidentQueueQuery
 
     public static function investigationWorkspace(User $user): bool
     {
-        return in_array($user->role, [Role::Investigator, Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true);
+        return in_array($user->role, [Role::Investigator, Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true)
+            // Department staff can be assigned to investigate too; they need the workspace to find it.
+            || Incident::where('assigned_investigator_id', $user->id)->exists();
     }
 
     public static function builder(string $queue, User $user): Builder

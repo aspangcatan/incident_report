@@ -196,6 +196,14 @@ class User extends Authenticatable
         return $query->where($this->qualifyColumn('status'), '1');
     }
 
+    /** Who can be assigned to investigate an incident: an active IR investigator, or active staff of its department. */
+    public function canInvestigate(Incident $incident): bool
+    {
+        return $this->is_active
+            && ($this->role === Role::Investigator
+                || ($incident->department_id !== null && $this->department_id === $incident->department_id));
+    }
+
     /** Validation: an id of an active tdh user (see scopeActive()). */
     public static function activeRule(): Exists
     {
