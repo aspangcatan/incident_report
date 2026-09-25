@@ -47,6 +47,7 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::patch('/investigations/{investigation}/findings/{finding}', [InvestigationController::class, 'updateFinding'])->name('investigations.findings.update');
     Route::delete('/investigations/{investigation}/findings/{finding}', [InvestigationController::class, 'deleteFinding'])->name('investigations.findings.destroy');
     Route::post('/investigations/{investigation}/complete', [InvestigationController::class, 'complete'])->name('investigations.complete');
+    Route::get('/corrective-actions', [CorrectiveActionController::class, 'index'])->name('corrective-actions.index');
     Route::post('/incidents/{incident}/corrective-actions', [CorrectiveActionController::class, 'store'])->name('corrective-actions.store');
     Route::patch('/corrective-actions/{correctiveAction}', [CorrectiveActionController::class, 'update'])->name('corrective-actions.update');
     Route::post('/corrective-actions/{correctiveAction}/progress', [CorrectiveActionController::class, 'progress'])->name('corrective-actions.progress');

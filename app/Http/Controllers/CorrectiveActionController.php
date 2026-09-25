@@ -7,17 +7,51 @@ use App\Actions\CorrectiveActions\CreateCorrectiveActionAction;
 use App\Actions\CorrectiveActions\MarkCorrectiveActionInProgressAction;
 use App\Actions\CorrectiveActions\UpdateCorrectiveActionAction;
 use App\Actions\CorrectiveActions\VerifyCorrectiveActionAction;
+use App\Enums\CorrectiveActionStatus;
 use App\Http\Requests\CorrectiveActions\CompleteCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\CreateCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\UpdateCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\VerifyCorrectiveActionRequest;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
+use App\Queries\CorrectiveActionQueueQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CorrectiveActionController extends Controller
 {
+    public function index(Request $request): Response
+    {
+        $queue = $request->string('queue', 'open')->toString();
+        abort_unless(CorrectiveActionQueueQuery::exists($queue), 404);
+        abort_unless(CorrectiveActionQueueQuery::allowed($request->user()), 403);
+
+        [$title, $description] = CorrectiveActionQueueQuery::QUEUES[$queue];
+
+        $actions = CorrectiveActionQueueQuery::builder($queue, $request->user())
+            ->with(['incident:id,incident_number', 'responsibleUser'])
+            ->orderBy('due_date')->orderBy('id')
+            ->paginate(15)->withQueryString()
+            ->through(fn (CorrectiveAction $action) => [
+                'id' => $action->id,
+                'capa_number' => $action->capa_number,
+                'description' => $action->description,
+                'incident' => ['id' => $action->incident->id, 'incident_number' => $action->incident->incident_number],
+                'responsible' => $action->responsibleUser?->name,
+                'priority' => $action->priority->label(),
+                'due_date' => $action->due_date?->toDateString(),
+                'is_overdue' => $action->due_date !== null && $action->due_date->isPast() && $action->status !== CorrectiveActionStatus::Verified,
+                'status' => ['value' => $action->status->value, 'label' => $action->status->label()],
+            ]);
+
+        return Inertia::render('CorrectiveActions/Index', [
+            'actions' => $actions,
+            'queue' => ['key' => $queue, 'title' => $title, 'description' => $description],
+        ]);
+    }
+
     public function store(CreateCorrectiveActionRequest $request, Incident $incident, CreateCorrectiveActionAction $action): RedirectResponse
     {
         $action($incident, $request->toDto());
