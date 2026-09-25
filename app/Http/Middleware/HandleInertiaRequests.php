@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Role;
 use App\Models\Incident;
+use App\Models\User;
 use App\Queries\CorrectiveActionQueueQuery;
 use App\Queries\IncidentQueueQuery;
 use Illuminate\Http\Request;
@@ -56,6 +57,29 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'unreadNotificationsCount' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
+            'queueCounts' => fn () => ($user = $request->user()) ? $this->queueCounts($user) : [],
         ]);
+    }
+
+    /** Badge counts, from the same builders the queue pages use. Zero counts are omitted. */
+    private function queueCounts(User $user): array
+    {
+        $counts = [];
+
+        foreach (IncidentQueueQuery::QUEUES as $queue => [, , $badge]) {
+            if ($badge && IncidentQueueQuery::allowed($queue, $user)) {
+                $counts[$queue] = IncidentQueueQuery::builder($queue, $user)->count();
+            }
+        }
+
+        if (CorrectiveActionQueueQuery::allowed($user)) {
+            foreach (CorrectiveActionQueueQuery::QUEUES as $queue => [, , $badge]) {
+                if ($badge) {
+                    $counts[$queue] = CorrectiveActionQueueQuery::builder($queue, $user)->count();
+                }
+            }
+        }
+
+        return array_filter($counts);
     }
 }
