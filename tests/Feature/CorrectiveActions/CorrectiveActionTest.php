@@ -12,6 +12,7 @@ use App\Enums\IncidentStatus;
 use App\Enums\InvestigationMethodology;
 use App\Enums\Role;
 use App\Enums\Severity;
+use App\Models\CorrectiveAction;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
@@ -360,7 +361,7 @@ class CorrectiveActionTest extends TestCase
         $completer = User::factory()->create(['role' => Role::Supervisor]);
         $this->actingAs($completer);
         app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
-        $otherSupervisor = User::factory()->create(['role' => Role::Supervisor]);
+        $otherSupervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
 
         $this->assertTrue($otherSupervisor->can('verify', $capa->fresh()));
         $this->assertFalse($completer->can('verify', $capa->fresh()));
@@ -592,5 +593,145 @@ class CorrectiveActionTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->actingAs($qso)->patch("/corrective-actions/{$capa->id}", $payload + ['responsible_user_id' => $retired->id])
             ->assertSessionHasErrors(['responsible_user_id']);
+    }
+
+    private function capaPayload(array $extra = []): array
+    {
+        return array_merge([
+            'description' => 'Implement double-check checklist.',
+            'action_type' => 'corrective',
+            'priority' => 'high',
+            'due_date' => now()->addDays(14)->toDateString(),
+        ], $extra);
+    }
+
+    private function completedCapa(Incident $incident): CorrectiveAction
+    {
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData());
+        $this->actingAs(User::factory()->create(['department_id' => $incident->department_id]));
+        app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+
+        return $capa->fresh();
+    }
+
+    public function test_the_department_head_of_the_incidents_department_can_create_and_edit_a_corrective_action_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+
+        $this->actingAs($head)->post("/incidents/{$incident->id}/corrective-actions", $this->capaPayload())
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $capa = CorrectiveAction::where('incident_id', $incident->id)->sole();
+
+        $this->actingAs($head)->patch("/corrective-actions/{$capa->id}", $this->capaPayload(['description' => 'Revised.']))
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame('Revised.', $capa->fresh()->description);
+    }
+
+    public function test_a_department_head_of_another_department_cannot_create_or_edit_a_corrective_action(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData());
+        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+
+        $this->actingAs($otherHead)->post("/incidents/{$incident->id}/corrective-actions", $this->capaPayload())
+            ->assertForbidden();
+        $this->actingAs($otherHead)->patch("/corrective-actions/{$capa->id}", $this->capaPayload(['description' => 'Revised.']))
+            ->assertForbidden();
+    }
+
+    public function test_a_supervisor_of_the_incidents_department_cannot_create_or_edit_a_corrective_action(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData());
+        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
+
+        $this->assertFalse($supervisor->can('create', [CorrectiveAction::class, $incident]));
+        $this->assertFalse($supervisor->can('update', $capa));
+    }
+
+    public function test_the_responsible_user_must_be_active_staff_of_the_incidents_department(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $outsider = User::factory()->create(['department_id' => Department::factory()->create()->id]);
+        $colleague = User::factory()->create(['department_id' => $incident->department_id]);
+
+        $this->actingAs($qso)->post("/incidents/{$incident->id}/corrective-actions", $this->capaPayload(['responsible_user_id' => $outsider->id]))
+            ->assertSessionHasErrors(['responsible_user_id']);
+        $this->actingAs($qso)->post("/incidents/{$incident->id}/corrective-actions", $this->capaPayload(['responsible_user_id' => $colleague->id]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('corrective_actions', ['incident_id' => $incident->id, 'responsible_user_id' => $colleague->id]);
+        $this->assertDatabaseMissing('corrective_actions', ['responsible_user_id' => $outsider->id]);
+    }
+
+    public function test_updating_rejects_a_new_responsible_user_from_another_department(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData());
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $outsider = User::factory()->create(['department_id' => Department::factory()->create()->id]);
+        $colleague = User::factory()->create(['department_id' => $incident->department_id]);
+
+        $this->actingAs($qso)->patch("/corrective-actions/{$capa->id}", $this->capaPayload(['responsible_user_id' => $outsider->id]))
+            ->assertSessionHasErrors(['responsible_user_id']);
+        $this->actingAs($qso)->patch("/corrective-actions/{$capa->id}", $this->capaPayload(['responsible_user_id' => $colleague->id]))
+            ->assertSessionHasNoErrors();
+        $this->assertSame($colleague->id, $capa->fresh()->responsible_user_id);
+    }
+
+    public function test_a_supervisor_or_department_head_of_the_incidents_department_can_verify(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $capa = $this->completedCapa($incident);
+        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+
+        $this->assertTrue($supervisor->can('verify', $capa));
+        $this->assertTrue($head->can('verify', $capa));
+
+        $this->actingAs($supervisor)->post("/corrective-actions/{$capa->id}/verify", ['verification_comments' => 'Confirmed.'])
+            ->assertRedirect();
+        $this->assertSame(CorrectiveActionStatus::Verified, $capa->fresh()->status);
+    }
+
+    public function test_a_supervisor_or_department_head_of_another_department_cannot_verify(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $capa = $this->completedCapa($incident);
+        $otherDepartment = Department::factory()->create()->id;
+        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $otherDepartment]);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $otherDepartment]);
+
+        $this->assertFalse($supervisor->can('verify', $capa));
+        $this->assertFalse($head->can('verify', $capa));
+        $this->actingAs($supervisor)->post("/corrective-actions/{$capa->id}/verify", ['verification_comments' => 'x'])
+            ->assertForbidden();
+    }
+
+    public function test_quality_staff_can_still_create_edit_and_verify_any_corrective_action(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $admin = User::factory()->create(['role' => Role::Administrator]);
+        $open = app(CorrectiveActionService::class)->create($incident, $this->capaData());
+        $completed = $this->completedCapa($incident->fresh());
+
+        foreach ([$qso, $admin] as $user) {
+            $this->assertTrue($user->can('create', [CorrectiveAction::class, $incident]));
+            $this->assertTrue($user->can('update', $open));
+            $this->assertTrue($user->can('verify', $completed));
+        }
+    }
+
+    public function test_the_completer_cannot_verify_even_as_department_head_of_the_incidents_department(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $head->id]));
+        $this->actingAs($head)->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.']);
+
+        $this->assertFalse($head->can('verify', $capa->fresh()));
     }
 }

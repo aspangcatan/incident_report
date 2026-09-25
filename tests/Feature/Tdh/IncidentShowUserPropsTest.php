@@ -140,20 +140,52 @@ class IncidentShowUserPropsTest extends TestCase
      */
     public function test_picker_labels_disambiguate_same_name_users(): void
     {
+        // Read from the investigator picker: it can list people from any
+        // section (and none), which the CAPA responsible picker no longer does.
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
-        $incident = $this->submittedIncident();
-        $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
+        $incident = $this->reviewedIncident();
 
         $pharmacy = Department::factory()->create(['description' => 'Pharmacy']);
-        $inSection = User::factory()->create(['fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => $pharmacy->id]);
-        $withDesignation = User::factory()->create(['fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => null, 'other_designation' => 'Nurse II']);
-        $bare = User::factory()->create(['fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => null]);
+        $inSection = User::factory()->create(['role' => Role::Investigator, 'fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => $pharmacy->id]);
+        $withDesignation = User::factory()->create(['role' => Role::Investigator, 'fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => null, 'other_designation' => 'Nurse II']);
+        $bare = User::factory()->create(['role' => Role::Investigator, 'fname' => 'Ana', 'mname' => null, 'lname' => 'Reyes', 'department_id' => null]);
 
         $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
-        $labels = array_column($props['potentialResponsibleUsers'], 'label', 'id');
+        $labels = array_column($props['investigators'], 'label', 'id');
 
         $this->assertSame('Ana Reyes — Pharmacy', $labels[$inSection->id]);
         $this->assertSame('Ana Reyes — Nurse II', $labels[$withDesignation->id]);
         $this->assertSame("Ana Reyes — #{$bare->id}", $labels[$bare->id]);
+    }
+
+    public function test_responsible_users_are_only_active_staff_of_the_incidents_department(): void
+    {
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $colleague = User::factory()->create(['department_id' => $this->department->id]);
+        $retired = User::factory()->inactive()->create(['department_id' => $this->department->id]);
+        $outsider = User::factory()->create(['department_id' => Department::factory()->create()->id]);
+        $noSection = User::factory()->create(['department_id' => null]);
+        $incident = $this->submittedIncident();
+        $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
+
+        $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
+        $ids = array_column($props['potentialResponsibleUsers'], 'id');
+
+        $this->assertEqualsCanonicalizing([$this->reporter->id, $colleague->id], $ids);
+        $this->assertNotContains($retired->id, $ids);
+        $this->assertNotContains($outsider->id, $ids);
+        $this->assertNotContains($noSection->id, $ids);
+    }
+
+    public function test_a_department_head_of_the_incidents_department_gets_responsible_users(): void
+    {
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $incident = $this->submittedIncident();
+        $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
+
+        $props = $this->actingAs($head)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
+
+        $this->assertTrue($props['can']['createCorrectiveAction']);
+        $this->assertEqualsCanonicalizing([$this->reporter->id, $head->id], array_column($props['potentialResponsibleUsers'], 'id'));
     }
 }

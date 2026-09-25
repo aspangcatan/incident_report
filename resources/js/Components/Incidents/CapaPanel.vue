@@ -16,9 +16,14 @@ const actionTypeOptions = { corrective: 'Corrective', preventive: 'Preventive', 
 const priorityOptions = { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' };
 
 const showCreateForm = ref(false);
+// The incident's department owns its CAPAs, so it is the default
+// (when it is one of the selectable departments).
+const defaultResponsibleDepartmentId = props.departments.some((department) => department.id === props.incident.department_id)
+    ? props.incident.department_id
+    : null;
 const createForm = useForm({
     description: '', action_type: 'corrective', priority: 'medium', due_date: '',
-    responsible_user_id: null, responsible_department_id: null, root_cause_finding_id: null,
+    responsible_user_id: null, responsible_department_id: defaultResponsibleDepartmentId, root_cause_finding_id: null,
 });
 
 function createCorrectiveAction() {

@@ -199,7 +199,7 @@ class IncidentController extends Controller
             // Only CapaPanel's create form (can.createCorrectiveAction) and per-action
             // edit form (action.can.update) read this list.
             'potentialResponsibleUsers' => ($canCreateCorrectiveAction || $canEditAnyCorrectiveAction)
-                ? $pickerEntries($directory(), ['id', 'name'])
+                ? $pickerEntries($directory()->filter(fn (User $candidate) => $candidate->canBeResponsibleFor($incident)), ['id', 'name'])
                 : [],
             'departments' => Department::options(),
             'can' => [

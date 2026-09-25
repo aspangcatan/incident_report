@@ -26,7 +26,12 @@ class CreateCorrectiveActionRequest extends FormRequest
             'action_type' => ['required', new Enum(CorrectiveActionType::class)],
             'priority' => ['required', new Enum(CorrectiveActionPriority::class)],
             'due_date' => ['required', 'date', 'after:today'],
-            'responsible_user_id' => ['nullable', User::activeRule()],
+            // Active staff of the incident's department (same check as the picker).
+            'responsible_user_id' => ['nullable', 'integer', function (string $attribute, $value, $fail) {
+                if (! User::find($value)?->canBeResponsibleFor($this->route('incident'))) {
+                    $fail('The responsible person must be active staff of the incident\'s department.');
+                }
+            }],
             'responsible_department_id' => ['nullable', Department::selectableRule()],
             'root_cause_finding_id' => [
                 'nullable',

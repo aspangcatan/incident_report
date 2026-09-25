@@ -204,6 +204,17 @@ class User extends Authenticatable
                 || ($incident->department_id !== null && $this->department_id === $incident->department_id));
     }
 
+    /**
+     * Who may be the responsible person on a CAPA for this incident: active
+     * staff of the incident's department (the department does the work).
+     */
+    public function canBeResponsibleFor(Incident $incident): bool
+    {
+        return $this->is_active
+            && $incident->department_id !== null
+            && $this->department_id === $incident->department_id;
+    }
+
     /** Validation: an id of an active tdh user (see scopeActive()). */
     public static function activeRule(): Exists
     {
