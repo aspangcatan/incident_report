@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Incidents\AssignIncidentRequest;
+use App\Http\Requests\Incidents\CompleteAssessmentRequest;
 use App\Http\Requests\Incidents\ReturnIncidentRequest;
+use App\Http\Requests\Incidents\ReturnToDepartmentRequest;
 use App\Http\Requests\Incidents\ReviewIncidentRequest;
+use App\Http\Requests\Incidents\SaveAssessmentRequest;
 use App\Models\Incident;
 use App\Models\User;
 use App\Services\IncidentService;
@@ -39,5 +42,27 @@ class IncidentWorkflowController extends Controller
         $this->incidents->assignInvestigator($incident, $investigator, $request->validated('target_closure_date'));
 
         return redirect()->route('incidents.show', $incident)->with('success', 'Investigator assigned.');
+    }
+
+    public function saveAssessment(SaveAssessmentRequest $request, Incident $incident): RedirectResponse
+    {
+        $this->incidents->saveAssessment($incident, $request->assessmentData());
+
+        return back()->with('success', 'Assessment saved.');
+    }
+
+    public function completeAssessment(CompleteAssessmentRequest $request, Incident $incident): RedirectResponse
+    {
+        $this->incidents->saveAssessment($incident, $request->assessmentData());
+        $this->incidents->completeAssessment($incident->fresh(), $request->user());
+
+        return redirect()->route('incidents.show', $incident)->with('success', 'Assessment completed — the incident is ready for review.');
+    }
+
+    public function returnToDepartment(ReturnToDepartmentRequest $request, Incident $incident): RedirectResponse
+    {
+        $this->incidents->returnToDepartment($incident, $request->user(), $request->validated('comments'));
+
+        return redirect()->route('incidents.show', $incident)->with('success', 'Incident returned to the department.');
     }
 }

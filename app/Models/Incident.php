@@ -158,6 +158,12 @@ class Incident extends Model
         return $query->where(function (Builder $q) use ($user) {
             $q->where('reporter_id', $user->id)
                 ->orWhere('assigned_investigator_id', $user->id);
+
+            if ($user->department_id !== null) {
+                $q->orWhere(fn (Builder $q) => $q
+                    ->where('status', IncidentStatus::Submitted)
+                    ->where('department_id', $user->department_id));
+            }
         });
     }
 }

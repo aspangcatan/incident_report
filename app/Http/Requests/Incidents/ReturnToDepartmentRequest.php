@@ -4,11 +4,11 @@ namespace App\Http\Requests\Incidents;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ReturnIncidentRequest extends FormRequest
+class ReturnToDepartmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('completeAssessment', $this->route('incident'));
+        return $this->user()->can('review', $this->route('incident'));
     }
 
     public function rules(): array

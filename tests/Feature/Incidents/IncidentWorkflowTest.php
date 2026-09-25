@@ -45,6 +45,14 @@ class IncidentWorkflowTest extends TestCase
         return $incident->fresh();
     }
 
+    private function assessedIncident(User $reporter, ?Department $department = null): Incident
+    {
+        $incident = $this->submittedIncident($reporter, $department);
+        app(IncidentService::class)->completeAssessment($incident, User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]));
+
+        return $incident->fresh();
+    }
+
     public function test_creating_a_draft_writes_a_created_audit_log_entry(): void
     {
         $reporter = $this->makeReporter();
@@ -165,23 +173,23 @@ class IncidentWorkflowTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_can_review_a_submitted_incident_in_their_own_department(): void
+    public function test_supervisor_can_review_an_assessed_incident_in_their_own_department(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
-        $incident = $this->submittedIncident($reporter, $department);
+        $incident = $this->assessedIncident($reporter, $department);
 
         $this->assertTrue($supervisor->can('review', $incident));
     }
 
-    public function test_supervisor_cannot_review_a_submitted_incident_from_a_different_department(): void
+    public function test_supervisor_cannot_review_an_assessed_incident_from_a_different_department(): void
     {
         $reporter = $this->makeReporter();
         $incidentDepartment = Department::factory()->create();
         $supervisorDepartment = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $supervisorDepartment->id]);
-        $incident = $this->submittedIncident($reporter, $incidentDepartment);
+        $incident = $this->assessedIncident($reporter, $incidentDepartment);
 
         $this->assertFalse($supervisor->can('review', $incident));
     }
@@ -218,7 +226,7 @@ class IncidentWorkflowTest extends TestCase
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $management = User::factory()->create(['role' => \App\Enums\Role::Management, 'department_id' => $department->id]);
-        $incident = $this->submittedIncident($reporter, $department);
+        $incident = $this->assessedIncident($reporter, $department);
 
         $this->assertFalse($management->can('review', $incident));
         $this->assertFalse($management->can('assign', $incident));
@@ -301,12 +309,12 @@ class IncidentWorkflowTest extends TestCase
         \Illuminate\Support\Facades\Notification::assertNotSentTo($supervisor, \App\Notifications\IncidentSubmittedNotification::class);
     }
 
-    public function test_a_supervisor_can_mark_a_submitted_incident_reviewed_via_http(): void
+    public function test_a_supervisor_can_mark_an_assessed_incident_reviewed_via_http(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
-        $incident = $this->submittedIncident($reporter, $department);
+        $incident = $this->assessedIncident($reporter, $department);
 
         $response = $this->actingAs($supervisor)->post("/incidents/{$incident->id}/review", [
             'comments' => 'Looks good.',
@@ -320,10 +328,10 @@ class IncidentWorkflowTest extends TestCase
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $departmentHead = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $department->id]);
         $incident = $this->submittedIncident($reporter, $department);
 
-        $this->actingAs($supervisor)
+        $this->actingAs($departmentHead)
             ->post("/incidents/{$incident->id}/return", [])
             ->assertSessionHasErrors(['comments']);
 
@@ -335,7 +343,7 @@ class IncidentWorkflowTest extends TestCase
         $reporter = $this->makeReporter();
         $incidentDepartment = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => Department::factory()->create()->id]);
-        $incident = $this->submittedIncident($reporter, $incidentDepartment);
+        $incident = $this->assessedIncident($reporter, $incidentDepartment);
 
         $this->actingAs($supervisor)
             ->post("/incidents/{$incident->id}/review", ['comments' => 'x'])
@@ -408,7 +416,7 @@ class IncidentWorkflowTest extends TestCase
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
-        $incident = $this->submittedIncident($reporter, $department);
+        $incident = $this->assessedIncident($reporter, $department);
 
         $response = $this->actingAs($supervisor)->get("/incidents/{$incident->id}");
 

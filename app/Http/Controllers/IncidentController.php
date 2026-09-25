@@ -115,7 +115,7 @@ class IncidentController extends Controller
 
         $incident->load([
             'reporter', 'department', 'incidentType', 'assignedInvestigator',
-            'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments',
+            'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments', 'assessor',
         ]);
 
         $user = $request->user();
@@ -190,6 +190,9 @@ class IncidentController extends Controller
             'can' => [
                 'update' => $user->can('update', $incident),
                 'review' => $user->can('review', $incident),
+                'assess' => $user->can('assess', $incident),
+                'completeAssessment' => $user->can('completeAssessment', $incident),
+                'changeDepartment' => $user->can('changeDepartment', $incident),
                 'assign' => $user->can('assign', $incident),
                 'startInvestigation' => $canStartInvestigation,
                 'manageInvestigationTeam' => $canManageInvestigationTeam,

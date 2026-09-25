@@ -37,6 +37,13 @@ class IncidentPolicy
             return false;
         }
 
+        // Department Assessment: anyone in the incident's department can open it to fill in actions/recommendations.
+        if ($incident->status === IncidentStatus::Submitted
+            && $user->department_id !== null
+            && $incident->department_id === $user->department_id) {
+            return true;
+        }
+
         if ($incident->assigned_investigator_id === $user->id) {
             return true;
         }
@@ -69,11 +76,45 @@ class IncidentPolicy
 
     public function review(User $user, Incident $incident): bool
     {
-        if (! in_array($incident->status, [IncidentStatus::Submitted, IncidentStatus::ForReview], true)) {
+        if ($incident->status !== IncidentStatus::ForReview) {
             return false;
         }
 
         return $this->hasReviewOrAssignAccess($user, $incident);
+    }
+
+    public function assess(User $user, Incident $incident): bool
+    {
+        if ($incident->status !== IncidentStatus::Submitted) {
+            return false;
+        }
+
+        if ($this->isQualityStaff($user)) {
+            return true;
+        }
+
+        return $user->department_id !== null && $incident->department_id === $user->department_id;
+    }
+
+    /** Set severity, complete the assessment, or return the report to the reporter. */
+    public function completeAssessment(User $user, Incident $incident): bool
+    {
+        if ($incident->status !== IncidentStatus::Submitted) {
+            return false;
+        }
+
+        if ($this->isQualityStaff($user)) {
+            return true;
+        }
+
+        return $user->role === Role::DepartmentHead
+            && $user->department_id !== null
+            && $incident->department_id === $user->department_id;
+    }
+
+    public function changeDepartment(User $user, Incident $incident): bool
+    {
+        return $incident->status === IncidentStatus::Submitted && $this->isQualityStaff($user);
     }
 
     public function assign(User $user, Incident $incident): bool
