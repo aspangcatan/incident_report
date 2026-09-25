@@ -6,11 +6,11 @@ use App\Models\Incident;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class IncidentSubmittedNotification extends Notification
+class IncidentReturnedToDepartmentNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(private Incident $incident)
+    public function __construct(private Incident $incident, private string $comments)
     {
     }
 
@@ -24,7 +24,7 @@ class IncidentSubmittedNotification extends Notification
         return [
             'incident_id' => $this->incident->id,
             'incident_number' => $this->incident->incident_number,
-            'message' => "New incident {$this->incident->incident_number} submitted — awaiting department assessment.",
+            'message' => "Incident {$this->incident->incident_number} was returned to your department: {$this->comments}",
         ];
     }
 }

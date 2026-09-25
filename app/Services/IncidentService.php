@@ -3,14 +3,18 @@
 namespace App\Services;
 
 use App\Enums\IncidentStatus;
+use App\Enums\Severity;
+use App\Events\IncidentAssessed;
 use App\Events\IncidentAssigned;
 use App\Events\IncidentReturnedForRevision;
+use App\Events\IncidentReturnedToDepartment;
 use App\Events\IncidentReviewed;
 use App\Events\IncidentSubmitted;
 use App\Models\ContributingFactor;
 use App\Models\Incident;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class IncidentService
@@ -123,6 +127,56 @@ class IncidentService
         });
 
         IncidentAssigned::dispatch($incident);
+
+        return $incident;
+    }
+
+    /**
+     * Department Assessment edits while the incident is Submitted. Callers pass
+     * only the keys the current user may change (see SaveAssessmentRequest).
+     */
+    public function saveAssessment(Incident $incident, array $data): Incident
+    {
+        return DB::transaction(function () use ($incident, $data) {
+            $incident->fill(Arr::only($data, ['recommendations', 'severity', 'department_id']));
+            $incident->save();
+
+            if (array_key_exists('actions_taken', $data)) {
+                $incident->actions()->delete();
+                $incident->actions()->createMany($data['actions_taken'] ?? []);
+            }
+
+            return $incident;
+        });
+    }
+
+    public function completeAssessment(Incident $incident, User $assessor): Incident
+    {
+        DB::transaction(function () use ($incident, $assessor) {
+            $incident->status = IncidentStatus::ForReview;
+            $incident->assessed_by = $assessor->id;
+            $incident->assessed_at = now();
+            $incident->review_escalated_at = null;
+            $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
+            $incident->save();
+        });
+
+        IncidentAssessed::dispatch($incident);
+
+        return $incident;
+    }
+
+    public function returnToDepartment(Incident $incident, User $reviewer, string $comments): Incident
+    {
+        DB::transaction(function () use ($incident, $reviewer, $comments) {
+            $incident->auditComment = $comments;
+            $incident->status = IncidentStatus::Submitted;
+            $incident->supervisor_reviewed_by = $reviewer->id;
+            $incident->supervisor_comments = $comments;
+            $incident->save();
+        });
+
+        IncidentReturnedToDepartment::dispatch($incident, $comments);
 
         return $incident;
     }

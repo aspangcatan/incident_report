@@ -30,6 +30,12 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\IncidentAssigned::class => [
             \App\Listeners\NotifyInvestigatorOfAssignment::class,
         ],
+        \App\Events\IncidentAssessed::class => [
+            \App\Listeners\NotifyReviewersOfAssessedIncident::class,
+        ],
+        \App\Events\IncidentReturnedToDepartment::class => [
+            \App\Listeners\NotifyDepartmentHeadsOfReturn::class,
+        ],
     ];
 
     /**

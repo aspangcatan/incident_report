@@ -2,10 +2,9 @@
 
 namespace App\Listeners;
 
-use App\Enums\Role;
 use App\Events\IncidentSubmitted;
-use App\Models\User;
 use App\Notifications\IncidentSubmittedNotification;
+use App\Support\IncidentReviewers;
 use Illuminate\Support\Facades\Notification;
 
 class NotifyReviewersOfSubmittedIncident
@@ -14,16 +13,7 @@ class NotifyReviewersOfSubmittedIncident
     {
         $incident = $event->incident;
 
-        $recipients = User::active()->where(function ($query) use ($incident) {
-            $query->withRole([Role::QualitySafetyOfficer, Role::Administrator]);
-
-            if ($incident->department_id !== null) {
-                $query->orWhere(function ($query) use ($incident) {
-                    $query->withRole([Role::Supervisor, Role::DepartmentHead])
-                        ->where('section', $incident->department_id);
-                });
-            }
-        })->get();
+        $recipients = IncidentReviewers::for($incident);
 
         if ($recipients->isNotEmpty()) {
             Notification::send($recipients, new IncidentSubmittedNotification($incident));
