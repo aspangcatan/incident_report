@@ -47,6 +47,25 @@ class IncidentService
         });
     }
 
+    /**
+     * Public guest report (no account): created and submitted in one step,
+     * landing in Department Assessment like any other submission.
+     */
+    public function submitGuestReport(array $data): Incident
+    {
+        $incident = DB::transaction(function () use ($data) {
+            $incident = new Incident($this->onlyIncidentColumns($data));
+            $incident->forceFill(Arr::only($data, ['guest_name', 'guest_contact', 'guest_relationship']));
+            $incident->reporter_id = null;
+            $incident->status = IncidentStatus::Draft;
+            $incident->save();
+
+            return $incident;
+        });
+
+        return $this->submit($incident);
+    }
+
     public function submit(Incident $incident): Incident
     {
         $attempts = 0;
