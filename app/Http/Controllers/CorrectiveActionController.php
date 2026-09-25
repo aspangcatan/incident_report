@@ -7,7 +7,6 @@ use App\Actions\CorrectiveActions\CreateCorrectiveActionAction;
 use App\Actions\CorrectiveActions\MarkCorrectiveActionInProgressAction;
 use App\Actions\CorrectiveActions\UpdateCorrectiveActionAction;
 use App\Actions\CorrectiveActions\VerifyCorrectiveActionAction;
-use App\Enums\CorrectiveActionStatus;
 use App\Http\Requests\CorrectiveActions\CompleteCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\CreateCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\UpdateCorrectiveActionRequest;
