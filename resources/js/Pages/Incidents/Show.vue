@@ -76,7 +76,10 @@ function switchTab(value) {
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Reporter</span>
-                <span class="font-body-md text-body-md text-on-surface font-semibold">{{ incident.reporter?.name ?? '—' }}</span>
+                <span v-if="incident.reporter_id === null" class="font-body-md text-body-md text-on-surface font-semibold">
+                    {{ incident.guest_name }} <span class="font-body-sm text-body-sm text-outline">(Guest · {{ incident.guest_relationship }} · {{ incident.guest_contact }})</span>
+                </span>
+                <span v-else class="font-body-md text-body-md text-on-surface font-semibold">{{ incident.reporter?.name ?? '—' }}</span>
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Lead Investigator</span>

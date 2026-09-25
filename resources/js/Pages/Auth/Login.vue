@@ -1,6 +1,6 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 
 defineProps({
     canResetPassword: { type: Boolean, default: false },
@@ -71,5 +71,10 @@ function submit() {
                 Sign in
             </button>
         </form>
+
+        <p class="mt-space-md font-body-sm text-body-sm text-outline text-center">
+            Not hospital staff?
+            <Link href="/report" class="text-primary font-semibold">Report an incident</Link>
+        </p>
     </GuestLayout>
 </template>

@@ -1,5 +1,9 @@
 <script setup>
 import AppLogo from '@/Components/AppLogo.vue';
+
+defineProps({
+    wide: { type: Boolean, default: false },
+});
 </script>
 
 <template>
@@ -16,7 +20,7 @@ import AppLogo from '@/Components/AppLogo.vue';
             </div>
         </div>
 
-        <div class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-sm p-space-lg">
+        <div class="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-lg" :class="wide ? 'max-w-2xl' : 'max-w-md'">
             <slot />
         </div>
 

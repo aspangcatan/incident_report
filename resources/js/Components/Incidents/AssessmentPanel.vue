@@ -183,7 +183,7 @@ function returnToReporter() {
         </div>
 
         <!-- Return to reporter -->
-        <div v-if="editable && can.completeAssessment" class="flex flex-col gap-2 pt-space-sm border-t border-outline-variant">
+        <div v-if="editable && can.returnToReporter" class="flex flex-col gap-2 pt-space-sm border-t border-outline-variant">
             <label for="return_comments" class="font-label-md text-label-md text-on-surface font-semibold">Return to reporter</label>
             <textarea id="return_comments" v-model="returnForm.comments" rows="2" class="w-full p-3 rounded-lg bg-surface-container-low" placeholder="What does the reporter need to fix?" />
             <span v-if="returnForm.errors.comments" class="font-body-sm text-body-sm text-error">{{ returnForm.errors.comments }}</span>
