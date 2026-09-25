@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Role;
+use App\Models\Incident;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,6 +41,13 @@ class HandleInertiaRequests extends Middleware
                     'designation' => $user->designation_title,
                     'department_id' => $user->department_id,
                 ] : null,
+                'can' => $user ? [
+                    'viewAllIncidents' => $user->can('viewAny', Incident::class),
+                    'investigationWorkspace' => in_array($user->role, [Role::Investigator, Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true),
+                    'capaOperations' => in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true),
+                    'viewAnalytics' => $user->can('viewAnalytics', Incident::class),
+                    'administration' => $user->role === Role::Administrator,
+                ] : [],
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

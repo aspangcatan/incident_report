@@ -29,21 +29,22 @@ function handleOutsideClick(event) {
 onMounted(() => document.addEventListener('click', handleOutsideClick));
 onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick));
 
-const navGroups = [
+const allNavGroups = [
     {
         label: 'Incident Management',
         items: [
-            { label: 'All Incidents', icon: 'kit-medical', href: '/incidents?scope=all', count: null },
+            { label: 'All Incidents', icon: 'kit-medical', href: '/incidents?scope=all', count: null, can: 'viewAllIncidents' },
             { label: 'My Reports', icon: 'user', href: '/incidents?scope=my-reports', count: null },
             { label: 'Draft Reports', icon: 'pen-to-square', href: '/incidents?scope=drafts', count: null },
-            { label: 'Pending Review', icon: 'hourglass-half', href: '#', count: null },
-            { label: 'Under Investigation', icon: 'magnifying-glass', href: '#', count: null },
-            { label: 'Corrective Actions', icon: 'square-check', href: '#', count: null },
-            { label: 'Resolved / Closed', icon: 'circle-check', href: '#', count: null },
+            { label: 'Pending Review', icon: 'hourglass-half', href: '#', count: null, can: 'viewAllIncidents' },
+            { label: 'Under Investigation', icon: 'magnifying-glass', href: '#', count: null, can: 'viewAllIncidents' },
+            { label: 'Corrective Actions', icon: 'square-check', href: '#', count: null, can: 'viewAllIncidents' },
+            { label: 'Resolved / Closed', icon: 'circle-check', href: '#', count: null, can: 'viewAllIncidents' },
         ],
     },
     {
         label: 'Investigation Workspace',
+        can: 'investigationWorkspace',
         items: [
             { label: 'Investigation Queue', icon: 'notes-medical', href: '#', count: null },
             { label: 'Assigned to Me', icon: 'clipboard-user', href: '#', count: null },
@@ -52,6 +53,7 @@ const navGroups = [
     },
     {
         label: 'CAPA Operations',
+        can: 'capaOperations',
         items: [
             { label: 'Open Actions', icon: 'list-check', href: '#', count: null },
             { label: 'For Verification', icon: 'shield-halved', href: '#', count: null },
@@ -61,6 +63,7 @@ const navGroups = [
     },
     {
         label: 'Analytics & Learning',
+        can: 'viewAnalytics',
         items: [
             { label: 'Executive Overview', icon: 'chart-line', href: '/analytics', count: null },
             { label: 'Trends & Sentinels', icon: 'arrow-trend-up', href: '#', count: null },
@@ -70,6 +73,7 @@ const navGroups = [
     },
     {
         label: 'Administration & Audit',
+        can: 'administration',
         items: [
             { label: 'Escalation Engine', icon: 'sitemap', href: '#', count: null },
             { label: 'Departments & Units', icon: 'building', href: '#', count: null },
@@ -77,6 +81,16 @@ const navGroups = [
         ],
     },
 ];
+
+const permissions = computed(() => page.props.auth?.can ?? {});
+const allowed = (entry) => !entry.can || permissions.value[entry.can] === true;
+
+const navGroups = computed(() =>
+    allNavGroups
+        .filter(allowed)
+        .map((group) => ({ ...group, items: group.items.filter(allowed) }))
+        .filter((group) => group.items.length > 0),
+);
 </script>
 
 <template>
