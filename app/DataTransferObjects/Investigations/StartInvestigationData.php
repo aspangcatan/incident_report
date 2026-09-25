@@ -26,7 +26,7 @@ final class StartInvestigationData
     {
         return new self(
             objective: $data['objective'],
-            methodology: InvestigationMethodology::from($data['methodology']),
+            methodology: InvestigationMethodology::from($data['methodology'] ?? InvestigationMethodology::Simple->value),
             targetCompletionAt: isset($data['target_completion_at']) ? Carbon::parse($data['target_completion_at']) : null,
             teamMembers: $data['team_members'] ?? [],
         );

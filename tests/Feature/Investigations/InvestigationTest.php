@@ -360,23 +360,28 @@ class InvestigationTest extends TestCase
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
+        // No RCA methodology to choose: every investigation is a simple one.
         $response = $this->actingAs($investigator)->post("/incidents/{$incident->id}/investigation", [
             'objective' => 'Determine root cause.',
-            'methodology' => 'five_whys',
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('investigations', ['incident_id' => $incident->id]);
+        $this->assertDatabaseHas('investigations', ['incident_id' => $incident->id, 'methodology' => 'simple']);
     }
 
-    public function test_starting_an_investigation_requires_an_objective_and_a_valid_methodology(): void
+    public function test_starting_an_investigation_requires_an_objective_and_ignores_any_methodology(): void
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
 
         $this->actingAs($investigator)
-            ->post("/incidents/{$incident->id}/investigation", ['methodology' => 'not-a-real-methodology'])
-            ->assertSessionHasErrors(['objective', 'methodology']);
+            ->post("/incidents/{$incident->id}/investigation", ['methodology' => 'five_whys'])
+            ->assertSessionHasErrors(['objective'])
+            ->assertSessionDoesntHaveErrors(['methodology']);
+
+        $this->actingAs($investigator)
+            ->post("/incidents/{$incident->id}/investigation", ['objective' => 'Find out why.', 'methodology' => 'five_whys']);
+        $this->assertDatabaseHas('investigations', ['incident_id' => $incident->id, 'methodology' => 'simple']);
     }
 
     public function test_starting_an_investigation_rejects_an_explicit_past_target_completion_date(): void

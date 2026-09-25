@@ -11,16 +11,8 @@ const props = defineProps({
     potentialTeamMembers: { type: Array, default: () => [] },
 });
 
-const methodologyOptions = {
-    five_whys: '5 Whys',
-    fishbone: 'Fishbone (Ishikawa)',
-    hfacs: 'Human Factors (HFACS)',
-    contributing_factors: 'Contributing Factors',
-};
-
 const startForm = useForm({
     objective: '',
-    methodology: 'five_whys',
     target_completion_at: '',
 });
 
@@ -99,12 +91,6 @@ function completeInvestigation() {
                 />
                 <span v-if="startForm.errors.objective" class="font-body-sm text-body-sm text-error">{{ startForm.errors.objective }}</span>
 
-                <label class="font-label-md text-label-md text-on-surface font-semibold" for="methodology">RCA methodology</label>
-                <select id="methodology" v-model="startForm.methodology" class="w-full p-3 rounded-lg bg-surface-container-low">
-                    <option v-for="(label, value) in methodologyOptions" :key="value" :value="value">{{ label }}</option>
-                </select>
-                <span v-if="startForm.errors.methodology" class="font-body-sm text-body-sm text-error">{{ startForm.errors.methodology }}</span>
-
                 <label class="font-label-md text-label-md text-on-surface font-semibold" for="target_completion_at">Target completion date</label>
                 <input
                     id="target_completion_at"
@@ -141,11 +127,7 @@ function completeInvestigation() {
                     <span class="font-label-sm text-body-sm uppercase tracking-wider text-primary font-bold">Objective</span>
                     <p class="font-body-md text-body-md text-on-surface">{{ investigation.objective }}</p>
                 </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div class="flex flex-col gap-0.5">
-                        <span class="font-label-sm text-body-sm text-outline">Methodology</span>
-                        <span class="font-title-sm text-title-sm text-primary font-semibold">{{ investigation.methodology.label }}</span>
-                    </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <div class="flex flex-col gap-0.5">
                         <span class="font-label-sm text-body-sm text-outline">Started</span>
                         <span class="font-code-tabular text-body-sm text-on-surface">{{ formatDate(investigation.started_at) }}</span>
@@ -201,7 +183,8 @@ function completeInvestigation() {
             </div>
 
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
-                <h3 class="font-title-lg text-title-lg text-on-surface">Root Cause Analysis — {{ investigation.methodology.label }}</h3>
+                <h3 class="font-title-lg text-title-lg text-on-surface">Findings</h3>
+                <p class="font-body-sm text-body-sm text-outline -mt-2">Write down what you found. Tick "Mark as root cause" on the finding(s) that caused the incident.</p>
 
                 <div v-if="!investigation.findings?.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
                     No findings recorded yet.

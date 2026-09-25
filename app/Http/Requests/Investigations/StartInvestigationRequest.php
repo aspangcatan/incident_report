@@ -3,10 +3,8 @@
 namespace App\Http\Requests\Investigations;
 
 use App\DataTransferObjects\Investigations\StartInvestigationData;
-use App\Enums\InvestigationMethodology;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Enum;
 
 class StartInvestigationRequest extends FormRequest
 {
@@ -18,8 +16,8 @@ class StartInvestigationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // No RCA methodology: every investigation is Simple (StartInvestigationData default).
             'objective' => ['required', 'string'],
-            'methodology' => ['required', new Enum(InvestigationMethodology::class)],
             'target_completion_at' => ['nullable', 'date', 'after:today'],
             'team_members' => ['nullable', 'array'],
             'team_members.*.user_id' => ['required_with:team_members', 'distinct', User::activeRule()],
