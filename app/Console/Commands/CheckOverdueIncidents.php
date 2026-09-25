@@ -46,6 +46,7 @@ class CheckOverdueIncidents extends Command
             return self::SUCCESS;
         }
 
+        $this->escalateOverdueAssessments($recipients);
         $this->escalateOverdueReviews($recipients);
         $this->escalateOverdueAssignments($recipients);
         $this->escalateOverdueInvestigations($recipients);
@@ -55,16 +56,31 @@ class CheckOverdueIncidents extends Command
         return self::SUCCESS;
     }
 
+    private function escalateOverdueAssessments(Collection $recipients): void
+    {
+        $hours = (int) config('incident_workflow.assessment_sla_hours', 72);
+
+        Incident::whereNull('assessment_escalated_at')
+            ->where('status', IncidentStatus::Submitted)
+            ->whereNotNull('reported_at')
+            ->where('reported_at', '<=', now()->subHours($hours))
+            ->get()
+            ->each(function (Incident $incident) use ($recipients) {
+                Notification::send($recipients, new IncidentEscalationNotification($incident, 'Department assessment SLA breached'));
+                $incident->forceFill(['assessment_escalated_at' => now()])->save();
+            });
+    }
+
     private function escalateOverdueReviews(Collection $recipients): void
     {
         Incident::whereNull('review_escalated_at')
-            ->where('status', IncidentStatus::Submitted)
-            ->whereNotNull('reported_at')
+            ->where('status', IncidentStatus::ForReview)
+            ->whereNotNull('assessed_at')
             ->get()
             ->each(function (Incident $incident) use ($recipients) {
-                $slaHours = config('incident_workflow.review_sla_hours.' . $incident->severity->value);
+                $slaHours = config('incident_workflow.review_sla_hours.' . $incident->severity?->value);
 
-                if ($slaHours === null || $incident->reported_at->addHours($slaHours)->isFuture()) {
+                if ($slaHours === null || $incident->assessed_at->addHours($slaHours)->isFuture()) {
                     return;
                 }
 
