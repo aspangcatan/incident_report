@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Role;
 use App\Models\Incident;
+use App\Queries\IncidentQueueQuery;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,7 +44,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
                 'can' => $user ? [
                     'viewAllIncidents' => $user->can('viewAny', Incident::class),
-                    'investigationWorkspace' => in_array($user->role, [Role::Investigator, Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true),
+                    'investigationWorkspace' => IncidentQueueQuery::investigationWorkspace($user),
                     'capaOperations' => in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true),
                     'viewAnalytics' => $user->can('viewAnalytics', Incident::class),
                     'administration' => $user->role === Role::Administrator,

@@ -15,6 +15,7 @@ use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
+use App\Queries\IncidentQueueQuery;
 use App\Services\IncidentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,20 @@ class IncidentController extends Controller
         $scope = $request->string('scope', 'my-reports')->toString();
         $user = $request->user();
 
+        if (IncidentQueueQuery::exists($scope)) {
+            abort_unless(IncidentQueueQuery::allowed($scope, $user), 403);
+
+            [$title, $description] = IncidentQueueQuery::QUEUES[$scope];
+
+            return Inertia::render('Incidents/Index', [
+                'incidents' => IncidentQueueQuery::builder($scope, $user)
+                    ->with(['incidentType', 'department', 'reporter'])
+                    ->latest('id')->paginate(15)->withQueryString(),
+                'scope' => $scope,
+                'queue' => ['title' => $title, 'description' => $description],
+            ]);
+        }
+
         $query = Incident::query()->with(['incidentType', 'department', 'reporter']);
 
         if ($scope === 'drafts') {
@@ -48,6 +63,7 @@ class IncidentController extends Controller
         return Inertia::render('Incidents/Index', [
             'incidents' => $query->latest('id')->paginate(15)->withQueryString(),
             'scope' => $scope,
+            'queue' => null,
         ]);
     }
 
