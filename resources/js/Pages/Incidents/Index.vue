@@ -8,6 +8,7 @@ import Pagination from '@/Components/Pagination.vue';
 const props = defineProps({
     incidents: { type: Object, required: true },
     scope: { type: String, required: true },
+    queue: { type: Object, default: null },
 });
 
 const scopes = [
@@ -27,13 +28,16 @@ function switchScope(value) {
     <AuthenticatedLayout>
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <div class="flex items-center justify-between flex-wrap gap-2">
-                <h1 class="font-headline-sm text-headline-sm text-on-surface">Incidents</h1>
+                <div class="flex flex-col gap-0.5">
+                    <h1 class="font-headline-sm text-headline-sm text-on-surface">{{ queue ? queue.title : 'Incidents' }}</h1>
+                    <p v-if="queue" class="font-body-sm text-body-sm text-outline">{{ queue.description }}</p>
+                </div>
                 <Link href="/incidents/create" class="px-4 py-2 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-semibold">
                     + Report an Incident
                 </Link>
             </div>
 
-            <div class="inline-flex p-1 rounded-lg bg-surface-container-low w-fit">
+            <div v-if="!queue" class="inline-flex p-1 rounded-lg bg-surface-container-low w-fit">
                 <button
                     v-for="option in scopes"
                     :key="option.value"
@@ -47,7 +51,7 @@ function switchScope(value) {
             </div>
 
             <div v-if="incidents.data.length === 0" class="p-space-lg text-center font-body-sm text-body-sm text-outline">
-                No incidents found in this view.
+                {{ queue ? `Nothing in ${queue.title} right now.` : 'No incidents found in this view.' }}
             </div>
 
             <div v-else class="overflow-x-auto rounded-lg bg-surface-container-low">

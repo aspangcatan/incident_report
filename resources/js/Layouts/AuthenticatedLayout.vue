@@ -33,51 +33,52 @@ const allNavGroups = [
     {
         label: 'Incident Management',
         items: [
-            { label: 'All Incidents', icon: 'kit-medical', href: '/incidents?scope=all', count: null, can: 'viewAllIncidents' },
-            { label: 'My Reports', icon: 'user', href: '/incidents?scope=my-reports', count: null },
-            { label: 'Draft Reports', icon: 'pen-to-square', href: '/incidents?scope=drafts', count: null },
-            { label: 'Pending Review', icon: 'hourglass-half', href: '#', count: null, can: 'viewAllIncidents' },
-            { label: 'Under Investigation', icon: 'magnifying-glass', href: '#', count: null, can: 'viewAllIncidents' },
-            { label: 'Corrective Actions', icon: 'square-check', href: '#', count: null, can: 'viewAllIncidents' },
-            { label: 'Resolved / Closed', icon: 'circle-check', href: '#', count: null, can: 'viewAllIncidents' },
+            { label: 'All Incidents', icon: 'kit-medical', href: '/incidents?scope=all', queue: 'all', can: 'viewAllIncidents' },
+            { label: 'My Reports', icon: 'user', href: '/incidents?scope=my-reports', queue: 'my-reports' },
+            { label: 'Draft Reports', icon: 'pen-to-square', href: '/incidents?scope=drafts', queue: 'drafts' },
+            { label: 'Awaiting Assessment', icon: 'clipboard-list', href: '/incidents?scope=awaiting-assessment', queue: 'awaiting-assessment' },
+            { label: 'Pending Review', icon: 'hourglass-half', href: '/incidents?scope=pending-review', queue: 'pending-review', can: 'viewAllIncidents' },
+            { label: 'Under Investigation', icon: 'magnifying-glass', href: '/incidents?scope=under-investigation', queue: 'under-investigation', can: 'viewAllIncidents' },
+            { label: 'Corrective Actions', icon: 'square-check', href: '/incidents?scope=corrective-actions', queue: 'corrective-actions', can: 'viewAllIncidents' },
+            { label: 'Resolved / Closed', icon: 'circle-check', href: '/incidents?scope=resolved', queue: 'resolved', can: 'viewAllIncidents' },
         ],
     },
     {
         label: 'Investigation Workspace',
         can: 'investigationWorkspace',
         items: [
-            { label: 'Investigation Queue', icon: 'notes-medical', href: '#', count: null },
-            { label: 'Assigned to Me', icon: 'clipboard-user', href: '#', count: null },
-            { label: 'History & Findings', icon: 'clock-rotate-left', href: '#', count: null },
+            { label: 'Investigation Queue', icon: 'notes-medical', href: '/incidents?scope=investigation-queue', queue: 'investigation-queue' },
+            { label: 'Assigned to Me', icon: 'clipboard-user', href: '/incidents?scope=assigned-to-me', queue: 'assigned-to-me' },
+            { label: 'History & Findings', icon: 'clock-rotate-left', href: '/incidents?scope=investigation-history', queue: 'investigation-history' },
         ],
     },
     {
         label: 'CAPA Operations',
         can: 'capaOperations',
         items: [
-            { label: 'Open Actions', icon: 'list-check', href: '#', count: null },
-            { label: 'For Verification', icon: 'shield-halved', href: '#', count: null },
-            { label: 'Overdue Actions', icon: 'triangle-exclamation', href: '#', count: null },
-            { label: 'Completed Archive', icon: 'box-archive', href: '#', count: null },
+            { label: 'Open Actions', icon: 'list-check', href: '/corrective-actions?queue=open', queue: 'open' },
+            { label: 'For Verification', icon: 'shield-halved', href: '/corrective-actions?queue=for-verification', queue: 'for-verification' },
+            { label: 'Overdue Actions', icon: 'triangle-exclamation', href: '/corrective-actions?queue=overdue', queue: 'overdue', badgeClass: 'bg-error text-on-error' },
+            { label: 'Completed Archive', icon: 'box-archive', href: '/corrective-actions?queue=completed', queue: 'completed' },
         ],
     },
     {
         label: 'Analytics & Learning',
         can: 'viewAnalytics',
         items: [
-            { label: 'Executive Overview', icon: 'chart-line', href: '/analytics', count: null },
-            { label: 'Trends & Sentinels', icon: 'arrow-trend-up', href: '#', count: null },
-            { label: 'Unit & Severity Heatmap', icon: 'table-cells', href: '#', count: null },
-            { label: 'Resolution Times', icon: 'stopwatch', href: '#', count: null },
+            { label: 'Executive Overview', icon: 'chart-line', href: '/analytics' },
+            { label: 'Trends & Sentinels', icon: 'arrow-trend-up', href: '#' },
+            { label: 'Unit & Severity Heatmap', icon: 'table-cells', href: '#' },
+            { label: 'Resolution Times', icon: 'stopwatch', href: '#' },
         ],
     },
     {
         label: 'Administration & Audit',
         can: 'administration',
         items: [
-            { label: 'Escalation Engine', icon: 'sitemap', href: '#', count: null },
-            { label: 'Departments & Units', icon: 'building', href: '#', count: null },
-            { label: 'Audit Trail & Custody', icon: 'file-contract', href: '#', count: null },
+            { label: 'Escalation Engine', icon: 'sitemap', href: '#' },
+            { label: 'Departments & Units', icon: 'building', href: '#' },
+            { label: 'Audit Trail & Custody', icon: 'file-contract', href: '#' },
         ],
     },
 ];
@@ -91,6 +92,33 @@ const navGroups = computed(() =>
         .map((group) => ({ ...group, items: group.items.filter(allowed) }))
         .filter((group) => group.items.length > 0),
 );
+
+const queueCounts = computed(() => page.props.queueCounts ?? {});
+const badgeCount = (item) => (item.queue ? queueCounts.value[item.queue] : null);
+
+const activeLinkClasses = 'bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]';
+const inactiveLinkClasses = 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface';
+
+function queryParam(url) {
+    const params = new URL(url, window.location.origin);
+    return params.searchParams.get('scope') ?? params.searchParams.get('queue');
+}
+
+function isActive(href) {
+    const target = new URL(href, window.location.origin);
+    const current = new URL(page.url, window.location.origin);
+
+    if (target.pathname !== current.pathname) {
+        return false;
+    }
+
+    let currentParam = queryParam(page.url);
+    if (target.pathname === '/incidents' && currentParam === null) {
+        currentParam = 'my-reports';
+    }
+
+    return queryParam(href) === currentParam;
+}
 </script>
 
 <template>
@@ -180,7 +208,8 @@ const navGroups = computed(() =>
             <nav class="flex-1 px-space-sm flex flex-col gap-0.5">
                 <Link
                     href="/"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors"
+                    :class="isActive('/') ? activeLinkClasses : inactiveLinkClasses"
                 >
                     <div class="flex items-center gap-2.5">
                         <FontAwesomeIcon icon="gauge-high" class="text-title-md" />
@@ -194,23 +223,25 @@ const navGroups = computed(() =>
                             {{ group.label }}
                         </span>
                     </div>
-                    <a
+                    <Link
                         v-for="item in group.items"
                         :key="item.label"
                         :href="item.href"
-                        class="flex items-center justify-between px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                        class="flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors"
+                        :class="isActive(item.href) ? activeLinkClasses : inactiveLinkClasses"
                     >
                         <div class="flex items-center gap-2.5">
                             <FontAwesomeIcon :icon="item.icon" class="text-title-md w-5" />
                             <span class="font-body-md text-body-md">{{ item.label }}</span>
                         </div>
                         <span
-                            v-if="item.count !== null"
-                            class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-semibold"
+                            v-if="badgeCount(item)"
+                            class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full font-semibold"
+                            :class="item.badgeClass ?? 'bg-surface-container text-on-surface'"
                         >
-                            {{ item.count }}
+                            {{ badgeCount(item) }}
                         </span>
-                    </a>
+                    </Link>
                 </template>
             </nav>
         </aside>
