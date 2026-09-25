@@ -167,13 +167,14 @@ class IncidentPolicy
         return false;
     }
 
+    /** The incident's department runs the CAPA stage, so its Department Head asks for closure. */
     public function requestApproval(User $user, Incident $incident): bool
     {
         if ($incident->status !== IncidentStatus::Verified) {
             return false;
         }
 
-        return $this->isQualityStaff($user);
+        return $this->isHeadOfIncidentDepartment($user, $incident);
     }
 
     public function markNoCorrectiveActionNeeded(User $user, Incident $incident): bool
@@ -186,7 +187,7 @@ class IncidentPolicy
             return false;
         }
 
-        return $this->isQualityStaff($user);
+        return $this->isHeadOfIncidentDepartment($user, $incident);
     }
 
     /**
@@ -228,33 +229,30 @@ class IncidentPolicy
         return in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true);
     }
 
+    private function isHeadOfIncidentDepartment(User $user, Incident $incident): bool
+    {
+        return $user->role === Role::DepartmentHead
+            && $incident->department_id !== null
+            && $incident->department_id === $user->department_id;
+    }
+
     /**
-     * Management/Administrator approve hospital-wide; a DepartmentHead is
-     * scoped to their own department, same convention as
-     * hasReviewOrAssignAccess() above. Either way, the specific user who
-     * requested *this* Approval row is excluded, even if their role would
-     * otherwise qualify - mirrors CorrectiveActionPolicy::verify()'s
-     * never-self-verification check, checked by user id, not just role,
-     * for the same reason (an Administrator can both request and
-     * ordinarily approve, so role alone isn't a strong enough guard).
+     * Closure approval is the independent check on the department's CAPA
+     * work, so it belongs to the Quality office and Management (QSO,
+     * Management, Administrator) - never the incident's own department.
+     * The specific user who requested *this* Approval row is excluded even
+     * if their role would otherwise qualify, mirroring
+     * CorrectiveActionPolicy::verify()'s never-self-verification check.
      * Checking $approval->requested_by directly (rather than re-querying
      * "the" pending approval on the incident) is both correct and cheap -
      * $approval is already the exact row callers are deciding on.
      */
     private function hasApprovalAuthority(User $user, Incident $incident, Approval $approval): bool
     {
-        if (in_array($user->role, [Role::Management, Role::Administrator], true)) {
-            return $approval->requested_by !== $user->id;
+        if (! in_array($user->role, [Role::QualitySafetyOfficer, Role::Management, Role::Administrator], true)) {
+            return false;
         }
 
-        if ($user->role === Role::DepartmentHead) {
-            if ($incident->department_id === null || $incident->department_id !== $user->department_id) {
-                return false;
-            }
-
-            return $approval->requested_by !== $user->id;
-        }
-
-        return false;
+        return $approval->requested_by !== $user->id;
     }
 }

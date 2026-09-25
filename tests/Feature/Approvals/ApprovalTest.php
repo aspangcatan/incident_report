@@ -64,6 +64,11 @@ class ApprovalTest extends TestCase
         return $incident->fresh();
     }
 
+    private function headOf(Incident $incident): User
+    {
+        return User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+    }
+
     /** An incident with one verified CAPA, sitting at IncidentStatus::Verified. */
     private function incidentReadyForApproval(Severity $severity = Severity::Level2Moderate): Incident
     {
@@ -214,12 +219,24 @@ class ApprovalTest extends TestCase
         $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
     }
 
-    public function test_qso_can_request_approval_once_the_incident_is_verified(): void
+    public function test_the_department_head_can_request_approval_once_the_incident_is_verified(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
-        $this->assertTrue($qso->can('requestApproval', $incident));
+        $this->assertTrue($this->headOf($incident)->can('requestApproval', $incident));
+    }
+
+    public function test_quality_staff_management_and_other_department_heads_cannot_request_approval(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
+
+        foreach ([Role::QualitySafetyOfficer, Role::Administrator, Role::Management] as $role) {
+            $this->assertFalse(User::factory()->create(['role' => $role])->can('requestApproval', $incident), $role->value);
+        }
+        $this->assertFalse($otherHead->can('requestApproval', $incident));
+        $this->assertFalse($supervisor->can('requestApproval', $incident));
     }
 
     public function test_an_investigator_cannot_request_approval(): void
@@ -233,17 +250,31 @@ class ApprovalTest extends TestCase
     public function test_nobody_can_request_approval_before_the_incident_is_verified(): void
     {
         $incident = $this->incidentThroughInvestigation();
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = $this->headOf($incident);
 
-        $this->assertFalse($qso->can('requestApproval', $incident->fresh()));
+        $this->assertFalse($head->can('requestApproval', $incident->fresh()));
     }
 
-    public function test_qso_can_mark_no_corrective_action_needed_when_zero_capas_exist(): void
+    public function test_the_department_head_can_mark_no_corrective_action_needed_when_zero_capas_exist(): void
+    {
+        $incident = $this->incidentThroughInvestigation();
+
+        $this->assertTrue($this->headOf($incident)->can('markNoCorrectiveActionNeeded', $incident));
+    }
+
+    public function test_quality_staff_and_other_department_heads_cannot_mark_no_corrective_action_needed(): void
     {
         $incident = $this->incidentThroughInvestigation();
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $admin = User::factory()->create(['role' => Role::Administrator]);
+        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
 
-        $this->assertTrue($qso->can('markNoCorrectiveActionNeeded', $incident));
+        $this->assertFalse($qso->can('markNoCorrectiveActionNeeded', $incident));
+        $this->assertFalse($admin->can('markNoCorrectiveActionNeeded', $incident));
+        $this->assertFalse($otherHead->can('markNoCorrectiveActionNeeded', $incident));
+        $this->actingAs($qso)
+            ->post("/incidents/{$incident->id}/no-corrective-action-needed", ['justification' => 'x'])
+            ->assertForbidden();
     }
 
     public function test_marking_no_corrective_action_needed_is_rejected_once_a_corrective_action_exists(): void
@@ -253,9 +284,9 @@ class ApprovalTest extends TestCase
             'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
             'due_date' => now()->addDays(7)->toDateString(),
         ]));
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = $this->headOf($incident);
 
-        $this->assertFalse($qso->can('markNoCorrectiveActionNeeded', $incident->fresh()));
+        $this->assertFalse($head->can('markNoCorrectiveActionNeeded', $incident->fresh()));
     }
 
     /**
@@ -268,10 +299,10 @@ class ApprovalTest extends TestCase
     public function test_marking_no_corrective_action_needed_can_be_used_again_after_a_return_with_still_zero_capas(): void
     {
         $incident = $this->incidentThroughInvestigation();
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = $this->headOf($incident);
         $first = app(ApprovalService::class)->markNoCorrectiveActionNeeded(
             $incident,
-            $qso,
+            $head,
             MarkNoCorrectiveActionNeededData::fromArray(['justification' => 'Initial call: no CAPA needed.'])
         );
         $approver = User::factory()->create(['role' => Role::Management]);
@@ -279,11 +310,11 @@ class ApprovalTest extends TestCase
 
         $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
         $this->assertFalse($incident->fresh()->correctiveActions()->exists());
-        $this->assertTrue($qso->can('markNoCorrectiveActionNeeded', $incident->fresh()));
+        $this->assertTrue($head->can('markNoCorrectiveActionNeeded', $incident->fresh()));
 
         $second = app(ApprovalService::class)->markNoCorrectiveActionNeeded(
             $incident->fresh(),
-            $qso,
+            $head,
             MarkNoCorrectiveActionNeededData::fromArray(['justification' => 'Reconsidered: still no CAPA needed.'])
         );
 
@@ -295,26 +326,33 @@ class ApprovalTest extends TestCase
         $this->assertTrue($approver->can('approveClosure', [$incident->fresh(), $second]));
     }
 
-    public function test_management_and_administrator_can_approve_closure_hospital_wide(): void
+    public function test_qso_management_and_administrator_can_approve_or_return_closure_hospital_wide(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
-        $management = User::factory()->create(['role' => Role::Management]);
-        $admin = User::factory()->create(['role' => Role::Administrator]);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
 
-        $this->assertTrue($management->can('approveClosure', [$incident->fresh(), $approval]));
-        $this->assertTrue($admin->can('approveClosure', [$incident->fresh(), $approval]));
+        foreach ([Role::QualitySafetyOfficer, Role::Management, Role::Administrator] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $this->assertTrue($user->can('approveClosure', [$incident->fresh(), $approval]), $role->value);
+            $this->assertTrue($user->can('returnFromApproval', [$incident->fresh(), $approval]), $role->value);
+        }
     }
 
-    public function test_a_department_head_can_only_approve_closure_for_their_own_department(): void
+    public function test_a_department_head_cannot_approve_or_return_closure_even_for_their_own_department(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
-        $sameDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $requester = $this->headOf($incident);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $requester);
+        $sameDeptHead = $this->headOf($incident);
         $otherDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
 
-        $this->assertTrue($sameDeptHead->can('approveClosure', [$incident->fresh(), $approval]));
-        $this->assertFalse($otherDeptHead->can('approveClosure', [$incident->fresh(), $approval]));
+        foreach ([$requester, $sameDeptHead, $otherDeptHead] as $head) {
+            $this->assertFalse($head->can('approveClosure', [$incident->fresh(), $approval]));
+            $this->assertFalse($head->can('returnFromApproval', [$incident->fresh(), $approval]));
+        }
+        $this->actingAs($sameDeptHead)
+            ->post("/approvals/{$approval->id}/approve", ['comments' => 'x'])
+            ->assertForbidden();
     }
 
     public function test_a_supervisor_cannot_approve_closure(): void
@@ -364,16 +402,21 @@ class ApprovalTest extends TestCase
         $this->assertTrue($approver->can('approveClosure', [$incident->fresh(), $second]));
     }
 
-    public function test_qso_can_request_approval_via_http(): void
+    public function test_the_department_head_can_request_approval_via_http_but_qso_cannot(): void
     {
         $incident = $this->incidentReadyForApproval();
+        $head = $this->headOf($incident);
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->actingAs($qso)
             ->post("/incidents/{$incident->id}/request-approval")
+            ->assertForbidden();
+
+        $this->actingAs($head)
+            ->post("/incidents/{$incident->id}/request-approval")
             ->assertRedirect();
 
-        $this->assertDatabaseHas('approvals', ['incident_id' => $incident->id, 'requested_by' => $qso->id]);
+        $this->assertDatabaseHas('approvals', ['incident_id' => $incident->id, 'requested_by' => $head->id]);
         $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
     }
 
@@ -390,9 +433,9 @@ class ApprovalTest extends TestCase
     public function test_marking_no_corrective_action_needed_via_http_requires_a_justification(): void
     {
         $incident = $this->incidentThroughInvestigation();
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = $this->headOf($incident);
 
-        $this->actingAs($qso)
+        $this->actingAs($head)
             ->post("/incidents/{$incident->id}/no-corrective-action-needed", [])
             ->assertSessionHasErrors(['justification']);
     }
@@ -400,9 +443,9 @@ class ApprovalTest extends TestCase
     public function test_marking_no_corrective_action_needed_via_http(): void
     {
         $incident = $this->incidentThroughInvestigation();
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = $this->headOf($incident);
 
-        $this->actingAs($qso)
+        $this->actingAs($head)
             ->post("/incidents/{$incident->id}/no-corrective-action-needed", ['justification' => 'Near miss, no fix needed.'])
             ->assertRedirect();
 
@@ -460,8 +503,8 @@ class ApprovalTest extends TestCase
     public function test_the_incident_show_page_exposes_resource_shaped_approvals_with_per_item_can_flags(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
-        $approval = app(ApprovalService::class)->requestApproval($incident, $qso);
+        $head = $this->headOf($incident);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $head);
         $management = User::factory()->create(['role' => Role::Management]);
 
         $this->actingAs($management)
@@ -473,7 +516,7 @@ class ApprovalTest extends TestCase
                 ->where('approvals.0.can.return', true)
             );
 
-        $this->actingAs($qso)
+        $this->actingAs($head)
             ->get("/incidents/{$incident->id}?tab=approvals")
             ->assertInertia(fn ($page) => $page
                 ->where('can.requestApproval', false) // already requested; incident is no longer Verified

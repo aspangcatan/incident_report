@@ -10,11 +10,12 @@ use App\Models\Incident;
 use App\Models\User;
 
 /**
- * The incident's department owns its CAPAs (its Department Head creates and
- * edits them, its staff do the work); the Quality office (QSO/Admin) keeps
- * independent oversight and can act on any CAPA. Verification is by QSO/Admin
- * or a Supervisor/Department Head of the incident's department, never by the
- * person who completed it.
+ * The incident's department runs the CAPA stage: its Department Head creates
+ * and edits CAPAs (assigning each to a staff member), the assigned
+ * responsible person does the work, and a Supervisor/Department Head of the
+ * incident's department verifies it - never the person who completed it.
+ * The Quality office (QSO/Admin) does not act here; it comes in at closure
+ * approval (IncidentPolicy::approveClosure()).
  */
 class CorrectiveActionPolicy
 {
@@ -24,7 +25,7 @@ class CorrectiveActionPolicy
             return false;
         }
 
-        return $this->isQualityStaff($user) || $this->isHeadOfIncidentDepartment($user, $incident);
+        return $this->isHeadOfIncidentDepartment($user, $incident);
     }
 
     public function update(User $user, CorrectiveAction $correctiveAction): bool
@@ -33,7 +34,7 @@ class CorrectiveActionPolicy
             return false;
         }
 
-        return $this->isQualityStaff($user) || $this->isHeadOfIncidentDepartment($user, $correctiveAction->incident);
+        return $this->isHeadOfIncidentDepartment($user, $correctiveAction->incident);
     }
 
     public function progress(User $user, CorrectiveAction $correctiveAction): bool
@@ -42,7 +43,7 @@ class CorrectiveActionPolicy
             return false;
         }
 
-        return $this->hasResponsibleAccess($user, $correctiveAction);
+        return $correctiveAction->responsible_user_id === $user->id;
     }
 
     public function complete(User $user, CorrectiveAction $correctiveAction): bool
@@ -51,7 +52,7 @@ class CorrectiveActionPolicy
             return false;
         }
 
-        return $this->hasResponsibleAccess($user, $correctiveAction);
+        return $correctiveAction->responsible_user_id === $user->id;
     }
 
     public function verify(User $user, CorrectiveAction $correctiveAction): bool
@@ -64,17 +65,8 @@ class CorrectiveActionPolicy
             return false;
         }
 
-        if ($this->isQualityStaff($user)) {
-            return true;
-        }
-
         return in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)
             && $this->belongsToIncidentDepartment($user, $correctiveAction->incident);
-    }
-
-    private function isQualityStaff(User $user): bool
-    {
-        return in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true);
     }
 
     private function isHeadOfIncidentDepartment(User $user, Incident $incident): bool
@@ -85,14 +77,5 @@ class CorrectiveActionPolicy
     private function belongsToIncidentDepartment(User $user, Incident $incident): bool
     {
         return $incident->department_id !== null && $user->department_id === $incident->department_id;
-    }
-
-    private function hasResponsibleAccess(User $user, CorrectiveAction $correctiveAction): bool
-    {
-        if ($this->isQualityStaff($user)) {
-            return true;
-        }
-
-        return $correctiveAction->responsible_user_id === $user->id;
     }
 }

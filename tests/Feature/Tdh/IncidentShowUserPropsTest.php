@@ -81,15 +81,28 @@ class IncidentShowUserPropsTest extends TestCase
                 ->where('investigators', []));
     }
 
-    public function test_a_qso_who_can_create_corrective_actions_gets_responsible_users_as_id_name_and_label_only(): void
+    public function test_a_department_head_who_can_create_corrective_actions_gets_responsible_users_as_id_name_and_label_only(): void
+    {
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $incident = $this->submittedIncident();
+        $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
+
+        $props = $this->actingAs($head)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
+
+        $this->assertEntryKeys($props['potentialResponsibleUsers'], ['id', 'name', 'label']);
+    }
+
+    public function test_a_qso_gets_no_responsible_users_at_the_corrective_action_stage_since_it_cannot_create_corrective_actions(): void
     {
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $incident = $this->submittedIncident();
         $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
 
-        $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
-
-        $this->assertEntryKeys($props['potentialResponsibleUsers'], ['id', 'name', 'label']);
+        $this->actingAs($qso)
+            ->get("/incidents/{$incident->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can.createCorrectiveAction', false)
+                ->where('potentialResponsibleUsers', []));
     }
 
     public function test_a_qso_gets_no_responsible_users_when_no_corrective_action_can_be_created_or_edited(): void
@@ -160,7 +173,7 @@ class IncidentShowUserPropsTest extends TestCase
 
     public function test_responsible_users_are_only_active_staff_of_the_incidents_department(): void
     {
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
         $colleague = User::factory()->create(['department_id' => $this->department->id]);
         $retired = User::factory()->inactive()->create(['department_id' => $this->department->id]);
         $outsider = User::factory()->create(['department_id' => Department::factory()->create()->id]);
@@ -168,10 +181,10 @@ class IncidentShowUserPropsTest extends TestCase
         $incident = $this->submittedIncident();
         $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
 
-        $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
+        $props = $this->actingAs($head)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
         $ids = array_column($props['potentialResponsibleUsers'], 'id');
 
-        $this->assertEqualsCanonicalizing([$this->reporter->id, $colleague->id], $ids);
+        $this->assertEqualsCanonicalizing([$this->reporter->id, $colleague->id, $head->id], $ids);
         $this->assertNotContains($retired->id, $ids);
         $this->assertNotContains($outsider->id, $ids);
         $this->assertNotContains($noSection->id, $ids);
