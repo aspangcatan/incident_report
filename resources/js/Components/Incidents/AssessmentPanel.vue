@@ -86,7 +86,7 @@ function returnToReporter() {
     <section class="flex flex-col gap-space-md">
         <div class="flex items-center justify-between">
             <h2 class="font-title-lg text-title-lg text-primary font-bold">Department Assessment</h2>
-            <span v-if="incident.assessed_at" class="font-body-sm text-body-sm text-outline">
+            <span v-if="incident.assessed_at && incident.status !== 'submitted'" class="font-body-sm text-body-sm text-outline">
                 Assessed by {{ incident.assessor?.name ?? 'a former user' }} on {{ new Date(incident.assessed_at).toLocaleString() }}
             </span>
         </div>
