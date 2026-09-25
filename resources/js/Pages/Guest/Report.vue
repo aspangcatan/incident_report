@@ -27,7 +27,10 @@ const form = useForm({
     website: '',
 });
 
-const now = new Date().toISOString().slice(0, 16);
+// datetime-local expects the browser's LOCAL time; toISOString() would give UTC
+// (8 hours behind in Manila) and block the last 8 hours.
+const nowDate = new Date();
+const now = new Date(nowDate.getTime() - nowDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
 function submit() {
     form.post('/report');
