@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AppLogo from '@/Components/AppLogo.vue';
+import FlashBanner from '@/Components/FlashBanner.vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -252,6 +253,7 @@ function isActive(href) {
         </aside>
 
         <div class="pl-72">
+            <FlashBanner />
             <main class="w-full pt-16 pb-12 px-margin min-h-screen">
                 <div class="flex flex-col w-full gap-space-lg py-space-lg">
                     <slot />

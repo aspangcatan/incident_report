@@ -73,16 +73,19 @@ class AnalyticsService
 
     private function meanHoursToReview(User $user): ?float
     {
+        // The review step only: from the department completing its assessment
+        // to the review decision (the assessment itself has its own SLA).
         $rows = $this->baseQuery($user)
+            ->whereNotNull('assessed_at')
             ->whereNotNull('supervisor_reviewed_at')
             ->where('reported_at', '>=', now()->subDays(self::WINDOW_DAYS))
-            ->get(['reported_at', 'supervisor_reviewed_at']);
+            ->get(['assessed_at', 'supervisor_reviewed_at']);
 
         if ($rows->isEmpty()) {
             return null;
         }
 
-        return round($rows->avg(fn (Incident $i) => $i->reported_at->diffInMinutes($i->supervisor_reviewed_at) / 60), 1);
+        return round($rows->avg(fn (Incident $i) => $i->assessed_at->diffInMinutes($i->supervisor_reviewed_at) / 60), 1);
     }
 
     private function meanDaysToInvestigate(User $user): ?float

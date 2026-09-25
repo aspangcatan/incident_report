@@ -62,20 +62,20 @@ class AnalyticsTest extends TestCase
             'summary' => 'Test incident.',
         ]);
         app(IncidentService::class)->submit($incident);
+        app(IncidentService::class)->completeAssessment($incident->fresh(), $supervisor);
         app(IncidentService::class)->markReviewed($incident->fresh(), $supervisor, null);
 
         return $incident->fresh();
     }
 
-    public function test_mean_hours_to_review_averages_reported_to_reviewed_gap(): void
+    public function test_mean_hours_to_review_averages_the_assessed_to_reviewed_gap(): void
     {
+        // Review time only: the (long) department assessment before it must not count.
         $department = Department::factory()->create();
         $incidentA = $this->incidentThroughReview($department);
-        $incidentA->forceFill(['reported_at' => now()->subHours(10)])->save();
-        $incidentA->forceFill(['supervisor_reviewed_at' => now()])->save();
+        $incidentA->forceFill(['reported_at' => now()->subHours(100), 'assessed_at' => now()->subHours(10), 'supervisor_reviewed_at' => now()])->save();
         $incidentB = $this->incidentThroughReview($department);
-        $incidentB->forceFill(['reported_at' => now()->subHours(20)])->save();
-        $incidentB->forceFill(['supervisor_reviewed_at' => now()])->save();
+        $incidentB->forceFill(['reported_at' => now()->subHours(100), 'assessed_at' => now()->subHours(20), 'supervisor_reviewed_at' => now()])->save();
 
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $kpis = app(AnalyticsService::class)->overview($qso)['kpis'];
@@ -159,9 +159,9 @@ class AnalyticsTest extends TestCase
         $deptA = Department::factory()->create();
         $deptB = Department::factory()->create();
         $incidentA = $this->incidentThroughReview($deptA);
-        $incidentA->forceFill(['reported_at' => now()->subHours(4), 'supervisor_reviewed_at' => now()])->save();
+        $incidentA->forceFill(['assessed_at' => now()->subHours(4), 'supervisor_reviewed_at' => now()])->save();
         $incidentB = $this->incidentThroughReview($deptB);
-        $incidentB->forceFill(['reported_at' => now()->subHours(40), 'supervisor_reviewed_at' => now()])->save();
+        $incidentB->forceFill(['assessed_at' => now()->subHours(40), 'supervisor_reviewed_at' => now()])->save();
 
         $deptHeadA = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $deptA->id]);
         $kpis = app(AnalyticsService::class)->overview($deptHeadA)['kpis'];

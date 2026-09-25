@@ -391,3 +391,9 @@ The sidebar's Incident Management, Investigation Workspace and CAPA Operations i
 - **Badges** on Awaiting Assessment, Pending Review, Under Investigation, Corrective Actions, Investigation Queue, Assigned to Me, Open Actions, For Verification, Overdue (red); none on Resolved, History, Completed Archive (they only grow).
 - **Active highlighting:** `AuthenticatedLayout::isActive()` compares path + `scope`/`queue` (`/incidents` without a scope = My Reports); `#` placeholders (Analytics sub-pages, Administration) are never active.
 - **Cost:** up to ~12 `COUNT` queries per full page load for QSO/Admin — fine at hospital scale; revisit (cache or partial reloads) only if it shows up.
+
+## 9n. Follow-ups (2026-09-25)
+
+- **Flash banner:** `Components/FlashBanner.vue` (mounted in `AuthenticatedLayout`) shows the shared `flash.success` / `flash.error` after every visit — top-right, auto-hides after 5 s, dismissible. Before this, success messages were set by controllers but never displayed.
+- **Analytics "Mean time to review"** now measures the review step only: `assessed_at` → `supervisor_reviewed_at` (incidents without `assessed_at` are excluded). The department assessment is tracked by its own 72 h SLA.
+- **Known gap, not changed:** the "Root cause distribution" chart groups by incident contributing factors, which reporters no longer enter (removed from the form per the client). It will stay empty for new incidents unless it is re-based on investigation findings.
