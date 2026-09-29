@@ -1,5 +1,5 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import KpiStatTile from '@/Components/Analytics/KpiStatTile.vue';
 import StackedBarChart from '@/Components/Analytics/StackedBarChart.vue';
@@ -11,6 +11,7 @@ const props = defineProps({
     departmentSafety: { type: Array, required: true },
     hourlyVolume: { type: Array, required: true },
     recurringPatterns: { type: Array, required: true },
+    canOpenRecurrenceReview: { type: Boolean, default: false },
     windowDays: { type: Number, required: true },
     recurringPatternWindowDays: { type: Number, required: true },
     recurringPatternMinCount: { type: Number, required: true },
@@ -137,9 +138,27 @@ function formatPercent(rate) {
                         <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ pattern.incidentTypeName }}</span>
                         <span class="font-body-sm text-body-sm text-on-surface-variant">{{ pattern.departmentName }}</span>
                     </div>
-                    <span class="px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">
-                        {{ pattern.incidentCount }} incidents
-                    </span>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <span class="px-3 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">
+                            {{ pattern.incidentCount }} incidents
+                        </span>
+                        <Link
+                            v-if="pattern.review"
+                            :href="`/recurrence-reviews/${pattern.review.id}`"
+                            class="px-3 py-1 rounded-full font-label-sm text-body-sm font-semibold"
+                            :class="pattern.review.status === 'closed' ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'"
+                        >
+                            {{ pattern.review.status === 'closed' ? 'Addressed' : 'Under review' }}
+                        </Link>
+                        <Link
+                            v-else-if="canOpenRecurrenceReview"
+                            :href="`/recurrence-reviews/create?department_id=${pattern.departmentId}&incident_type_id=${pattern.incidentTypeId}`"
+                            class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-body-sm font-semibold"
+                        >
+                            Open review
+                        </Link>
+                        <span v-else class="font-body-sm text-body-sm text-outline">No review yet</span>
+                    </div>
                 </div>
             </div>
         </div>

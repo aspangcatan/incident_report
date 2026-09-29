@@ -68,6 +68,7 @@ const allNavGroups = [
         items: [
             { label: 'Safety Alerts', icon: 'bullhorn', href: '/safety-alerts', queue: 'safety-alerts', badgeClass: 'bg-error text-on-error' },
             { label: 'Lessons Learned', icon: 'lightbulb', href: '/lessons-learned' },
+            { label: 'Recurrence Reviews', icon: 'arrows-rotate', href: '/recurrence-reviews', queue: 'recurrence-reviews', can: 'viewAnalytics' },
         ],
     },
     {

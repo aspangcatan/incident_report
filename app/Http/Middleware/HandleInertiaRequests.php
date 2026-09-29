@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RecurrenceReviewStatus;
 use App\Enums\Role;
 use App\Models\Incident;
+use App\Models\RecurrenceReview;
 use App\Models\SafetyAlert;
 use App\Models\User;
 use App\Queries\CorrectiveActionQueueQuery;
@@ -73,6 +75,9 @@ class HandleInertiaRequests extends Middleware
         $counts = [
             'drafts' => Incident::returned()->where('reporter_id', $user->id)->count(),
             'safety-alerts' => SafetyAlert::addressedTo($user)->notAcknowledgedBy($user)->count(),
+            'recurrence-reviews' => $user->role === Role::QualitySafetyOfficer
+                ? RecurrenceReview::where('status', RecurrenceReviewStatus::Submitted)->count()
+                : RecurrenceReview::where('status', RecurrenceReviewStatus::Open)->where('assigned_to', $user->id)->count(),
         ];
 
         foreach (IncidentQueueQuery::QUEUES as $queue => [, , $badge]) {

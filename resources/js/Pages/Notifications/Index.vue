@@ -10,6 +10,7 @@ defineProps({
 
 function targetUrl(notification) {
     if (notification.data.safety_alert_id) return `/safety-alerts/${notification.data.safety_alert_id}`;
+    if (notification.data.recurrence_review_id) return `/recurrence-reviews/${notification.data.recurrence_review_id}`;
     if (notification.data.incident_id) return `/incidents/${notification.data.incident_id}`;
     return null;
 }

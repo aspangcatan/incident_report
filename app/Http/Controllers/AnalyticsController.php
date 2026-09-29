@@ -15,7 +15,10 @@ class AnalyticsController extends Controller
     {
         $this->authorize('viewAnalytics', Incident::class);
 
-        return Inertia::render('Analytics/Index', $analytics->overview($request->user()));
+        return Inertia::render('Analytics/Index', [
+            ...$analytics->overview($request->user()),
+            'canOpenRecurrenceReview' => $request->user()->can('create', \App\Models\RecurrenceReview::class),
+        ]);
     }
 
     public function trends(Request $request, TrendService $trends): Response

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\CorrectiveActionStatus;
 use App\Enums\IncidentStatus;
+use App\Enums\RecurrenceReviewStatus;
 use App\Enums\RootCauseType;
 use App\Enums\Severity;
 use App\Models\Approval;
@@ -12,6 +13,7 @@ use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\Investigation;
+use App\Models\RecurrenceReview;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +32,8 @@ class AnalyticsService
      * recurring pattern" window is a distinct business question from "how
      * far back for a trailing KPI" and may need to move independently.
      */
-    private const REPEAT_PATTERN_WINDOW_DAYS = 90;
-    private const REPEAT_PATTERN_MIN_COUNT = 3;
+    public const REPEAT_PATTERN_WINDOW_DAYS = 90;
+    public const REPEAT_PATTERN_MIN_COUNT = 3;
 
     public function overview(User $user): array
     {
@@ -377,9 +379,28 @@ class AnalyticsService
         $incidentTypes = IncidentType::whereIn('id', $rows->pluck('incident_type_id'))->pluck('name', 'id');
 
         return $rows->map(fn ($row) => [
+            'departmentId' => (int) $row->department_id,
+            'incidentTypeId' => (int) $row->incident_type_id,
             'departmentName' => $departments[$row->department_id] ?? 'Unknown',
             'incidentTypeName' => $incidentTypes[$row->incident_type_id] ?? 'Unknown',
             'incidentCount' => (int) $row->incidentCount,
+            'review' => $this->reviewFor((int) $row->department_id, (int) $row->incident_type_id),
         ])->all();
+    }
+
+    /**
+     * The pattern's recurrence review: one still in progress, or one closed within the
+     * pattern window. A review closed longer ago no longer covers a pattern that is back.
+     */
+    private function reviewFor(int $departmentId, int $incidentTypeId): ?array
+    {
+        $review = RecurrenceReview::where('department_id', $departmentId)
+            ->where('incident_type_id', $incidentTypeId)
+            ->where(fn ($q) => $q->where('status', '!=', RecurrenceReviewStatus::Closed)
+                ->orWhere('closed_at', '>=', now()->subDays(self::REPEAT_PATTERN_WINDOW_DAYS)))
+            ->latest('id')
+            ->first();
+
+        return $review ? ['id' => $review->id, 'status' => $review->status->value, 'label' => $review->status->label()] : null;
     }
 }

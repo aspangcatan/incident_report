@@ -8,6 +8,7 @@ use App\Http\Controllers\CorrectiveActionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadershipDepartmentController;
 use App\Http\Controllers\LessonsLearnedController;
+use App\Http\Controllers\RecurrenceReviewController;
 use App\Http\Controllers\SafetyAlertController;
 use App\Http\Controllers\GuestReportController;
 use App\Http\Controllers\IncidentController;
@@ -75,6 +76,12 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::post('/safety-alerts', [SafetyAlertController::class, 'store'])->name('safety-alerts.store');
     Route::get('/safety-alerts/{safetyAlert}', [SafetyAlertController::class, 'show'])->name('safety-alerts.show');
     Route::post('/safety-alerts/{safetyAlert}/acknowledge', [SafetyAlertController::class, 'acknowledge'])->name('safety-alerts.acknowledge');
+    Route::get('/recurrence-reviews', [RecurrenceReviewController::class, 'index'])->name('recurrence-reviews.index');
+    Route::get('/recurrence-reviews/create', [RecurrenceReviewController::class, 'create'])->name('recurrence-reviews.create');
+    Route::post('/recurrence-reviews', [RecurrenceReviewController::class, 'store'])->name('recurrence-reviews.store');
+    Route::get('/recurrence-reviews/{recurrenceReview}', [RecurrenceReviewController::class, 'show'])->name('recurrence-reviews.show');
+    Route::post('/recurrence-reviews/{recurrenceReview}/submit', [RecurrenceReviewController::class, 'submit'])->name('recurrence-reviews.submit');
+    Route::post('/recurrence-reviews/{recurrenceReview}/decide', [RecurrenceReviewController::class, 'decide'])->name('recurrence-reviews.decide');
     Route::get('/lessons-learned', [LessonsLearnedController::class, 'index'])->name('lessons.index');
 
     Route::get('/admin/leadership', [LeadershipDepartmentController::class, 'index'])->name('admin.leadership.index');

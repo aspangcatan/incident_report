@@ -180,6 +180,7 @@ class IncidentController extends Controller
 
         return Inertia::render('Incidents/Show', [
             'injuryOptions' => self::injuryOptions(),
+            'similarIncidents' => $this->similarIncidents($incident),
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
             // Fetched separately rather than via load() above: Incident::auditLogs() is
@@ -268,6 +269,31 @@ class IncidentController extends Controller
                 'category' => 'evidence',
             ]);
         }
+    }
+
+    /** Up to 5 closed incidents sharing a type with this one, with their published lesson. */
+    private function similarIncidents(Incident $incident): array
+    {
+        $typeIds = $incident->incidentTypes->pluck('id');
+        if ($typeIds->isEmpty()) {
+            return [];
+        }
+
+        return Incident::query()
+            ->whereKeyNot($incident->id)
+            ->whereNotNull('lessons_published_at')
+            ->whereHas('incidentTypes', fn ($q) => $q->whereIn('incident_types.id', $typeIds))
+            ->with(['incidentTypes', 'department'])
+            ->latest('lessons_published_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Incident $similar) => [
+                'id' => $similar->id,
+                'types' => $similar->incidentTypes->pluck('name')->all(),
+                'department' => $similar->department?->name,
+                'lesson' => $similar->lessons_learned,
+                'published_at' => $similar->lessons_published_at,
+            ])->all();
     }
 
     /** Cause/agent of injury choices (value => label) for the report forms and incident page. */

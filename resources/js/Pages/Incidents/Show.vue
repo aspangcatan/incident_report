@@ -25,6 +25,7 @@ const props = defineProps({
     approvals: { type: Array, default: () => [] },
     auditLogs: { type: Array, required: true },
     injuryOptions: { type: Object, required: true },
+    similarIncidents: { type: Array, default: () => [] },
 });
 
 // Chosen labels plus the "Others (Specify)" text, as one readable line.
@@ -131,6 +132,17 @@ function switchTab(value) {
             <div class="flex flex-col gap-1">
                 <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Executive Narrative Summary</span>
                 <p class="font-body-md text-body-md text-on-surface">{{ incident.summary || '—' }}</p>
+            </div>
+
+            <div v-if="similarIncidents.length" class="flex flex-col gap-2">
+                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Similar Past Incidents & Lessons</span>
+                <span class="font-body-sm text-body-sm text-outline -mt-1">Closed incidents of the same type, and what the hospital learned from them.</span>
+                <div v-for="similar in similarIncidents" :key="similar.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+                    <span class="font-label-md text-label-md text-on-surface font-semibold">
+                        {{ similar.types.join(', ') }} · {{ similar.department ?? 'Department not recorded' }} · {{ formatDate(similar.published_at) }}
+                    </span>
+                    <span class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ similar.lesson }}</span>
+                </div>
             </div>
 
             <div v-if="incident.has_injury !== null" class="flex flex-col gap-1">
