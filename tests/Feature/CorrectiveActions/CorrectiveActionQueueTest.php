@@ -128,6 +128,20 @@ class CorrectiveActionQueueTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('auth.can.capaOperations', true));
     }
 
+    public function test_staff_see_only_their_own_capa_not_colleagues_on_the_same_incident(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+        $colleague = User::factory()->create(['role' => Role::Staff]);
+        $mine = $this->capaAtStatus(CorrectiveActionStatus::Open, ['responsible_user_id' => $staff->id]);
+        $theirs = app(CorrectiveActionService::class)->create($mine->incident, CorrectiveActionData::fromArray([
+            'description' => 'Back up PCs.', 'action_type' => 'corrective', 'priority' => 'low',
+            'due_date' => now()->addDays(3)->toDateString(),
+        ]));
+        $theirs->forceFill(['responsible_user_id' => $colleague->id])->save();
+
+        $this->assertQueueLists('open', $staff, [$mine->id]);
+    }
+
     public function test_unrelated_staff_is_forbidden_and_has_no_capa_operations_flag(): void
     {
         $staff = User::factory()->create(['role' => Role::Staff]);

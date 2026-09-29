@@ -46,7 +46,11 @@ function truncate(text, length = 80) {
                     </thead>
                     <tbody class="divide-y divide-surface-container">
                         <tr v-for="action in actions.data" :key="action.id" class="bg-surface-container-lowest hover:bg-surface-container-low">
-                            <td class="p-3 font-code-tabular text-body-sm text-on-surface font-semibold">{{ action.capa_number }}</td>
+                            <td class="p-3">
+                                <Link :href="`/incidents/${action.incident.id}?tab=capa`" class="font-code-tabular text-body-sm text-primary font-semibold">
+                                    {{ action.capa_number }}
+                                </Link>
+                            </td>
                             <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ truncate(action.description) }}</td>
                             <td class="p-3">
                                 <Link :href="`/incidents/${action.incident.id}?tab=capa`" class="font-code-tabular text-body-sm text-primary font-semibold">

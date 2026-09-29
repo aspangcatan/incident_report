@@ -34,9 +34,12 @@ final class CorrectiveActionQueueQuery
 
     public static function builder(string $queue, User $user): Builder
     {
-        $query = CorrectiveAction::query()->where(fn (Builder $q) => $q
-            ->whereIn('incident_id', Incident::query()->select('id')->visibleTo($user))
-            ->orWhere('responsible_user_id', $user->id));
+        // Focal Persons, Department Heads and the CQI Office oversee CAPAs; everyone else sees only their own.
+        $query = in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer], true)
+            ? CorrectiveAction::query()->where(fn (Builder $q) => $q
+                ->whereIn('incident_id', Incident::query()->select('id')->visibleTo($user))
+                ->orWhere('responsible_user_id', $user->id))
+            : CorrectiveAction::query()->where('responsible_user_id', $user->id);
 
         return match ($queue) {
             'open' => $query->whereIn('status', [CorrectiveActionStatus::Open, CorrectiveActionStatus::InProgress]),
