@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ApprovalStage;
 use App\Enums\ApprovalStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Approval extends Model
 {
+    protected $attributes = ['stage' => 'cqi_office'];
+
     protected $fillable = [
+        'stage',
         'incident_id',
         'requested_by',
         'request_comments',
@@ -23,6 +27,7 @@ class Approval extends Model
     protected $casts = [
         'requested_by' => 'integer',
         'status' => ApprovalStatus::class,
+        'stage' => ApprovalStage::class,
         'due_at' => 'datetime',
         'decided_at' => 'datetime',
         'escalated_at' => 'datetime',

@@ -250,8 +250,8 @@ class IncidentPolicy
 
     /**
      * Closure approval is the independent check on the department's CAPA
-     * work, so it belongs to the Quality office and Management (QSO,
-     * Management, Administrator) - never the incident's own department.
+     * work: the CQI Office decides the first stage, the CQI Committee the
+     * second (High/Sentinel only) - never the incident's own department.
      * The specific user who requested *this* Approval row is excluded even
      * if their role would otherwise qualify, mirroring
      * CorrectiveActionPolicy::verify()'s never-self-verification check.
@@ -261,7 +261,7 @@ class IncidentPolicy
      */
     private function hasApprovalAuthority(User $user, Incident $incident, Approval $approval): bool
     {
-        if (! in_array($user->role, [Role::QualitySafetyOfficer, Role::Management, Role::Administrator], true)) {
+        if ($user->role !== $approval->stage->deciderRole()) {
             return false;
         }
 

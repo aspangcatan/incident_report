@@ -10,6 +10,7 @@ use App\DataTransferObjects\CorrectiveActions\VerifyCorrectiveActionData;
 use App\DataTransferObjects\Investigations\CompleteInvestigationData;
 use App\DataTransferObjects\Investigations\FindingData;
 use App\DataTransferObjects\Investigations\StartInvestigationData;
+use App\Enums\ApprovalStage;
 use App\Enums\ApprovalStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\InvestigationMethodology;
@@ -23,7 +24,9 @@ use App\Services\ApprovalService;
 use App\Services\CorrectiveActionService;
 use App\Services\IncidentService;
 use App\Services\InvestigationService;
+use App\Notifications\CommitteeSignOffNeededNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class ApprovalTest extends TestCase
@@ -168,7 +171,7 @@ class ApprovalTest extends TestCase
         $incident = $this->incidentReadyForApproval();
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $approval = app(ApprovalService::class)->requestApproval($incident, $qso);
-        $approver = User::factory()->create(['role' => Role::Management]);
+        $approver = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $decided = app(ApprovalService::class)->approve($approval, $approver, DecideApprovalData::fromArray(['comments' => 'All good.']));
 
@@ -186,7 +189,7 @@ class ApprovalTest extends TestCase
         $incident = $this->incidentReadyForApproval();
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $approval = app(ApprovalService::class)->requestApproval($incident, $qso);
-        $approver = User::factory()->create(['role' => Role::Management]);
+        $approver = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $decided = app(ApprovalService::class)->returnForRevision($approval, $approver, DecideApprovalData::fromArray(['comments' => 'Needs a stronger fix.']));
 
@@ -200,7 +203,7 @@ class ApprovalTest extends TestCase
         $incident = $this->incidentReadyForApproval();
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $first = app(ApprovalService::class)->requestApproval($incident, $qso);
-        $approver = User::factory()->create(['role' => Role::Management]);
+        $approver = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         app(ApprovalService::class)->returnForRevision($first, $approver, DecideApprovalData::fromArray(['comments' => 'Not enough.']));
 
         // A new CAPA is added/verified in response, advancing back to Verified again.
@@ -305,7 +308,7 @@ class ApprovalTest extends TestCase
             $head,
             MarkNoCorrectiveActionNeededData::fromArray(['justification' => 'Initial call: no CAPA needed.'])
         );
-        $approver = User::factory()->create(['role' => Role::Management]);
+        $approver = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         app(ApprovalService::class)->returnForRevision($first, $approver, DecideApprovalData::fromArray(['comments' => 'Disagree, please reconsider.']));
 
         $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
@@ -326,15 +329,19 @@ class ApprovalTest extends TestCase
         $this->assertTrue($approver->can('approveClosure', [$incident->fresh(), $second]));
     }
 
-    public function test_qso_management_and_administrator_can_approve_or_return_closure_hospital_wide(): void
+    public function test_only_the_cqi_office_decides_the_first_closure_stage(): void
     {
         $incident = $this->incidentReadyForApproval();
         $approval = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
 
-        foreach ([Role::QualitySafetyOfficer, Role::Management, Role::Administrator] as $role) {
+        $cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $this->assertTrue($cqi->can('approveClosure', [$incident->fresh(), $approval]));
+        $this->assertTrue($cqi->can('returnFromApproval', [$incident->fresh(), $approval]));
+
+        foreach ([Role::Management, Role::Administrator, Role::CqiCommittee] as $role) {
             $user = User::factory()->create(['role' => $role]);
-            $this->assertTrue($user->can('approveClosure', [$incident->fresh(), $approval]), $role->value);
-            $this->assertTrue($user->can('returnFromApproval', [$incident->fresh(), $approval]), $role->value);
+            $this->assertFalse($user->can('approveClosure', [$incident->fresh(), $approval]), $role->value);
+            $this->assertFalse($user->can('returnFromApproval', [$incident->fresh(), $approval]), $role->value);
         }
     }
 
@@ -364,12 +371,12 @@ class ApprovalTest extends TestCase
         $this->assertFalse($supervisor->can('approveClosure', [$incident->fresh(), $approval]));
     }
 
-    public function test_the_requester_cannot_approve_or_return_their_own_request_even_as_administrator(): void
+    public function test_the_requester_cannot_approve_or_return_their_own_request_even_as_cqi_office(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $admin = User::factory()->create(['role' => Role::Administrator]);
+        $admin = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $approval = app(ApprovalService::class)->requestApproval($incident, $admin);
-        $otherAdmin = User::factory()->create(['role' => Role::Administrator]);
+        $otherAdmin = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->assertFalse($admin->can('approveClosure', [$incident->fresh(), $approval]));
         $this->assertFalse($admin->can('returnFromApproval', [$incident->fresh(), $approval]));
@@ -382,7 +389,7 @@ class ApprovalTest extends TestCase
         $incident = $this->incidentReadyForApproval();
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $first = app(ApprovalService::class)->requestApproval($incident, $qso);
-        $approver = User::factory()->create(['role' => Role::Management]);
+        $approver = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         app(ApprovalService::class)->returnForRevision($first, $approver, DecideApprovalData::fromArray(['comments' => 'Not enough.']));
 
         $capa = app(CorrectiveActionService::class)->create($incident->fresh(), CorrectiveActionData::fromArray([
@@ -456,7 +463,7 @@ class ApprovalTest extends TestCase
     {
         $incident = $this->incidentReadyForApproval();
         $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
-        $management = User::factory()->create(['role' => Role::Management]);
+        $management = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->actingAs($management)
             ->post("/approvals/{$approval->id}/approve", [])
@@ -467,7 +474,7 @@ class ApprovalTest extends TestCase
     {
         $incident = $this->incidentReadyForApproval();
         $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
-        $management = User::factory()->create(['role' => Role::Management]);
+        $management = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->actingAs($management)
             ->post("/approvals/{$approval->id}/approve", ['comments' => 'Confirmed effective.'])
@@ -479,7 +486,7 @@ class ApprovalTest extends TestCase
     public function test_the_requester_cannot_approve_their_own_request_via_http(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $admin = User::factory()->create(['role' => Role::Administrator]);
+        $admin = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $approval = app(ApprovalService::class)->requestApproval($incident, $admin);
 
         $this->actingAs($admin)
@@ -491,7 +498,7 @@ class ApprovalTest extends TestCase
     {
         $incident = $this->incidentReadyForApproval();
         $approval = app(ApprovalService::class)->requestApproval($incident, User::factory()->create(['role' => Role::QualitySafetyOfficer]));
-        $management = User::factory()->create(['role' => Role::Management]);
+        $management = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->actingAs($management)
             ->post("/approvals/{$approval->id}/return", ['comments' => 'Needs more work.'])
@@ -505,7 +512,7 @@ class ApprovalTest extends TestCase
         $incident = $this->incidentReadyForApproval();
         $head = $this->headOf($incident);
         $approval = app(ApprovalService::class)->requestApproval($incident, $head);
-        $management = User::factory()->create(['role' => Role::Management]);
+        $management = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->actingAs($management)
             ->get("/incidents/{$incident->id}?tab=approvals")
@@ -522,5 +529,53 @@ class ApprovalTest extends TestCase
                 ->where('can.requestApproval', false) // already requested; incident is no longer Verified
                 ->where('approvals.0.can.approve', false)
             );
+    }
+
+    public function test_a_high_risk_closure_needs_the_committee_after_the_cqi_office(): void
+    {
+        Notification::fake();
+        $committee = User::factory()->create(['role' => Role::CqiCommittee]);
+        $incident = $this->incidentReadyForApproval(Severity::Level3High);
+        $first = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
+        $cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+
+        $this->actingAs($cqi)->post("/approvals/{$first->id}/approve", ['comments' => 'CAPA done.'])->assertRedirect();
+
+        $incident->refresh();
+        $this->assertSame(IncidentStatus::ForApproval, $incident->status);
+        $second = $incident->approvals()->latest('id')->first();
+        $this->assertSame(ApprovalStage::Committee, $second->stage);
+        $this->assertSame(ApprovalStatus::Pending, $second->status);
+        Notification::assertSentTo($committee, CommitteeSignOffNeededNotification::class);
+
+        $this->assertFalse($cqi->can('approveClosure', [$incident, $second]));
+        $this->assertTrue($committee->can('approveClosure', [$incident, $second]));
+
+        $this->actingAs($committee)->post("/approvals/{$second->id}/approve", ['comments' => 'Agreed.'])->assertRedirect();
+        $this->assertSame(IncidentStatus::Closed, $incident->fresh()->status);
+    }
+
+    public function test_the_committee_can_return_a_high_risk_closure_to_the_department(): void
+    {
+        $incident = $this->incidentReadyForApproval(Severity::Level4CriticalSentinel);
+        $first = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
+        app(ApprovalService::class)->approve($first, User::factory()->create(['role' => Role::QualitySafetyOfficer]), DecideApprovalData::fromArray(['comments' => 'OK.']));
+        $second = $incident->approvals()->latest('id')->first();
+        $committee = User::factory()->create(['role' => Role::CqiCommittee]);
+
+        $this->actingAs($committee)->post("/approvals/{$second->id}/return", ['comments' => 'Retrain all staff first.'])->assertRedirect();
+
+        $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
+    }
+
+    public function test_a_moderate_closure_closes_on_the_cqi_offices_approval_alone(): void
+    {
+        $incident = $this->incidentReadyForApproval(Severity::Level2Moderate);
+        $approval = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
+
+        app(ApprovalService::class)->approve($approval, User::factory()->create(['role' => Role::QualitySafetyOfficer]), DecideApprovalData::fromArray(['comments' => 'OK.']));
+
+        $this->assertSame(IncidentStatus::Closed, $incident->fresh()->status);
+        $this->assertSame(1, $incident->approvals()->count());
     }
 }

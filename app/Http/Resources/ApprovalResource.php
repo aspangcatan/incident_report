@@ -16,6 +16,10 @@ class ApprovalResource extends JsonResource
                 'value' => $this->status->value,
                 'label' => $this->status->label(),
             ],
+            'stage' => [
+                'value' => $this->stage->value,
+                'label' => $this->stage->label(),
+            ],
             'request_comments' => $this->request_comments,
             'due_at' => $this->due_at,
             'is_overdue' => $this->isOverdue(),

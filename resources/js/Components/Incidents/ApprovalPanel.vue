@@ -100,6 +100,7 @@ function submitDecision(approvalId) {
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex flex-col gap-1 max-w-xl">
                         <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-label-md text-label-md text-on-surface font-semibold">{{ approval.stage.label }}</span>
                             <span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-body-sm font-semibold">
                                 {{ approval.status.label }}
                             </span>
@@ -111,7 +112,7 @@ function submitDecision(approvalId) {
                             No corrective action needed: {{ approval.request_comments }}
                         </p>
                         <p class="font-body-sm text-body-sm text-outline">
-                            Requested by {{ approval.requested_by?.name }} on {{ formatDate(approval.created_at) }}
+                            {{ approval.stage.value === 'committee' ? 'Passed on by' : 'Requested by' }} {{ approval.requested_by?.name }} on {{ formatDate(approval.created_at) }}
                         </p>
                         <p v-if="approval.approver" class="font-body-sm text-body-sm text-outline">
                             {{ approval.status.value === 'approved' ? 'Approved' : 'Returned' }} by {{ approval.approver.name }} on {{ formatDate(approval.decided_at) }}: "{{ approval.comments }}"
@@ -119,7 +120,7 @@ function submitDecision(approvalId) {
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <button v-if="approval.can.approve" type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md" @click="startDeciding(approval.id, 'approve')">
-                            Approve &amp; Close
+                            {{ approval.stage.value === 'cqi_office' && ['level_3_high', 'level_4_critical_sentinel'].includes(incident.severity) ? 'Approve (to Committee)' : 'Approve & Close' }}
                         </button>
                         <button v-if="approval.can.return" type="button" class="px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md" @click="startDeciding(approval.id, 'return')">
                             Return for Revision

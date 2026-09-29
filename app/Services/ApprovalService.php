@@ -4,13 +4,18 @@ namespace App\Services;
 
 use App\DataTransferObjects\Approvals\DecideApprovalData;
 use App\DataTransferObjects\Approvals\MarkNoCorrectiveActionNeededData;
+use App\Enums\ApprovalStage;
 use App\Enums\ApprovalStatus;
 use App\Enums\IncidentStatus;
+use App\Enums\Role;
+use App\Enums\Severity;
 use App\Models\Approval;
 use App\Models\Incident;
 use App\Models\User;
+use App\Notifications\CommitteeSignOffNeededNotification;
 use App\Repositories\ApprovalRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class ApprovalService
 {
@@ -39,6 +44,27 @@ class ApprovalService
             ]);
 
             $incident = $approval->incident;
+
+            // High/Sentinel: the CQI Office's approval hands over to the Committee.
+            if ($approval->stage === ApprovalStage::CqiOffice && $this->needsCommitteeSignOff($incident)) {
+                $this->approvals->create([
+                    'incident_id' => $incident->id,
+                    'stage' => ApprovalStage::Committee,
+                    'requested_by' => $approver->id,
+                    'status' => ApprovalStatus::Pending,
+                    'due_at' => now()->addHours(config('incident_workflow.approval_sla_hours.' . $incident->severity->value, 72)),
+                ]);
+                $incident->auditComment = "Approved by the CQI Office: {$data->comments}. Awaiting CQI Committee sign-off.";
+                $incident->save();
+
+                $committee = User::active()->withRole(Role::CqiCommittee)->get();
+                if ($committee->isNotEmpty()) {
+                    Notification::send($committee, new CommitteeSignOffNeededNotification($incident));
+                }
+
+                return $approval;
+            }
+
             $incident->auditComment = "Approved for closure: {$data->comments}";
             $incident->status = IncidentStatus::Closed;
             $incident->closed_by = $approver->id;
@@ -68,6 +94,11 @@ class ApprovalService
         });
     }
 
+    private function needsCommitteeSignOff(Incident $incident): bool
+    {
+        return in_array($incident->severity, [Severity::Level3High, Severity::Level4CriticalSentinel], true);
+    }
+
     /**
      * Both public "request" methods funnel here — the DB operations are
      * identical either way (create a pending Approval row, move the
@@ -82,6 +113,7 @@ class ApprovalService
         return DB::transaction(function () use ($incident, $requester, $justification) {
             $approval = $this->approvals->create([
                 'incident_id' => $incident->id,
+                'stage' => ApprovalStage::CqiOffice,
                 'requested_by' => $requester->id,
                 'request_comments' => $justification,
                 'status' => ApprovalStatus::Pending,
