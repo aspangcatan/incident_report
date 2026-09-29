@@ -69,6 +69,7 @@ class DepartmentAssessmentTest extends TestCase
         Notification::fake();
         $head = $this->departmentHead();
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $this->department->id]);
+        $cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $incident = $this->submittedIncident();
         app(IncidentService::class)->saveAssessment($incident, ['severity' => Severity::Level4CriticalSentinel->value]);
 
@@ -79,7 +80,9 @@ class DepartmentAssessmentTest extends TestCase
         $this->assertSame($head->id, $incident->assessed_by);
         $this->assertNotNull($incident->assessed_at);
         $this->assertTrue($incident->is_sentinel_event);
-        Notification::assertSentTo([$head, $supervisor], IncidentReadyForReviewNotification::class);
+        // Only the CQI Office triages, so only it is told the incident is ready.
+        Notification::assertSentTo($cqi, IncidentReadyForReviewNotification::class);
+        Notification::assertNotSentTo([$head, $supervisor], IncidentReadyForReviewNotification::class);
     }
 
     public function test_return_to_department_moves_back_to_submitted_and_notifies_the_department_head(): void
