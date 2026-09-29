@@ -28,7 +28,7 @@ final class CorrectiveActionQueueQuery
     /** Also the sidebar's capaOperations flag. */
     public static function allowed(User $user): bool
     {
-        return in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer, Role::Administrator], true)
+        return in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer], true)
             || CorrectiveAction::where('responsible_user_id', $user->id)->exists();
     }
 

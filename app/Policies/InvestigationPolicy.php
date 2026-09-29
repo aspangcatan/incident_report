@@ -38,7 +38,7 @@ class InvestigationPolicy
 
     private function hasLeadAccess(User $user, Investigation $investigation): bool
     {
-        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true)) {
+        if ($user->role === Role::QualitySafetyOfficer) {
             return true;
         }
 

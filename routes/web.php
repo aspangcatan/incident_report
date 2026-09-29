@@ -6,6 +6,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CorrectiveActionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LeadershipDepartmentController;
 use App\Http\Controllers\GuestReportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentWorkflowController;
@@ -63,4 +64,7 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+    Route::get('/admin/leadership', [LeadershipDepartmentController::class, 'index'])->name('admin.leadership.index');
+    Route::put('/admin/leadership/{user}', [LeadershipDepartmentController::class, 'update'])->name('admin.leadership.update');
 });

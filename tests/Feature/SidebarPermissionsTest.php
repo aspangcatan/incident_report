@@ -34,9 +34,11 @@ class SidebarPermissionsTest extends TestCase
             'investigator' => [Role::Investigator, $flags(true, true, false, false, false)],
             'supervisor' => [Role::Supervisor, $flags(true, true, true, true, false)],
             'department head' => [Role::DepartmentHead, $flags(true, true, true, true, false)],
-            'qso' => [Role::QualitySafetyOfficer, $flags(true, true, true, true, false)],
-            'administrator' => [Role::Administrator, $flags(true, true, true, true, true)],
+            'qso' => [Role::QualitySafetyOfficer, $flags(true, true, true, true, true)],
+            'administrator' => [Role::Administrator, $flags(false, false, false, false, true)],
             'management' => [Role::Management, $flags(true, false, false, true, false)],
+            'leadership' => [Role::Leadership, $flags(true, false, false, true, false)],
+            'cqi committee' => [Role::CqiCommittee, $flags(true, false, false, true, false)],
         ];
     }
 }

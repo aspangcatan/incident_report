@@ -49,7 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'investigationWorkspace' => IncidentQueueQuery::investigationWorkspace($user),
                     'capaOperations' => CorrectiveActionQueueQuery::allowed($user),
                     'viewAnalytics' => $user->can('viewAnalytics', Incident::class),
-                    'administration' => $user->role === Role::Administrator,
+                    'administration' => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true),
                 ] : [],
             ],
             'flash' => [

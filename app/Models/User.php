@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
@@ -194,6 +195,18 @@ class User extends Authenticatable
     public function scopeActive(Builder $query): Builder
     {
         return $query->where($this->qualifyColumn('status'), '1');
+    }
+
+    private ?array $leadershipDepartmentIdsCache = null;
+
+    /** Departments a Medical/Nursing/Ancillary Leadership user oversees (leadership_departments). */
+    public function leadershipDepartmentIds(): array
+    {
+        return $this->leadershipDepartmentIdsCache ??= DB::table('leadership_departments')
+            ->where('user_id', $this->id)
+            ->pluck('department_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     /** Who can be assigned to investigate an incident: an active IR investigator, or active staff of its department. */

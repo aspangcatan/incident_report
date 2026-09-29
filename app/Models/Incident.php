@@ -177,7 +177,7 @@ class Incident extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator, Role::Management], true)) {
+        if ($user->role->seesAllIncidents()) {
             return $query;
         }
 
@@ -191,6 +191,8 @@ class Incident extends Model
                 if ($user->department_id !== null) {
                     $q->orWhere('department_id', $user->department_id);
                 }
+            } elseif ($user->role === Role::Leadership) {
+                $q->orWhereIn('department_id', $user->leadershipDepartmentIds());
             } else {
                 if ($user->department_id !== null) {
                     $q->orWhere(fn (Builder $q) => $q

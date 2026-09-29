@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -26,6 +29,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // Technical setup: which departments each Leadership user oversees.
+        Gate::define('manageLeadership', fn (User $user) => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true));
     }
 }

@@ -50,5 +50,5 @@ return [
     | Escalation recipients (role values — see App\Enums\Role)
     |--------------------------------------------------------------------------
     */
-    'escalation_recipient_roles' => ['quality_safety_officer', 'administrator'],
+    'escalation_recipient_roles' => ['quality_safety_officer'],
 ];

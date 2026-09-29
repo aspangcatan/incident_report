@@ -28,10 +28,11 @@ class AnalyticsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_qso_administrator_and_management_can_view_analytics(): void
+    public function test_cqi_office_committee_and_executives_can_view_analytics_but_not_it_admin(): void
     {
         $this->assertTrue(User::factory()->create(['role' => Role::QualitySafetyOfficer])->can('viewAnalytics', Incident::class));
-        $this->assertTrue(User::factory()->create(['role' => Role::Administrator])->can('viewAnalytics', Incident::class));
+        $this->assertTrue(User::factory()->create(['role' => Role::CqiCommittee])->can('viewAnalytics', Incident::class));
+        $this->assertFalse(User::factory()->create(['role' => Role::Administrator])->can('viewAnalytics', Incident::class));
         $this->assertTrue(User::factory()->create(['role' => Role::Management])->can('viewAnalytics', Incident::class));
     }
 

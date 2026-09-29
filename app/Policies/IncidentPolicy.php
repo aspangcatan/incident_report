@@ -11,17 +11,19 @@ use App\Models\User;
 
 class IncidentPolicy
 {
+    /** The IT/System Administrator is technical only: no incident lists beyond their own reports. */
     public function viewAny(User $user): bool
     {
-        return $user->role !== Role::Staff;
+        return ! in_array($user->role, [Role::Staff, Role::Administrator], true);
     }
 
     public function viewAnalytics(User $user): bool
     {
         return in_array($user->role, [
             Role::QualitySafetyOfficer,
-            Role::Administrator,
             Role::Management,
+            Role::CqiCommittee,
+            Role::Leadership,
             Role::Supervisor,
             Role::DepartmentHead,
         ], true);
@@ -57,12 +59,16 @@ class IncidentPolicy
             return true;
         }
 
-        if (in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator, Role::Management], true)) {
+        if ($user->role->seesAllIncidents()) {
             return true;
         }
 
         if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
             return $incident->department_id !== null && $incident->department_id === $user->department_id;
+        }
+
+        if ($user->role === Role::Leadership) {
+            return in_array($incident->department_id, $user->leadershipDepartmentIds(), true);
         }
 
         return false;
@@ -224,9 +230,10 @@ class IncidentPolicy
         return $this->hasApprovalAuthority($user, $incident, $approval);
     }
 
+    /** The Patient Safety/CQI Office. */
     private function isQualityStaff(User $user): bool
     {
-        return in_array($user->role, [Role::QualitySafetyOfficer, Role::Administrator], true);
+        return $user->role === Role::QualitySafetyOfficer;
     }
 
     private function isHeadOfIncidentDepartment(User $user, Incident $incident): bool

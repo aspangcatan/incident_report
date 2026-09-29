@@ -7,13 +7,13 @@ use App\Models\Incident;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
-/** People who assess/review an incident: QSO/Admin, plus Supervisors and Department Heads of its department. */
+/** People who assess/triage an incident: the CQI Office, plus Focal Persons and Department Heads of its department. */
 final class IncidentReviewers
 {
     public static function for(Incident $incident): Collection
     {
         return User::active()->where(function ($query) use ($incident) {
-            $query->withRole([Role::QualitySafetyOfficer, Role::Administrator]);
+            $query->withRole(Role::QualitySafetyOfficer);
 
             if ($incident->department_id !== null) {
                 $query->orWhere(function ($query) use ($incident) {

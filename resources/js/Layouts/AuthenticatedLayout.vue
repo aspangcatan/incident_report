@@ -77,6 +77,7 @@ const allNavGroups = [
         label: 'Administration & Audit',
         can: 'administration',
         items: [
+            { label: 'Leadership Coverage', icon: 'building', href: '/admin/leadership' },
             { label: 'Escalation Engine', icon: 'sitemap', href: '#' },
             { label: 'Departments & Units', icon: 'building', href: '#' },
             { label: 'Audit Trail & Custody', icon: 'file-contract', href: '#' },
