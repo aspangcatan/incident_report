@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\ApprovalStatus;
 use App\Enums\IncidentStatus;
 use App\Enums\Role;
+use App\Enums\Severity;
 use App\Models\Approval;
 use App\Models\Incident;
 use App\Models\User;
@@ -89,13 +90,34 @@ class IncidentPolicy
         return $this->update($user, $incident);
     }
 
+    /** CQI triage: confirm or change the severity, or return to the department. */
     public function review(User $user, Incident $incident): bool
     {
-        if ($incident->status !== IncidentStatus::ForReview) {
+        return $incident->status === IncidentStatus::ForReview && $this->isQualityStaff($user);
+    }
+
+    /** The department's suggestion for who should investigate, made during assessment. */
+    public function recommendInvestigator(User $user, Incident $incident): bool
+    {
+        if ($incident->status !== IncidentStatus::Submitted) {
             return false;
         }
 
-        return $this->hasReviewOrAssignAccess($user, $incident);
+        if ($this->isQualityStaff($user)) {
+            return true;
+        }
+
+        return in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)
+            && $user->department_id !== null
+            && $incident->department_id === $user->department_id;
+    }
+
+    /** Only the CQI Office, and never for High or Sentinel incidents. */
+    public function skipInvestigation(User $user, Incident $incident): bool
+    {
+        return $incident->status === IncidentStatus::Reviewed
+            && $this->isQualityStaff($user)
+            && in_array($incident->severity, [Severity::Level1Low, Severity::Level2Moderate], true);
     }
 
     public function assess(User $user, Incident $incident): bool
@@ -140,11 +162,7 @@ class IncidentPolicy
 
     public function assign(User $user, Incident $incident): bool
     {
-        if ($incident->status !== IncidentStatus::Reviewed) {
-            return false;
-        }
-
-        return $this->hasReviewOrAssignAccess($user, $incident);
+        return $incident->status === IncidentStatus::Reviewed && $this->isQualityStaff($user);
     }
 
     public function start(User $user, Incident $incident): bool
@@ -158,19 +176,6 @@ class IncidentPolicy
         }
 
         return $incident->assigned_investigator_id === $user->id;
-    }
-
-    private function hasReviewOrAssignAccess(User $user, Incident $incident): bool
-    {
-        if ($this->isQualityStaff($user)) {
-            return true;
-        }
-
-        if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
-            return $incident->department_id !== null && $incident->department_id === $user->department_id;
-        }
-
-        return false;
     }
 
     /** The incident's department runs the CAPA stage, so its Department Head asks for closure. */

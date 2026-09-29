@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Severity;
 use App\Http\Requests\Incidents\AssignIncidentRequest;
 use App\Http\Requests\Incidents\CompleteAssessmentRequest;
 use App\Http\Requests\Incidents\ReturnIncidentRequest;
 use App\Http\Requests\Incidents\ReturnToDepartmentRequest;
 use App\Http\Requests\Incidents\ReviewIncidentRequest;
 use App\Http\Requests\Incidents\SaveAssessmentRequest;
+use App\Http\Requests\Incidents\SkipInvestigationRequest;
 use App\Models\Incident;
 use App\Models\User;
 use App\Services\IncidentService;
@@ -21,9 +23,17 @@ class IncidentWorkflowController extends Controller
 
     public function review(ReviewIncidentRequest $request, Incident $incident): RedirectResponse
     {
-        $this->incidents->markReviewed($incident, $request->user(), $request->validated('comments'));
+        $severity = $request->validated('severity') ? Severity::from($request->validated('severity')) : null;
+        $this->incidents->markReviewed($incident, $request->user(), $request->validated('comments'), $severity);
 
-        return redirect()->route('incidents.show', $incident)->with('success', 'Incident marked as reviewed.');
+        return redirect()->route('incidents.show', $incident)->with('success', 'Triage done - now assign an investigator or record that none is needed.');
+    }
+
+    public function skipInvestigation(SkipInvestigationRequest $request, Incident $incident): RedirectResponse
+    {
+        $this->incidents->skipInvestigation($incident, $request->user(), $request->validated('reason'));
+
+        return redirect()->route('incidents.show', $incident)->with('success', 'No investigation needed - the department can now handle corrective actions.');
     }
 
     public function returnForRevision(ReturnIncidentRequest $request, Incident $incident): RedirectResponse

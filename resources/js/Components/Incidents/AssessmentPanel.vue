@@ -8,6 +8,7 @@ const props = defineProps({
     incident: { type: Object, required: true },
     can: { type: Object, required: true },
     departments: { type: Array, default: () => [] },
+    investigators: { type: Array, default: () => [] },
 });
 
 const severities = [
@@ -38,6 +39,7 @@ const form = useForm({
     recommendations: props.incident.recommendations ?? '',
     severity: props.incident.severity ?? null,
     department_id: props.incident.department_id ?? null,
+    recommended_investigator_id: props.incident.recommended_investigator_id ?? null,
 });
 
 const returnForm = useForm({ comments: '' });
@@ -117,6 +119,21 @@ function returnToReporter() {
                 <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option>
             </select>
             <span v-if="form.errors.department_id" class="font-body-sm text-body-sm text-error">{{ form.errors.department_id }}</span>
+        </div>
+
+        <!-- Recommended investigator (Focal Person / Department Head) -->
+        <div v-if="editable && can.recommendInvestigator" class="flex flex-col gap-1.5">
+            <label for="recommended_investigator" class="font-label-md text-label-md text-on-surface font-semibold">Recommended investigator</label>
+            <span class="font-body-sm text-body-sm text-outline">Optional. Who in the department should investigate? The Patient Safety/CQI Office makes the final choice.</span>
+            <select id="recommended_investigator" v-model="form.recommended_investigator_id" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low">
+                <option :value="null">No recommendation</option>
+                <option v-for="person in investigators" :key="person.id" :value="person.id">{{ person.label }}</option>
+            </select>
+            <span v-if="form.errors.recommended_investigator_id" class="font-body-sm text-body-sm text-error">{{ form.errors.recommended_investigator_id }}</span>
+        </div>
+        <div v-else-if="incident.recommended_investigator" class="flex flex-col gap-0.5">
+            <span class="font-label-md text-label-md text-on-surface font-semibold">Recommended investigator</span>
+            <span class="font-body-md text-body-md text-on-surface">{{ incident.recommended_investigator.name }}</span>
         </div>
 
         <!-- Immediate actions -->

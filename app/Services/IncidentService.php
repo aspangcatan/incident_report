@@ -103,9 +103,16 @@ class IncidentService
         }
     }
 
-    public function markReviewed(Incident $incident, User $reviewer, ?string $comments): Incident
+    /** CQI triage. A new $severity overrides the department's classification. */
+    public function markReviewed(Incident $incident, User $reviewer, ?string $comments, ?Severity $severity = null): Incident
     {
-        DB::transaction(function () use ($incident, $reviewer, $comments) {
+        DB::transaction(function () use ($incident, $reviewer, $comments, $severity) {
+            if ($severity !== null && $severity !== $incident->severity) {
+                $comments = trim("Severity changed from {$incident->severity?->label()} to {$severity->label()}. " . ($comments ?? ''));
+                $incident->severity = $severity;
+                $incident->is_sentinel_event = $severity === Severity::Level4CriticalSentinel;
+            }
+
             $incident->auditComment = $comments;
             $incident->status = IncidentStatus::Reviewed;
             $incident->supervisor_reviewed_by = $reviewer->id;
@@ -135,6 +142,21 @@ class IncidentService
         return $incident;
     }
 
+    /** CQI Office decides no investigation is needed; the department goes straight to CAPA. */
+    public function skipInvestigation(Incident $incident, User $decidedBy, string $reason): Incident
+    {
+        DB::transaction(function () use ($incident, $decidedBy, $reason) {
+            $incident->auditComment = "No investigation needed: {$reason}";
+            $incident->status = IncidentStatus::CorrectiveAction;
+            $incident->investigation_skipped_reason = $reason;
+            $incident->investigation_skipped_by = $decidedBy->id;
+            $incident->investigation_skipped_at = now();
+            $incident->save();
+        });
+
+        return $incident;
+    }
+
     public function assignInvestigator(Incident $incident, User $investigator, \DateTimeInterface|string|null $targetClosureDate = null): Incident
     {
         DB::transaction(function () use ($incident, $investigator, $targetClosureDate) {
@@ -160,7 +182,7 @@ class IncidentService
     public function saveAssessment(Incident $incident, array $data): Incident
     {
         return DB::transaction(function () use ($incident, $data) {
-            $incident->fill(Arr::only($data, ['recommendations', 'severity', 'department_id']));
+            $incident->fill(Arr::only($data, ['recommendations', 'severity', 'department_id', 'recommended_investigator_id']));
             $incident->save();
 
             if (array_key_exists('actions_taken', $data)) {

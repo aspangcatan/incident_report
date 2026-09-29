@@ -5,6 +5,8 @@ namespace App\Http\Requests\Incidents;
 use App\Enums\ActionStatus;
 use App\Enums\Severity;
 use App\Models\Department;
+use App\Models\User;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
@@ -21,6 +23,17 @@ class SaveAssessmentRequest extends FormRequest
             'recommendations' => ['nullable', 'string'],
             'severity' => ['nullable', new Enum(Severity::class)],
             'department_id' => ['nullable', Department::selectableRule()],
+            'recommended_investigator_id' => [
+                'nullable',
+                'integer',
+                function (string $attribute, mixed $value, Closure $fail) {
+                    $candidate = User::find($value);
+
+                    if ($candidate === null || ! $candidate->canInvestigate($this->route('incident'))) {
+                        $fail("Choose an active staff member of this incident's department.");
+                    }
+                },
+            ],
             'actions_taken' => ['array'],
             'actions_taken.*.description' => ['required_with:actions_taken', 'string'],
             'actions_taken.*.responsible_name' => ['nullable', 'string', 'max:255'],
@@ -37,6 +50,10 @@ class SaveAssessmentRequest extends FormRequest
 
         if (! $this->user()->can('completeAssessment', $incident)) {
             unset($data['severity']);
+        }
+
+        if (! $this->user()->can('recommendInvestigator', $incident)) {
+            unset($data['recommended_investigator_id']);
         }
 
         if (! $this->user()->can('changeDepartment', $incident) || empty($data['department_id'])) {

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Incidents;
 
+use App\Enums\Severity;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Enum;
 
 class ReviewIncidentRequest extends FormRequest
 {
@@ -15,6 +17,7 @@ class ReviewIncidentRequest extends FormRequest
     {
         return [
             'comments' => ['nullable', 'string'],
+            'severity' => ['nullable', new Enum(Severity::class)],
         ];
     }
 }

@@ -95,7 +95,7 @@ function switchTab(value) {
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Lead Investigator</span>
-                <span class="font-body-md text-body-md text-secondary font-semibold">{{ incident.assigned_investigator?.name ?? 'Not yet assigned' }}</span>
+                <span class="font-body-md text-body-md text-secondary font-semibold">{{ incident.assigned_investigator?.name ?? (incident.investigation_skipped_at ? 'Not required' : 'Not yet assigned') }}</span>
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Type</span>
@@ -119,7 +119,7 @@ function switchTab(value) {
         </div>
 
         <div v-if="activeTab === 'overview'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
-            <AssessmentPanel :incident="incident" :can="can" :departments="departments" />
+            <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" />
 
             <div class="flex flex-col gap-1">
                 <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Executive Narrative Summary</span>
@@ -216,6 +216,17 @@ function switchTab(value) {
                     <span class="font-code-tabular text-body-sm text-outline">{{ formatDate(log.created_at) }}</span>
                 </div>
             </div>
+        </div>
+
+        <div
+            v-else-if="activeTab === 'investigation' && incident.investigation_skipped_at"
+            class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-xs"
+        >
+            <h2 class="font-title-lg text-title-lg text-primary font-bold">No Investigation Needed</h2>
+            <p class="font-body-md text-body-md text-on-surface whitespace-pre-line">"{{ incident.investigation_skipped_reason }}"</p>
+            <span class="font-body-sm text-body-sm text-outline">
+                Decided by {{ incident.investigation_skipped_by?.name ?? 'the Patient Safety/CQI Office' }} on {{ formatDate(incident.investigation_skipped_at) }}
+            </span>
         </div>
 
         <InvestigationPanel

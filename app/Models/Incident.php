@@ -39,6 +39,7 @@ class Incident extends Model
         'injury_agent_other',
         'summary',
         'recommendations',
+        'recommended_investigator_id',
         'police_notified',
         'police_station',
         'police_officer_in_charge',
@@ -70,6 +71,9 @@ class Incident extends Model
         'assignment_escalated_at' => 'datetime',
         'assessed_by' => 'integer',
         'assessed_at' => 'datetime',
+        'recommended_investigator_id' => 'integer',
+        'investigation_skipped_by' => 'integer',
+        'investigation_skipped_at' => 'datetime',
         'assessment_escalated_at' => 'datetime',
     ];
 
@@ -103,6 +107,16 @@ class Incident extends Model
     public function supervisorReviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'supervisor_reviewed_by');
+    }
+
+    public function recommendedInvestigator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recommended_investigator_id');
+    }
+
+    public function investigationSkippedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'investigation_skipped_by');
     }
 
     public function assessor(): BelongsTo

@@ -23,6 +23,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         \App\Events\IncidentReviewed::class => [
             \App\Listeners\NotifyReporterOfReviewOutcome::class,
+            \App\Listeners\AlertOversightOfHighRiskIncident::class,
         ],
         \App\Events\IncidentReturnedForRevision::class => [
             \App\Listeners\NotifyReporterOfReturnForRevision::class,

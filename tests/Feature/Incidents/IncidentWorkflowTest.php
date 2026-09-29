@@ -173,14 +173,18 @@ class IncidentWorkflowTest extends TestCase
         ]);
     }
 
-    public function test_supervisor_can_review_an_assessed_incident_in_their_own_department(): void
+    public function test_only_the_cqi_office_triages_not_the_department(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $head = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $department->id]);
+        $qso = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]);
         $incident = $this->assessedIncident($reporter, $department);
 
-        $this->assertTrue($supervisor->can('review', $incident));
+        $this->assertFalse($supervisor->can('review', $incident));
+        $this->assertFalse($head->can('review', $incident));
+        $this->assertTrue($qso->can('review', $incident));
     }
 
     public function test_supervisor_cannot_review_an_assessed_incident_from_a_different_department(): void
@@ -208,17 +212,19 @@ class IncidentWorkflowTest extends TestCase
         $this->assertFalse($supervisor->can('review', $submitted->fresh()));
     }
 
-    public function test_supervisor_can_assign_only_a_reviewed_incident_in_their_department(): void
+    public function test_only_the_cqi_office_assigns_and_only_once_reviewed(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $qso = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]);
         $incident = $this->submittedIncident($reporter, $department);
 
-        $this->assertFalse($supervisor->can('assign', $incident));
+        $this->assertFalse($qso->can('assign', $incident));
 
-        app(IncidentService::class)->markReviewed($incident, $supervisor, null);
-        $this->assertTrue($supervisor->can('assign', $incident->fresh()));
+        app(IncidentService::class)->markReviewed($incident, $qso, null);
+        $this->assertTrue($qso->can('assign', $incident->fresh()));
+        $this->assertFalse($supervisor->can('assign', $incident->fresh()));
     }
 
     public function test_management_cannot_review_or_assign(): void
@@ -309,11 +315,11 @@ class IncidentWorkflowTest extends TestCase
         \Illuminate\Support\Facades\Notification::assertNotSentTo($supervisor, \App\Notifications\IncidentSubmittedNotification::class);
     }
 
-    public function test_a_supervisor_can_mark_an_assessed_incident_reviewed_via_http(): void
+    public function test_the_cqi_office_can_triage_an_assessed_incident_via_http(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]); // CQI Office triages and assigns
         $incident = $this->assessedIncident($reporter, $department);
 
         $response = $this->actingAs($supervisor)->post("/incidents/{$incident->id}/review", [
@@ -354,7 +360,7 @@ class IncidentWorkflowTest extends TestCase
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]); // CQI Office triages and assigns
         $notAnInvestigator = User::factory()->create(['role' => \App\Enums\Role::Staff]);
         $incident = $this->submittedIncident($reporter, $department);
         app(IncidentService::class)->markReviewed($incident, $supervisor, null);
@@ -367,7 +373,7 @@ class IncidentWorkflowTest extends TestCase
     public function test_assigning_rejects_an_inactive_investigator(): void
     {
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]); // CQI Office triages and assigns
         $inactiveInvestigator = User::factory()->inactive()->create(['role' => \App\Enums\Role::Investigator]);
         $incident = $this->submittedIncident($this->makeReporter(), $department);
         app(IncidentService::class)->markReviewed($incident, $supervisor, null);
@@ -381,7 +387,7 @@ class IncidentWorkflowTest extends TestCase
     public function test_assigning_rejects_a_user_whose_elevated_privilege_belongs_to_another_system(): void
     {
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]); // CQI Office triages and assigns
         $hrisAdmin = User::factory()->create();
         \App\Models\UserPrivilege::create(['user_id' => $hrisAdmin->id, 'syscode' => 'hris', 'level' => 'investigator']);
         $incident = $this->submittedIncident($this->makeReporter(), $department);
@@ -396,7 +402,7 @@ class IncidentWorkflowTest extends TestCase
     public function test_a_staff_member_of_the_incidents_department_can_be_assigned_and_finds_it_in_assigned_to_me(): void
     {
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]); // CQI Office triages and assigns
         $colleague = User::factory()->create(['department_id' => $department->id]);
         $incident = $this->submittedIncident($this->makeReporter(), $department);
         app(IncidentService::class)->markReviewed($incident, $supervisor, null);
@@ -413,11 +419,11 @@ class IncidentWorkflowTest extends TestCase
                 ->where('auth.can.investigationWorkspace', true));
     }
 
-    public function test_a_supervisor_can_assign_a_reviewed_incident_via_http(): void
+    public function test_the_cqi_office_can_assign_a_reviewed_incident_via_http(): void
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]); // CQI Office triages and assigns
         $investigator = User::factory()->create(['role' => \App\Enums\Role::Investigator]);
         $incident = $this->submittedIncident($reporter, $department);
         app(IncidentService::class)->markReviewed($incident, $supervisor, null);
@@ -435,7 +441,7 @@ class IncidentWorkflowTest extends TestCase
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
-        $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
+        $supervisor = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]);
         $incident = $this->assessedIncident($reporter, $department);
 
         $response = $this->actingAs($supervisor)->get("/incidents/{$incident->id}");

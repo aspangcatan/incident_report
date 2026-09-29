@@ -41,6 +41,7 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::post('/incidents/{incident}/assessment/complete', [IncidentWorkflowController::class, 'completeAssessment'])->name('incidents.assessment.complete');
     Route::post('/incidents/{incident}/return-to-department', [IncidentWorkflowController::class, 'returnToDepartment'])->name('incidents.return-to-department');
     Route::post('/incidents/{incident}/assign', [IncidentWorkflowController::class, 'assign'])->name('incidents.assign');
+    Route::post('/incidents/{incident}/skip-investigation', [IncidentWorkflowController::class, 'skipInvestigation'])->name('incidents.skip-investigation');
     Route::post('/incidents/{incident}/investigation', [InvestigationController::class, 'start'])->name('incidents.investigation.start');
     Route::post('/investigations/{investigation}/team-members', [InvestigationController::class, 'addTeamMember'])->name('investigations.team-members.store');
     Route::delete('/investigations/{investigation}/team-members/{teamMember}', [InvestigationController::class, 'removeTeamMember'])->name('investigations.team-members.destroy');

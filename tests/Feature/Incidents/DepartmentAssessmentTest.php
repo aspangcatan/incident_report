@@ -200,7 +200,7 @@ class DepartmentAssessmentTest extends TestCase
 
     public function test_review_is_only_possible_at_for_review(): void
     {
-        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $this->department->id]);
+        $supervisor = User::factory()->create(['role' => Role::QualitySafetyOfficer]); // CQI Office triages
         $incident = $this->submittedIncident();
 
         $this->actingAs($supervisor)->post("/incidents/{$incident->id}/review")->assertForbidden();
@@ -214,7 +214,7 @@ class DepartmentAssessmentTest extends TestCase
 
     public function test_reviewer_can_return_to_the_department(): void
     {
-        $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $this->department->id]);
+        $supervisor = User::factory()->create(['role' => Role::QualitySafetyOfficer]); // CQI Office triages
         $incident = $this->submittedIncident();
         app(IncidentService::class)->saveAssessment($incident, ['severity' => Severity::Level2Moderate->value]);
         app(IncidentService::class)->completeAssessment($incident->fresh(), $this->departmentHead());

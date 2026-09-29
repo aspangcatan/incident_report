@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import ConfirmationDialog from '@/Components/ConfirmationDialog.vue';
 
@@ -9,11 +9,24 @@ const props = defineProps({
     investigators: { type: Array, default: () => [] },
 });
 
-const reviewForm = useForm({ comments: '' });
-const assignForm = useForm({ assigned_investigator_id: null, target_closure_date: '' });
+const severities = [
+    { value: 'level_1_low', label: 'Level I — Low Risk' },
+    { value: 'level_2_moderate', label: 'Level II — Moderate Risk' },
+    { value: 'level_3_high', label: 'Level III — High Severity' },
+    { value: 'level_4_critical_sentinel', label: 'Level IV — Critical / Sentinel' },
+];
+
+// CQI triage: confirm or change the department's severity.
+const reviewForm = useForm({ comments: '', severity: props.incident.severity ?? null });
+// The department's recommendation is pre-selected; the CQI Office decides.
+const assignForm = useForm({ assigned_investigator_id: props.incident.recommended_investigator_id ?? null, target_closure_date: '' });
+const skipForm = useForm({ reason: '' });
 
 const showReviewConfirm = ref(false);
 const showReturnConfirm = ref(false);
+const showSkipConfirm = ref(false);
+
+const severityChanged = computed(() => reviewForm.severity !== props.incident.severity);
 
 function confirmMarkReviewed() {
     showReviewConfirm.value = true;
@@ -27,10 +40,18 @@ function confirmReturnForRevision() {
     showReturnConfirm.value = true;
 }
 
+function confirmSkip() {
+    if (!skipForm.reason.trim()) {
+        skipForm.setError('reason', 'Explain why no investigation is needed.');
+        return;
+    }
+    showSkipConfirm.value = true;
+}
+
 function markReviewed() {
     reviewForm.post(`/incidents/${props.incident.id}/review`, {
         preserveScroll: true,
-        onSuccess: () => reviewForm.reset(),
+        onSuccess: () => reviewForm.reset('comments'),
         onFinish: () => (showReviewConfirm.value = false),
     });
 }
@@ -48,23 +69,41 @@ function assignInvestigator() {
         onSuccess: () => assignForm.reset(),
     });
 }
+
+function skipInvestigation() {
+    skipForm.post(`/incidents/${props.incident.id}/skip-investigation`, {
+        preserveScroll: true,
+        onFinish: () => (showSkipConfirm.value = false),
+    });
+}
 </script>
 
 <template>
     <div
         v-if="can.review && incident.status === 'for_review'"
-        class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-sm"
+        class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md"
     >
-        <h2 class="font-title-lg text-title-lg text-primary font-bold">Review This Incident</h2>
-        <label class="font-label-md text-label-md text-on-surface font-semibold" for="review_comments">Review comments</label>
-        <textarea
-            id="review_comments"
-            v-model="reviewForm.comments"
-            rows="3"
-            placeholder="Review comments (required if returning to the department)"
-            class="w-full p-3 rounded-lg bg-surface-container-low"
-        />
-        <span v-if="reviewForm.errors.comments" class="font-body-sm text-body-sm text-error">{{ reviewForm.errors.comments }}</span>
+        <div>
+            <h2 class="font-title-lg text-title-lg text-primary font-bold">CQI Triage</h2>
+            <p class="font-body-sm text-body-sm text-outline">Confirm the department's classification or change it. High and Sentinel alert Executives, the CQI Committee and Leadership.</p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="font-label-md text-label-md text-on-surface font-semibold" for="triage_severity">Severity *</label>
+            <select id="triage_severity" v-model="reviewForm.severity" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low">
+                <option v-for="option in severities" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+            <span v-if="severityChanged" class="font-body-sm text-body-sm text-amber-900">This changes the severity the department set.</span>
+            <span v-if="reviewForm.errors.severity" class="font-body-sm text-body-sm text-error">{{ reviewForm.errors.severity }}</span>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="font-label-md text-label-md text-on-surface font-semibold" for="review_comments">Triage comments</label>
+            <span class="font-body-sm text-body-sm text-outline">Optional, but required if you return it to the department.</span>
+            <textarea id="review_comments" v-model="reviewForm.comments" rows="3" class="w-full p-3 rounded-lg bg-surface-container-low" />
+            <span v-if="reviewForm.errors.comments" class="font-body-sm text-body-sm text-error">{{ reviewForm.errors.comments }}</span>
+        </div>
+
         <div class="flex gap-2">
             <button
                 type="button"
@@ -72,7 +111,7 @@ function assignInvestigator() {
                 class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60"
                 @click="confirmMarkReviewed"
             >
-                Mark Reviewed
+                Confirm Triage
             </button>
             <button
                 type="button"
@@ -87,21 +126,33 @@ function assignInvestigator() {
 
     <div
         v-if="can.assign && incident.status === 'reviewed'"
-        class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-sm"
+        class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md"
     >
-        <h2 class="font-title-lg text-title-lg text-primary font-bold">Assign Investigator</h2>
-        <label class="font-label-md text-label-md text-on-surface font-semibold" for="assigned_investigator_id">Investigator</label>
-        <select id="assigned_investigator_id" v-model="assignForm.assigned_investigator_id" class="w-full p-3 rounded-lg bg-surface-container-low">
-            <option :value="null" disabled>Select an investigator</option>
-            <option v-for="investigator in investigators" :key="investigator.id" :value="investigator.id">
-                {{ investigator.label }}
-            </option>
-        </select>
-        <span v-if="assignForm.errors.assigned_investigator_id" class="font-body-sm text-body-sm text-error">
-            {{ assignForm.errors.assigned_investigator_id }}
-        </span>
-        <label class="font-label-md text-label-md text-on-surface font-semibold" for="target_closure_date">Target closure date</label>
-        <input id="target_closure_date" v-model="assignForm.target_closure_date" type="date" class="w-full p-3 rounded-lg bg-surface-container-low" />
+        <h2 class="font-title-lg text-title-lg text-primary font-bold">Investigation</h2>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="font-label-md text-label-md text-on-surface font-semibold" for="assigned_investigator_id">Investigator *</label>
+            <span v-if="incident.recommended_investigator" class="font-body-sm text-body-sm text-outline">
+                The department recommended {{ incident.recommended_investigator.name }}.
+            </span>
+            <select id="assigned_investigator_id" v-model="assignForm.assigned_investigator_id" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low">
+                <option :value="null" disabled>Select an investigator</option>
+                <option v-for="investigator in investigators" :key="investigator.id" :value="investigator.id">
+                    {{ investigator.label }}
+                </option>
+            </select>
+            <span v-if="assignForm.errors.assigned_investigator_id" class="font-body-sm text-body-sm text-error">
+                {{ assignForm.errors.assigned_investigator_id }}
+            </span>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="font-label-md text-label-md text-on-surface font-semibold" for="target_closure_date">Target closure date</label>
+            <span class="font-body-sm text-body-sm text-outline">Optional. Leave empty to use the standard deadline for this severity.</span>
+            <input id="target_closure_date" v-model="assignForm.target_closure_date" type="date" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low" />
+            <span v-if="assignForm.errors.target_closure_date" class="font-body-sm text-body-sm text-error">{{ assignForm.errors.target_closure_date }}</span>
+        </div>
+
         <button
             type="button"
             :disabled="assignForm.processing"
@@ -110,13 +161,31 @@ function assignInvestigator() {
         >
             Assign Investigator
         </button>
+
+        <div v-if="can.skipInvestigation" class="flex flex-col gap-1.5 pt-space-sm border-t border-outline-variant">
+            <label class="font-label-md text-label-md text-on-surface font-semibold" for="skip_reason">Or: no investigation needed</label>
+            <span class="font-body-sm text-body-sm text-outline">Only for Low or Moderate incidents. The department goes straight to corrective actions.</span>
+            <textarea id="skip_reason" v-model="skipForm.reason" rows="2" class="w-full p-3 rounded-lg bg-surface-container-low" placeholder="Why is no investigation needed?" />
+            <span v-if="skipForm.errors.reason" class="font-body-sm text-body-sm text-error">{{ skipForm.errors.reason }}</span>
+            <button
+                type="button"
+                :disabled="skipForm.processing"
+                class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md disabled:opacity-60 w-fit"
+                @click="confirmSkip"
+            >
+                No Investigation Needed
+            </button>
+        </div>
+        <p v-else class="font-body-sm text-body-sm text-outline pt-space-sm border-t border-outline-variant">
+            High and Sentinel incidents must be investigated.
+        </p>
     </div>
 
     <ConfirmationDialog
         :show="showReviewConfirm"
-        title="Mark this incident reviewed?"
-        message="This confirms the report is complete and moves it forward to assignment. This cannot be undone from here."
-        confirm-label="Mark Reviewed"
+        title="Confirm triage?"
+        :message="severityChanged ? 'The severity will be changed and the incident moves on to investigation assignment.' : 'The department\'s severity is confirmed and the incident moves on to investigation assignment.'"
+        confirm-label="Confirm Triage"
         :processing="reviewForm.processing"
         @cancel="showReviewConfirm = false"
         @confirm="markReviewed"
@@ -130,5 +199,15 @@ function assignInvestigator() {
         :processing="reviewForm.processing"
         @cancel="showReturnConfirm = false"
         @confirm="returnForRevision"
+    />
+
+    <ConfirmationDialog
+        :show="showSkipConfirm"
+        title="Record that no investigation is needed?"
+        message="No investigator will be assigned. The department will handle corrective actions directly. This cannot be undone from here."
+        confirm-label="No Investigation Needed"
+        :processing="skipForm.processing"
+        @cancel="showSkipConfirm = false"
+        @confirm="skipInvestigation"
     />
 </template>

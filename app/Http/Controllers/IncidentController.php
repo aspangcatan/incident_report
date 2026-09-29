@@ -135,7 +135,7 @@ class IncidentController extends Controller
         $this->authorize('view', $incident);
 
         $incident->load([
-            'reporter', 'department', 'incidentTypes', 'assignedInvestigator',
+            'reporter', 'department', 'incidentTypes', 'assignedInvestigator', 'recommendedInvestigator', 'investigationSkippedBy',
             'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments', 'assessor',
         ]);
 
@@ -192,7 +192,8 @@ class IncidentController extends Controller
             // created_at alone cannot reliably order same-second rows chronologically.
             'auditLogs' => $incident->auditLogs()->with('actor')->latest()->latest('id')->get(),
             'investigation' => $investigation ? new InvestigationResource($investigation) : null,
-            'investigators' => $user->can('assign', $incident)
+            // Used to assign (CQI Office) or to recommend (department, during assessment).
+            'investigators' => ($user->can('assign', $incident) || $user->can('recommendInvestigator', $incident))
                 ? $pickerEntries($directory()->filter(fn (User $candidate) => $candidate->canInvestigate($incident)), ['id', 'name'])
                 : [],
             'potentialTeamMembers' => ($canStartInvestigation || $canManageInvestigationTeam)
@@ -217,6 +218,8 @@ class IncidentController extends Controller
                 'returnToReporter' => $user->can('returnToReporter', $incident),
                 'changeDepartment' => $user->can('changeDepartment', $incident),
                 'assign' => $user->can('assign', $incident),
+                'skipInvestigation' => $user->can('skipInvestigation', $incident),
+                'recommendInvestigator' => $user->can('recommendInvestigator', $incident),
                 'startInvestigation' => $canStartInvestigation,
                 'manageInvestigationTeam' => $canManageInvestigationTeam,
                 'recordFindings' => $investigation && $user->can('recordFindings', $investigation),
