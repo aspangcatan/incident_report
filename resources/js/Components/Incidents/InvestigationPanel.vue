@@ -34,14 +34,25 @@ function removeTeamMember(memberId) {
 }
 
 const usesSequence = computed(() => props.investigation?.methodology?.uses_sequence ?? false);
-const usesCategory = computed(() => props.investigation?.methodology?.uses_category ?? false);
+
+const rootCauseTypes = {
+    staffing: 'Staffing',
+    procedure: 'Procedure',
+    equipment: 'Equipment',
+    environment: 'Environment',
+    communication: 'Communication',
+    other: 'Other',
+};
 
 const findingForm = useForm({ category: '', question: '', finding: '', is_root_cause: false });
 const editingFindingId = ref(null);
 const editForm = useForm({ category: '', question: '', finding: '', is_root_cause: false });
 
+// The cause type only belongs to root-cause findings.
+const withoutStrayCauseType = (data) => ({ ...data, category: data.is_root_cause ? data.category : '' });
+
 function addFinding() {
-    findingForm.post(`/investigations/${props.investigation.id}/findings`, {
+    findingForm.transform(withoutStrayCauseType).post(`/investigations/${props.investigation.id}/findings`, {
         preserveScroll: true,
         onSuccess: () => findingForm.reset(),
     });
@@ -56,7 +67,7 @@ function startEditing(finding) {
 }
 
 function saveEdit(findingId) {
-    editForm.patch(`/investigations/${props.investigation.id}/findings/${findingId}`, {
+    editForm.transform(withoutStrayCauseType).patch(`/investigations/${props.investigation.id}/findings/${findingId}`, {
         preserveScroll: true,
         onSuccess: () => (editingFindingId.value = null),
     });
@@ -197,12 +208,20 @@ function completeInvestigation() {
 
                     <template v-if="editingFindingId === finding.id">
                         <div class="flex-1 flex flex-col gap-2">
-                            <input v-if="usesCategory" v-model="editForm.category" type="text" placeholder="Category" class="p-2 rounded-lg bg-surface-container" />
                             <input v-if="usesSequence" v-model="editForm.question" type="text" placeholder="Why…?" class="p-2 rounded-lg bg-surface-container" />
                             <textarea v-model="editForm.finding" rows="2" class="p-2 rounded-lg bg-surface-container" />
                             <label class="flex items-center gap-2 font-label-sm text-body-sm text-on-surface">
                                 <input v-model="editForm.is_root_cause" type="checkbox" /> Root cause
                             </label>
+                            <div v-if="editForm.is_root_cause" class="flex flex-col gap-1">
+                                <label :for="'edit_cause_type_' + finding.id" class="font-label-md text-label-md text-on-surface font-semibold">Type of cause *</label>
+                                <span class="font-body-sm text-body-sm text-outline">What kind of problem caused the incident. Used for the hospital-wide root cause chart.</span>
+                                <select :id="'edit_cause_type_' + finding.id" v-model="editForm.category" class="p-2 rounded-lg bg-surface-container">
+                                    <option value="" disabled>Choose one</option>
+                                    <option v-for="(label, value) in rootCauseTypes" :key="value" :value="value">{{ label }}</option>
+                                </select>
+                                <span v-if="editForm.errors.category" class="font-body-sm text-body-sm text-error">{{ editForm.errors.category }}</span>
+                            </div>
                             <div class="flex gap-2">
                                 <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-body-sm" @click="saveEdit(finding.id)">Save</button>
                                 <button type="button" class="px-3 py-1.5 rounded-lg bg-surface-container font-label-sm text-body-sm" @click="editingFindingId = null">Cancel</button>
@@ -211,7 +230,7 @@ function completeInvestigation() {
                     </template>
                     <template v-else>
                         <div class="flex-1 flex flex-col gap-0.5">
-                            <span v-if="finding.category" class="font-label-sm text-body-sm text-secondary font-semibold">{{ finding.category }}</span>
+                            <span v-if="finding.category" class="font-label-sm text-body-sm text-secondary font-semibold">{{ rootCauseTypes[finding.category] ?? finding.category }}</span>
                             <span v-if="finding.question" class="font-label-sm text-body-sm text-primary font-semibold">{{ finding.question }}</span>
                             <p class="font-body-md text-body-md text-on-surface">{{ finding.finding }}</p>
                             <span v-if="finding.is_root_cause" class="px-2 py-0.5 rounded-md bg-error text-on-error font-label-sm text-body-sm uppercase font-bold w-fit">Root Cause</span>
@@ -225,13 +244,21 @@ function completeInvestigation() {
 
                 <form v-if="can.recordFindings" class="flex flex-col gap-2 p-space-md rounded-lg bg-surface-container-low" @submit.prevent="addFinding">
                     <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Add Finding</span>
-                    <input v-if="usesCategory" v-model="findingForm.category" type="text" placeholder="Category (e.g. Equipment, Environment)" class="p-2 rounded-lg bg-surface-container" />
                     <input v-if="usesSequence" v-model="findingForm.question" type="text" placeholder="Why…?" class="p-2 rounded-lg bg-surface-container" />
                     <textarea v-model="findingForm.finding" rows="2" placeholder="Finding" class="p-2 rounded-lg bg-surface-container" />
                     <span v-if="findingForm.errors.finding" class="font-body-sm text-body-sm text-error">{{ findingForm.errors.finding }}</span>
                     <label class="flex items-center gap-2 font-label-sm text-body-sm text-on-surface">
                         <input v-model="findingForm.is_root_cause" type="checkbox" /> Mark as root cause
                     </label>
+                    <div v-if="findingForm.is_root_cause" class="flex flex-col gap-1">
+                        <label for="finding_cause_type" class="font-label-md text-label-md text-on-surface font-semibold">Type of cause *</label>
+                        <span class="font-body-sm text-body-sm text-outline">What kind of problem caused the incident. Used for the hospital-wide root cause chart.</span>
+                        <select id="finding_cause_type" v-model="findingForm.category" class="p-2 rounded-lg bg-surface-container">
+                            <option value="" disabled>Choose one</option>
+                            <option v-for="(label, value) in rootCauseTypes" :key="value" :value="value">{{ label }}</option>
+                        </select>
+                        <span v-if="findingForm.errors.category" class="font-body-sm text-body-sm text-error">{{ findingForm.errors.category }}</span>
+                    </div>
                     <button type="submit" :disabled="findingForm.processing" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60 w-fit">
                         Add Finding
                     </button>

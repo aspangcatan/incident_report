@@ -16,7 +16,7 @@ function widthPercent(count) {
 <template>
     <div class="flex flex-col gap-3">
         <div v-if="!segments.length" class="text-center font-body-sm text-body-sm text-outline p-space-md">
-            No contributing-factor data recorded in this window.
+            No root causes recorded in this window yet.
         </div>
         <template v-else>
             <div class="flex w-full h-6 rounded-full overflow-hidden bg-surface-container">

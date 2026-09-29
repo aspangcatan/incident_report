@@ -515,12 +515,32 @@ class InvestigationTest extends TestCase
 
         $this->actingAs($investigator)
             ->patch("/investigations/{$investigation->id}/findings/{$finding->id}", [
-                'question' => 'Q', 'finding' => 'Corrected.', 'is_root_cause' => true,
+                'question' => 'Q', 'finding' => 'Corrected.', 'is_root_cause' => true, 'category' => 'equipment',
             ])
             ->assertRedirect();
 
         $this->assertSame('Corrected.', $finding->fresh()->finding);
         $this->assertTrue($finding->fresh()->is_root_cause);
+        $this->assertSame('equipment', $finding->fresh()->category);
+    }
+
+    public function test_a_root_cause_finding_needs_a_known_cause_type(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData());
+
+        $this->actingAs($investigator)
+            ->post("/investigations/{$investigation->id}/findings", ['finding' => 'Pump failed.', 'is_root_cause' => true])
+            ->assertSessionHasErrors('category');
+
+        $this->actingAs($investigator)
+            ->post("/investigations/{$investigation->id}/findings", ['finding' => 'Pump failed.', 'is_root_cause' => true, 'category' => 'bad luck'])
+            ->assertSessionHasErrors('category');
+
+        $this->actingAs($investigator)
+            ->post("/investigations/{$investigation->id}/findings", ['finding' => 'Night shift was short.', 'is_root_cause' => false])
+            ->assertSessionHasNoErrors();
     }
 
     public function test_updating_a_finding_scoped_to_another_investigation_is_rejected(): void

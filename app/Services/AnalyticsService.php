@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\CorrectiveActionStatus;
 use App\Enums\IncidentStatus;
+use App\Enums\RootCauseType;
 use App\Enums\Severity;
 use App\Models\Approval;
 use App\Models\CorrectiveAction;
@@ -193,12 +194,9 @@ class AnalyticsService
     }
 
     /**
-     * Grouped by contributing_factors.category (captured on the report
-     * form at submission time, Phase 3) rather than investigation finding
-     * category - every incident has contributing factors regardless of
-     * which RCA methodology its investigation used, so this source is
-     * complete where finding-category data would have gaps (five_whys
-     * findings never set a category at all).
+     * Incidents per root-cause type: counts findings the investigator marked
+     * "root cause", grouped by the cause type chosen with them (RootCauseType).
+     * An incident with two Staffing root causes counts once for Staffing.
      */
     private function rootCauseDistribution(User $user): array
     {
@@ -206,15 +204,19 @@ class AnalyticsService
             ->where('reported_at', '>=', now()->subDays(self::WINDOW_DAYS))
             ->pluck('id');
 
-        return DB::table('incident_contributing_factor')
-            ->join('contributing_factors', 'contributing_factors.id', '=', 'incident_contributing_factor.contributing_factor_id')
-            ->whereIn('incident_contributing_factor.incident_id', $visibleIncidentIds)
-            ->whereNotNull('contributing_factors.category')
-            ->groupBy('contributing_factors.category')
-            ->selectRaw('contributing_factors.category as category, COUNT(DISTINCT incident_contributing_factor.incident_id) as incidentCount')
+        return DB::table('investigation_findings')
+            ->join('investigations', 'investigations.id', '=', 'investigation_findings.investigation_id')
+            ->whereIn('investigations.incident_id', $visibleIncidentIds)
+            ->where('investigation_findings.is_root_cause', true)
+            ->whereNotNull('investigation_findings.category')
+            ->groupBy('investigation_findings.category')
+            ->selectRaw('investigation_findings.category as category, COUNT(DISTINCT investigations.incident_id) as incidentCount')
             ->orderByDesc('incidentCount')
             ->get()
-            ->map(fn ($row) => ['category' => $row->category, 'incidentCount' => (int) $row->incidentCount])
+            ->map(fn ($row) => [
+                'category' => RootCauseType::tryFrom($row->category)?->label() ?? $row->category,
+                'incidentCount' => (int) $row->incidentCount,
+            ])
             ->all();
     }
 

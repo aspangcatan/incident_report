@@ -64,7 +64,7 @@ function formatPercent(rate) {
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
                 <div>
                     <h2 class="font-title-lg text-title-lg text-primary font-bold">Root Cause Distribution</h2>
-                    <p class="font-body-sm text-body-sm text-outline">Contributing factors recorded on incidents in the last {{ windowDays }} days, by category.</p>
+                    <p class="font-body-sm text-body-sm text-outline">Incidents in the last {{ windowDays }} days, by the type of root cause found in the investigation.</p>
                 </div>
                 <StackedBarChart :segments="rootCauseDistribution" />
             </div>

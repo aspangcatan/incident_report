@@ -169,20 +169,30 @@ class AnalyticsTest extends TestCase
         $this->assertSame(4.0, $kpis['meanHoursToReview']);
     }
 
-    public function test_root_cause_distribution_groups_by_contributing_factor_category(): void
+    public function test_root_cause_distribution_counts_incidents_by_root_cause_type(): void
     {
         $department = Department::factory()->create();
-        $incident = $this->incidentThroughReview($department);
-        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
-        $equipment = \App\Models\ContributingFactor::create(['label' => 'Device malfunction', 'category' => 'Equipment']);
-        $incident->contributingFactors()->sync([$humanFactors->id, $equipment->id]);
+        $investigation = $this->investigationFor($this->incidentThroughReview($department));
+        $service = app(InvestigationService::class);
+        $service->addFinding($investigation, FindingData::fromArray(['finding' => 'Short-staffed.', 'is_root_cause' => true, 'category' => 'staffing']));
+        $service->addFinding($investigation, FindingData::fromArray(['finding' => 'Also short-staffed.', 'is_root_cause' => true, 'category' => 'staffing']));
+        $service->addFinding($investigation, FindingData::fromArray(['finding' => 'Pump alarm muted.', 'is_root_cause' => true, 'category' => 'equipment']));
+        $service->addFinding($investigation, FindingData::fromArray(['finding' => 'Not a cause.', 'is_root_cause' => false, 'category' => 'environment']));
 
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
-        $distribution = app(AnalyticsService::class)->overview($qso)['rootCauseDistribution'];
+        $distribution = collect(app(AnalyticsService::class)->overview($qso)['rootCauseDistribution']);
 
-        $categories = collect($distribution)->pluck('category')->all();
-        $this->assertContains('Human Factors', $categories);
-        $this->assertContains('Equipment', $categories);
+        $this->assertSame(1, $distribution->firstWhere('category', 'Staffing')['incidentCount']);
+        $this->assertSame(1, $distribution->firstWhere('category', 'Equipment')['incidentCount']);
+        $this->assertNull($distribution->firstWhere('category', 'Environment'));
+    }
+
+    private function investigationFor(Incident $incident): \App\Models\Investigation
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        app(IncidentService::class)->assignInvestigator($incident->fresh(), $investigator);
+
+        return app(InvestigationService::class)->start($incident->fresh(), $investigator, StartInvestigationData::fromArray(['objective' => 'x']));
     }
 
     public function test_department_safety_table_reports_capa_resolution_per_department(): void
@@ -228,18 +238,15 @@ class AnalyticsTest extends TestCase
         $deptB = Department::factory()->create(['name' => 'Surgery']);
 
         $incidentA = $this->incidentThroughReview($deptA);
-        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
-        $incidentA->contributingFactors()->sync([$humanFactors->id]);
+        app(InvestigationService::class)->addFinding($this->investigationFor($incidentA), FindingData::fromArray(['finding' => 'Short-staffed.', 'is_root_cause' => true, 'category' => 'staffing']));
 
         $incidentB = $this->incidentThroughReview($deptB);
-        $equipment = \App\Models\ContributingFactor::create(['label' => 'Device malfunction', 'category' => 'Equipment']);
-        $incidentB->contributingFactors()->sync([$equipment->id]);
         $investigatorB = User::factory()->create(['role' => Role::Investigator]);
         app(IncidentService::class)->assignInvestigator($incidentB->fresh(), $investigatorB);
         $investigationB = app(InvestigationService::class)->start($incidentB->fresh(), $investigatorB, StartInvestigationData::fromArray([
             'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
         ]));
-        app(InvestigationService::class)->addFinding($investigationB, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->addFinding($investigationB, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true, 'category' => 'equipment']));
         app(InvestigationService::class)->complete($investigationB->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
         app(CorrectiveActionService::class)->create($incidentB->fresh(), CorrectiveActionData::fromArray([
             'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
@@ -249,7 +256,7 @@ class AnalyticsTest extends TestCase
         $overview = app(AnalyticsService::class)->overview($deptHeadA);
 
         $categories = collect($overview['rootCauseDistribution'])->pluck('category')->all();
-        $this->assertContains('Human Factors', $categories);
+        $this->assertContains('Staffing', $categories);
         $this->assertNotContains('Equipment', $categories);
 
         $departmentNames = collect($overview['departmentSafety'])->pluck('departmentName')->all();
@@ -348,8 +355,6 @@ class AnalyticsTest extends TestCase
         $this->incidentThroughReview($department, $incidentType);
         $this->incidentThroughReview($department, $incidentType);
 
-        $humanFactors = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
-        $incidentA->contributingFactors()->sync([$humanFactors->id]);
         $incidentA->forceFill(['is_sentinel_event' => true, 'reported_at' => now()->subDays(10)])->save();
 
         $investigator = User::factory()->create(['role' => Role::Investigator]);
@@ -357,7 +362,7 @@ class AnalyticsTest extends TestCase
         $investigation = app(InvestigationService::class)->start($incidentA->fresh(), $investigator, StartInvestigationData::fromArray([
             'objective' => 'x', 'methodology' => InvestigationMethodology::FiveWhys->value,
         ]));
-        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true, 'category' => 'staffing']));
         app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
         $capa = app(CorrectiveActionService::class)->create($incidentA->fresh(), CorrectiveActionData::fromArray([
             'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
@@ -429,30 +434,6 @@ class AnalyticsTest extends TestCase
         $this->assertSame(['verified' => 0, 'total' => 0, 'rate' => null], $kpis['capaAdoption']);
         $this->assertSame(['recurrences' => 0, 'total' => 0, 'rate' => 0.0], $kpis['sentinelRecurrence']);
         $this->assertSame(0.0, $kpis['nearMissVelocityPercent']);
-    }
-
-    /**
-     * Task 9 holistic-review regression (item 4): rootCauseDistribution()'s
-     * existing test only ever attaches factors from 2 *different*
-     * categories, so it never actually exercises the
-     * COUNT(DISTINCT incident_contributing_factor.incident_id) that's
-     * supposed to prevent one incident with 2 factors in the *same*
-     * category from being counted twice for that category.
-     */
-    public function test_root_cause_distribution_counts_an_incident_once_per_category_with_two_same_category_factors(): void
-    {
-        $department = Department::factory()->create();
-        $incident = $this->incidentThroughReview($department);
-        $fatigue = \App\Models\ContributingFactor::create(['label' => 'Fatigue', 'category' => 'Human Factors']);
-        $distraction = \App\Models\ContributingFactor::create(['label' => 'Distraction', 'category' => 'Human Factors']);
-        $incident->contributingFactors()->sync([$fatigue->id, $distraction->id]);
-
-        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
-        $distribution = app(AnalyticsService::class)->overview($qso)['rootCauseDistribution'];
-
-        $row = collect($distribution)->firstWhere('category', 'Human Factors');
-        $this->assertNotNull($row);
-        $this->assertSame(1, $row['incidentCount']);
     }
 
     /**
