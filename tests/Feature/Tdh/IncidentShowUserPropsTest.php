@@ -141,7 +141,8 @@ class IncidentShowUserPropsTest extends TestCase
         $incident = $this->reviewedIncident();
         app(IncidentService::class)->assignInvestigator($incident, $investigator);
 
-        $props = $this->actingAs($qso)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
+        // The team picker belongs to whoever starts the investigation: the assigned investigator.
+        $props = $this->actingAs($investigator)->get("/incidents/{$incident->id}")->assertOk()->viewData('page')['props'];
 
         $this->assertEntryKeys($props['potentialTeamMembers'], ['id', 'name', 'role', 'label']);
     }

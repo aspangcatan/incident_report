@@ -165,17 +165,11 @@ class IncidentPolicy
         return $incident->status === IncidentStatus::Reviewed && $this->isQualityStaff($user);
     }
 
+    /** Only the assigned investigator starts the investigation. */
     public function start(User $user, Incident $incident): bool
     {
-        if ($incident->status !== IncidentStatus::Assigned) {
-            return false;
-        }
-
-        if ($this->isQualityStaff($user)) {
-            return true;
-        }
-
-        return $incident->assigned_investigator_id === $user->id;
+        return $incident->status === IncidentStatus::Assigned
+            && $incident->assigned_investigator_id === $user->id;
     }
 
     /** The incident's department runs the CAPA stage, so its Department Head asks for closure - once the actions proved effective. */

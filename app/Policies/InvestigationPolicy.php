@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Enums\InvestigationStatus;
-use App\Enums\Role;
 use App\Models\Investigation;
 use App\Models\User;
 
@@ -36,12 +35,12 @@ class InvestigationPolicy
         return $this->hasLeadAccess($user, $investigation);
     }
 
+    /**
+     * The investigation team owns the RCA. The CQI Office only monitors it;
+     * if it facilitates, it is added to the team like anyone else.
+     */
     private function hasLeadAccess(User $user, Investigation $investigation): bool
     {
-        if ($user->role === Role::QualitySafetyOfficer) {
-            return true;
-        }
-
         return $investigation->lead_investigator_id === $user->id;
     }
 }

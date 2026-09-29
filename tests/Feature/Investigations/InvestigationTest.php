@@ -272,13 +272,14 @@ class InvestigationTest extends TestCase
         $this->assertFalse($otherInvestigator->can('start', $incident));
     }
 
-    public function test_qso_can_start_any_assigned_incidents_investigation(): void
+    public function test_the_cqi_office_cannot_start_someone_elses_investigation(): void
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $incident = $this->assignedIncident($investigator);
 
-        $this->assertTrue($qso->can('start', $incident));
+        $this->assertFalse($qso->can('start', $incident));
+        $this->assertTrue($investigator->can('start', $incident));
     }
 
     public function test_nobody_can_start_an_investigation_before_the_incident_is_assigned(): void
@@ -301,7 +302,7 @@ class InvestigationTest extends TestCase
         $this->assertFalse($investigator->can('start', $incident->fresh()));
     }
 
-    public function test_only_the_lead_investigator_or_qso_can_manage_the_team(): void
+    public function test_only_the_lead_investigator_manages_the_team_and_completes(): void
     {
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $teamMember = User::factory()->create();
@@ -312,8 +313,24 @@ class InvestigationTest extends TestCase
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->assertTrue($investigator->can('manageTeam', $investigation));
-        $this->assertTrue($qso->can('manageTeam', $investigation));
+        $this->assertFalse($qso->can('manageTeam', $investigation));
         $this->assertFalse($teamMember->can('manageTeam', $investigation));
+        $this->assertFalse($qso->can('complete', $investigation));
+        $this->assertFalse($qso->can('recordFindings', $investigation));
+    }
+
+    public function test_a_cqi_facilitator_added_to_the_team_records_findings_but_does_not_lead(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('simple', [
+            'team_members' => [['user_id' => $qso->id, 'role_in_team' => 'Facilitator']],
+        ]));
+
+        $this->assertTrue($qso->can('recordFindings', $investigation));
+        $this->assertFalse($qso->can('manageTeam', $investigation));
+        $this->assertFalse($qso->can('complete', $investigation));
     }
 
     public function test_a_team_member_can_record_findings_but_a_stranger_cannot(): void
