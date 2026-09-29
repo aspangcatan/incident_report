@@ -78,6 +78,7 @@ class Incident extends Model
         'effectiveness_checked_by' => 'integer',
         'effectiveness_checked_at' => 'datetime',
         'effectiveness_notified_at' => 'datetime',
+        'lessons_published_at' => 'datetime',
         'assessment_escalated_at' => 'datetime',
     ];
 

@@ -18,6 +18,7 @@ class ApproveClosureRequest extends FormRequest
     {
         return [
             'comments' => ['required', 'string'],
+            'lessons_learned' => ['nullable', 'string'],
         ];
     }
 

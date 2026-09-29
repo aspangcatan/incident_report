@@ -6,21 +6,20 @@ use App\Actions\Approvals\ApproveClosureAction;
 use App\Actions\Approvals\MarkNoCorrectiveActionNeededAction;
 use App\Actions\Approvals\RequestApprovalAction;
 use App\Actions\Approvals\ReturnFromApprovalAction;
+use App\Enums\IncidentStatus;
 use App\Http\Requests\Approvals\ApproveClosureRequest;
 use App\Http\Requests\Approvals\MarkNoCorrectiveActionNeededRequest;
+use App\Http\Requests\Approvals\RequestApprovalRequest;
 use App\Http\Requests\Approvals\ReturnFromApprovalRequest;
 use App\Models\Approval;
 use App\Models\Incident;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class ApprovalController extends Controller
 {
-    public function requestApproval(Request $request, Incident $incident, RequestApprovalAction $action): RedirectResponse
+    public function requestApproval(RequestApprovalRequest $request, Incident $incident, RequestApprovalAction $action): RedirectResponse
     {
-        $this->authorize('requestApproval', $incident);
-
-        $action($incident, $request->user());
+        $action($incident, $request->user(), $request->validated('lessons_learned'));
 
         return back()->with('success', 'Closure approval requested.');
     }
@@ -36,7 +35,9 @@ class ApprovalController extends Controller
     {
         $action($approval, $request->user(), $request->toDto());
 
-        return back()->with('success', 'Incident approved and closed.');
+        return back()->with('success', $approval->incident->fresh()->status === IncidentStatus::Closed
+            ? 'Incident approved and closed.'
+            : 'Approved - now waiting for the CQI Committee\'s sign-off.');
     }
 
     public function returnForRevision(ReturnFromApprovalRequest $request, Approval $approval, ReturnFromApprovalAction $action): RedirectResponse

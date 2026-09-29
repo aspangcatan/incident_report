@@ -13,11 +13,12 @@ final class MarkNoCorrectiveActionNeededData
 {
     public function __construct(
         public readonly string $justification,
+        public readonly ?string $lessonsLearned = null,
     ) {
     }
 
     public static function fromArray(array $data): self
     {
-        return new self(justification: $data['justification']);
+        return new self(justification: $data['justification'], lessonsLearned: $data['lessons_learned'] ?? null);
     }
 }

@@ -419,11 +419,11 @@ class ApprovalTest extends TestCase
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
 
         $this->actingAs($qso)
-            ->post("/incidents/{$incident->id}/request-approval")
+            ->post("/incidents/{$incident->id}/request-approval", ['lessons_learned' => 'Check the rail weekly.'])
             ->assertForbidden();
 
         $this->actingAs($head)
-            ->post("/incidents/{$incident->id}/request-approval")
+            ->post("/incidents/{$incident->id}/request-approval", ['lessons_learned' => 'Check the rail weekly.'])
             ->assertRedirect();
 
         $this->assertDatabaseHas('approvals', ['incident_id' => $incident->id, 'requested_by' => $head->id]);
@@ -436,7 +436,7 @@ class ApprovalTest extends TestCase
         $investigator = User::factory()->create(['role' => Role::Investigator]);
 
         $this->actingAs($investigator)
-            ->post("/incidents/{$incident->id}/request-approval")
+            ->post("/incidents/{$incident->id}/request-approval", ['lessons_learned' => 'Check the rail weekly.'])
             ->assertForbidden();
     }
 
@@ -456,7 +456,7 @@ class ApprovalTest extends TestCase
         $head = $this->headOf($incident);
 
         $this->actingAs($head)
-            ->post("/incidents/{$incident->id}/no-corrective-action-needed", ['justification' => 'Near miss, no fix needed.'])
+            ->post("/incidents/{$incident->id}/no-corrective-action-needed", ['justification' => 'Near miss, no fix needed.', 'lessons_learned' => 'Near misses are worth reporting.'])
             ->assertRedirect();
 
         $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);

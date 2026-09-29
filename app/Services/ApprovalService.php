@@ -23,14 +23,14 @@ class ApprovalService
     {
     }
 
-    public function requestApproval(Incident $incident, User $requester): Approval
+    public function requestApproval(Incident $incident, User $requester, ?string $lessonsLearned = null): Approval
     {
-        return $this->createPendingApproval($incident, $requester, null);
+        return $this->createPendingApproval($incident, $requester, null, $lessonsLearned);
     }
 
     public function markNoCorrectiveActionNeeded(Incident $incident, User $requester, MarkNoCorrectiveActionNeededData $data): Approval
     {
-        return $this->createPendingApproval($incident, $requester, $data->justification);
+        return $this->createPendingApproval($incident, $requester, $data->justification, $data->lessonsLearned);
     }
 
     public function approve(Approval $approval, User $approver, DecideApprovalData $data): Approval
@@ -44,6 +44,10 @@ class ApprovalService
             ]);
 
             $incident = $approval->incident;
+
+            if ($approval->stage === ApprovalStage::CqiOffice && filled($data->lessonsLearned)) {
+                $incident->lessons_learned = $data->lessonsLearned;
+            }
 
             // High/Sentinel: the CQI Office's approval hands over to the Committee.
             if ($approval->stage === ApprovalStage::CqiOffice && $this->needsCommitteeSignOff($incident)) {
@@ -67,6 +71,7 @@ class ApprovalService
 
             $incident->auditComment = "Approved for closure: {$data->comments}";
             $incident->status = IncidentStatus::Closed;
+            $incident->lessons_published_at = $incident->lessons_learned ? now() : null;
             $incident->closed_by = $approver->id;
             $incident->closed_at = now();
             $incident->save();
@@ -108,9 +113,13 @@ class ApprovalService
      * Service's — the same division of responsibility every prior phase's
      * Service/Policy pair already uses.
      */
-    private function createPendingApproval(Incident $incident, User $requester, ?string $justification): Approval
+    private function createPendingApproval(Incident $incident, User $requester, ?string $justification, ?string $lessonsLearned = null): Approval
     {
-        return DB::transaction(function () use ($incident, $requester, $justification) {
+        return DB::transaction(function () use ($incident, $requester, $justification, $lessonsLearned) {
+            if ($lessonsLearned !== null) {
+                $incident->lessons_learned = $lessonsLearned;
+            }
+
             $approval = $this->approvals->create([
                 'incident_id' => $incident->id,
                 'stage' => ApprovalStage::CqiOffice,

@@ -16,6 +16,7 @@ class MarkNoCorrectiveActionNeededRequest extends FormRequest
     {
         return [
             'justification' => ['required', 'string'],
+            'lessons_learned' => ['required', 'string'],
         ];
     }
 

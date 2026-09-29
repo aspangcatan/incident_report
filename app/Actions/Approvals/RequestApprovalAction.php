@@ -13,8 +13,8 @@ class RequestApprovalAction
     {
     }
 
-    public function __invoke(Incident $incident, User $requester): Approval
+    public function __invoke(Incident $incident, User $requester, ?string $lessonsLearned = null): Approval
     {
-        return $this->approvals->requestApproval($incident, $requester);
+        return $this->approvals->requestApproval($incident, $requester, $lessonsLearned);
     }
 }

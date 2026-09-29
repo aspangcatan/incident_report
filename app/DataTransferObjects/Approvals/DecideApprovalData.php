@@ -14,11 +14,13 @@ final class DecideApprovalData
 {
     public function __construct(
         public readonly string $comments,
+        // The CQI Office may finalize the Department Head's lessons learned when approving.
+        public readonly ?string $lessonsLearned = null,
     ) {
     }
 
     public static function fromArray(array $data): self
     {
-        return new self(comments: $data['comments']);
+        return new self(comments: $data['comments'], lessonsLearned: $data['lessons_learned'] ?? null);
     }
 }

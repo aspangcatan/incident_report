@@ -64,6 +64,12 @@ const allNavGroups = [
         ],
     },
     {
+        label: 'Learning & Safety',
+        items: [
+            { label: 'Lessons Learned', icon: 'lightbulb', href: '/lessons-learned' },
+        ],
+    },
+    {
         label: 'Analytics & Learning',
         can: 'viewAnalytics',
         items: [

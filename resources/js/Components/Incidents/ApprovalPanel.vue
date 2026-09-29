@@ -9,14 +9,18 @@ const props = defineProps({
     can: { type: Object, required: true },
 });
 
-const requestForm = useForm({});
+const showRequestForm = ref(false);
+const requestForm = useForm({ lessons_learned: props.incident.lessons_learned ?? '' });
 
 function requestApproval() {
-    requestForm.post(`/incidents/${props.incident.id}/request-approval`, { preserveScroll: true });
+    requestForm.post(`/incidents/${props.incident.id}/request-approval`, {
+        preserveScroll: true,
+        onSuccess: () => (showRequestForm.value = false),
+    });
 }
 
 const showNoCorrectiveActionForm = ref(false);
-const noCorrectiveActionForm = useForm({ justification: '' });
+const noCorrectiveActionForm = useForm({ justification: '', lessons_learned: props.incident.lessons_learned ?? '' });
 
 function markNoCorrectiveActionNeeded() {
     noCorrectiveActionForm.post(`/incidents/${props.incident.id}/no-corrective-action-needed`, {
@@ -37,11 +41,12 @@ function recordEffectiveness() {
 
 const decidingId = ref(null);
 const decidingMode = ref(null); // 'approve' | 'return'
-const decideForm = useForm({ comments: '' });
+const decideForm = useForm({ comments: '', lessons_learned: '' });
 
 function startDeciding(approvalId, mode) {
     decidingId.value = approvalId;
     decidingMode.value = mode;
+    decideForm.lessons_learned = props.incident.lessons_learned ?? '';
 }
 
 function submitDecision(approvalId) {
@@ -110,6 +115,14 @@ function submitDecision(approvalId) {
             </form>
         </div>
 
+        <div v-if="incident.lessons_learned" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-xs">
+            <h2 class="font-title-lg text-title-lg text-primary font-bold">Lessons Learned</h2>
+            <p class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ incident.lessons_learned }}</p>
+            <span class="font-body-sm text-body-sm text-outline">
+                {{ incident.lessons_published_at ? `Published ${formatDate(incident.lessons_published_at)}` : 'Draft: published when the incident closes.' }}
+            </span>
+        </div>
+
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <div class="flex flex-wrap items-center justify-between gap-space-sm">
                 <h2 class="font-title-lg text-title-lg text-primary font-bold">Closure Approval</h2>
@@ -118,10 +131,9 @@ function submitDecision(approvalId) {
                         v-if="can.requestApproval"
                         type="button"
                         class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-semibold"
-                        @click="requestApproval"
-                        :disabled="requestForm.processing"
+                        @click="showRequestForm = !showRequestForm"
                     >
-                        Request Approval
+                        {{ showRequestForm ? 'Cancel' : 'Request Approval' }}
                     </button>
                     <button
                         v-if="can.markNoCorrectiveActionNeeded"
@@ -134,6 +146,16 @@ function submitDecision(approvalId) {
                 </div>
             </div>
 
+            <form v-if="showRequestForm" class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-container-low" @submit.prevent="requestApproval">
+                <label for="request_lessons" class="font-label-md text-label-md text-on-surface font-semibold">Lessons learned *</label>
+                <span class="font-body-sm text-body-sm text-outline">What should the whole hospital learn from this? Published for all staff when the incident closes. Don't include names.</span>
+                <textarea id="request_lessons" v-model="requestForm.lessons_learned" rows="3" class="p-2 rounded-lg bg-surface-container" />
+                <span v-if="requestForm.errors.lessons_learned" class="font-body-sm text-body-sm text-error">{{ requestForm.errors.lessons_learned }}</span>
+                <button type="submit" :disabled="requestForm.processing" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60 w-fit">
+                    Submit for Approval
+                </button>
+            </form>
+
             <form v-if="showNoCorrectiveActionForm" class="flex flex-col gap-2 p-space-md rounded-lg bg-surface-container-low" @submit.prevent="markNoCorrectiveActionNeeded">
                 <textarea
                     v-model="noCorrectiveActionForm.justification"
@@ -142,6 +164,10 @@ function submitDecision(approvalId) {
                     class="p-2 rounded-lg bg-surface-container"
                 />
                 <span v-if="noCorrectiveActionForm.errors.justification" class="font-body-sm text-body-sm text-error">{{ noCorrectiveActionForm.errors.justification }}</span>
+                <label for="no_capa_lessons" class="font-label-md text-label-md text-on-surface font-semibold">Lessons learned *</label>
+                <span class="font-body-sm text-body-sm text-outline">Published for all staff when the incident closes. Don't include names.</span>
+                <textarea id="no_capa_lessons" v-model="noCorrectiveActionForm.lessons_learned" rows="3" class="p-2 rounded-lg bg-surface-container" />
+                <span v-if="noCorrectiveActionForm.errors.lessons_learned" class="font-body-sm text-body-sm text-error">{{ noCorrectiveActionForm.errors.lessons_learned }}</span>
                 <button type="submit" :disabled="noCorrectiveActionForm.processing" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60 w-fit">
                     Submit for Approval
                 </button>
@@ -191,6 +217,11 @@ function submitDecision(approvalId) {
                         class="p-2 rounded-lg bg-surface-container-low"
                     />
                     <span v-if="decideForm.errors.comments" class="font-body-sm text-body-sm text-error">{{ decideForm.errors.comments }}</span>
+                    <template v-if="decidingMode === 'approve' && approval.stage.value === 'cqi_office'">
+                        <label :for="'decide_lessons_' + approval.id" class="font-label-md text-label-md text-on-surface font-semibold">Lessons learned (final wording)</label>
+                        <span class="font-body-sm text-body-sm text-outline">Edit the department's draft if needed. Published for all staff when the incident closes.</span>
+                        <textarea :id="'decide_lessons_' + approval.id" v-model="decideForm.lessons_learned" rows="3" class="p-2 rounded-lg bg-surface-container-low" />
+                    </template>
                     <div class="flex gap-2">
                         <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-body-sm" @click="submitDecision(approval.id)">Submit</button>
                         <button type="button" class="px-3 py-1.5 rounded-lg bg-surface-container-lowest font-label-sm text-body-sm" @click="decidingId = null; decidingMode = null">Cancel</button>
