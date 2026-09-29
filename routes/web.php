@@ -8,6 +8,7 @@ use App\Http\Controllers\CorrectiveActionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadershipDepartmentController;
 use App\Http\Controllers\LessonsLearnedController;
+use App\Http\Controllers\SafetyAlertController;
 use App\Http\Controllers\GuestReportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\IncidentWorkflowController;
@@ -68,6 +69,11 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
 
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
+    Route::get('/safety-alerts', [SafetyAlertController::class, 'index'])->name('safety-alerts.index');
+    Route::get('/safety-alerts/create', [SafetyAlertController::class, 'create'])->name('safety-alerts.create');
+    Route::post('/safety-alerts', [SafetyAlertController::class, 'store'])->name('safety-alerts.store');
+    Route::get('/safety-alerts/{safetyAlert}', [SafetyAlertController::class, 'show'])->name('safety-alerts.show');
+    Route::post('/safety-alerts/{safetyAlert}/acknowledge', [SafetyAlertController::class, 'acknowledge'])->name('safety-alerts.acknowledge');
     Route::get('/lessons-learned', [LessonsLearnedController::class, 'index'])->name('lessons.index');
 
     Route::get('/admin/leadership', [LeadershipDepartmentController::class, 'index'])->name('admin.leadership.index');

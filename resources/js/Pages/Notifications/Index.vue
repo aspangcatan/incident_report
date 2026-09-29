@@ -1,5 +1,5 @@
 <script setup>
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { formatDate } from '@/Utils/formatDate';
@@ -7,6 +7,12 @@ import { formatDate } from '@/Utils/formatDate';
 defineProps({
     notifications: { type: Object, required: true },
 });
+
+function targetUrl(notification) {
+    if (notification.data.safety_alert_id) return `/safety-alerts/${notification.data.safety_alert_id}`;
+    if (notification.data.incident_id) return `/incidents/${notification.data.incident_id}`;
+    return null;
+}
 
 function markRead(notification) {
     router.post(`/notifications/${notification.id}/read`, {}, { preserveScroll: true });
@@ -34,6 +40,14 @@ function markRead(notification) {
                     <span class="font-body-md text-body-md text-on-surface">{{ notification.data.message }}</span>
                     <span class="font-code-tabular text-body-sm text-outline">{{ formatDate(notification.created_at) }}</span>
                 </div>
+                <div class="flex items-center gap-3">
+                <Link
+                    v-if="targetUrl(notification)"
+                    :href="targetUrl(notification)"
+                    class="font-label-sm text-body-sm text-primary font-semibold whitespace-nowrap"
+                >
+                    Open
+                </Link>
                 <button
                     v-if="!notification.read_at"
                     type="button"
@@ -42,6 +56,7 @@ function markRead(notification) {
                 >
                     Mark as read
                 </button>
+                </div>
             </div>
 
             <Pagination :paginator="notifications" />

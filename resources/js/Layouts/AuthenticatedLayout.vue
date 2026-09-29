@@ -66,6 +66,7 @@ const allNavGroups = [
     {
         label: 'Learning & Safety',
         items: [
+            { label: 'Safety Alerts', icon: 'bullhorn', href: '/safety-alerts', queue: 'safety-alerts', badgeClass: 'bg-error text-on-error' },
             { label: 'Lessons Learned', icon: 'lightbulb', href: '/lessons-learned' },
         ],
     },
@@ -102,6 +103,7 @@ const navGroups = computed(() =>
 );
 
 const queueCounts = computed(() => page.props.queueCounts ?? {});
+const pendingSafetyAlert = computed(() => page.props.pendingSafetyAlert ?? null);
 const badgeCount = (item) => (item.queue ? queueCounts.value[item.queue] : null);
 
 const activeLinkClasses = 'bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]';
@@ -263,6 +265,18 @@ function isActive(href) {
             <FlashBanner />
             <main class="w-full pt-16 pb-12 px-margin min-h-screen">
                 <div class="flex flex-col w-full gap-space-lg py-space-lg">
+                    <Link
+                        v-if="pendingSafetyAlert && !page.url.startsWith(`/safety-alerts/${pendingSafetyAlert.id}`)"
+                        :href="`/safety-alerts/${pendingSafetyAlert.id}`"
+                        role="alert"
+                        class="rounded-lg p-space-md flex items-center gap-3 border-l-4"
+                        :class="pendingSafetyAlert.urgency === 'critical' ? 'bg-error-container text-on-error-container border-error' : 'bg-amber-50 text-amber-900 border-amber-500'"
+                    >
+                        <FontAwesomeIcon icon="bullhorn" />
+                        <span class="font-title-sm text-title-sm font-semibold">Safety alert:</span>
+                        <span class="font-body-md text-body-md flex-1">{{ pendingSafetyAlert.title }}</span>
+                        <span class="font-label-md text-label-md font-semibold underline whitespace-nowrap">Read and acknowledge</span>
+                    </Link>
                     <slot />
                 </div>
             </main>

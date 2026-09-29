@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -71,6 +71,13 @@ function switchTab(value) {
             <h1 class="font-headline-md text-headline-md text-primary tracking-tight">
                 {{ incident.summary || 'Incident report' }}
             </h1>
+            <Link
+                v-if="can.issueSafetyAlert && incident.incident_number"
+                :href="`/safety-alerts/create?incident=${incident.id}`"
+                class="self-start mt-2 px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md font-semibold"
+            >
+                <FontAwesomeIcon icon="bullhorn" /> Issue Safety Alert
+            </Link>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-surface-container-low p-space-md rounded-xl">

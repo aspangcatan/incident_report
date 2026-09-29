@@ -227,6 +227,7 @@ class IncidentController extends Controller
                 'createCorrectiveAction' => $canCreateCorrectiveAction,
                 'requestApproval' => $user->can('requestApproval', $incident),
                 'checkEffectiveness' => $user->can('checkEffectiveness', $incident),
+                'issueSafetyAlert' => $user->can('create', \App\Models\SafetyAlert::class),
                 'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),
             ],
         ]);

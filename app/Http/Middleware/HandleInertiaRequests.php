@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Role;
 use App\Models\Incident;
+use App\Models\SafetyAlert;
 use App\Models\User;
 use App\Queries\CorrectiveActionQueueQuery;
 use App\Queries\IncidentQueueQuery;
@@ -58,6 +59,10 @@ class HandleInertiaRequests extends Middleware
             ],
             'unreadNotificationsCount' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'queueCounts' => fn () => ($user = $request->user()) ? $this->queueCounts($user) : [],
+            // Newest safety alert this user has not acknowledged yet (banner).
+            'pendingSafetyAlert' => fn () => ($user = $request->user())
+                ? SafetyAlert::addressedTo($user)->notAcknowledgedBy($user)->latest('id')->first(['id', 'title', 'urgency'])
+                : null,
         ]);
     }
 
@@ -65,7 +70,10 @@ class HandleInertiaRequests extends Middleware
     private function queueCounts(User $user): array
     {
         // Draft Reports counts only reports sent back to this reporter.
-        $counts = ['drafts' => Incident::returned()->where('reporter_id', $user->id)->count()];
+        $counts = [
+            'drafts' => Incident::returned()->where('reporter_id', $user->id)->count(),
+            'safety-alerts' => SafetyAlert::addressedTo($user)->notAcknowledgedBy($user)->count(),
+        ];
 
         foreach (IncidentQueueQuery::QUEUES as $queue => [, , $badge]) {
             if ($badge && IncidentQueueQuery::allowed($queue, $user)) {

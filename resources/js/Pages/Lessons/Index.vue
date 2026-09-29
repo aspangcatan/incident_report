@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
+import Pagination from '@/Components/Pagination.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import { formatDate } from '@/Utils/formatDate';
@@ -35,15 +36,6 @@ defineProps({
             <p class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ lesson.lesson }}</p>
         </article>
 
-        <div v-if="lessons.last_page > 1" class="flex items-center gap-2">
-            <Link
-                v-for="link in lessons.links"
-                :key="link.label"
-                :href="link.url ?? ''"
-                :class="[link.active ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface', !link.url && 'opacity-40 pointer-events-none']"
-                class="px-3 py-1.5 rounded-lg font-label-md text-label-md"
-                v-html="link.label"
-            />
-        </div>
+        <Pagination :paginator="lessons" />
     </AuthenticatedLayout>
 </template>
