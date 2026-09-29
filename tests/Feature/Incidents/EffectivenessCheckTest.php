@@ -30,6 +30,8 @@ class EffectivenessCheckTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Independent of the local setting (it may be 0 while someone tests by hand).
+        config(['incident_workflow.effectiveness_wait_days' => 30]);
         $this->department = Department::factory()->create();
         $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
     }
