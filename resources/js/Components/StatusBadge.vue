@@ -4,10 +4,12 @@ import { statusLabel, statusBadgeClasses } from '@/Composables/useIncidentStatus
 
 const props = defineProps({
     status: { type: String, required: true },
+    // A draft sent back to the reporter shows as "Returned" instead of "Draft".
+    returned: { type: Boolean, default: false },
 });
 
-const label = computed(() => statusLabel(props.status));
-const classes = computed(() => statusBadgeClasses(props.status));
+const label = computed(() => (props.returned ? 'Returned' : statusLabel(props.status)));
+const classes = computed(() => (props.returned ? 'bg-amber-100 text-amber-900' : statusBadgeClasses(props.status)));
 </script>
 
 <template>

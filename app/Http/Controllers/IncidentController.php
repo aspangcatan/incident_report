@@ -52,7 +52,9 @@ class IncidentController extends Controller
         $query = Incident::query()->with(['incidentTypes', 'department', 'reporter']);
 
         if ($scope === 'drafts') {
-            $query->where('reporter_id', $user->id)->where('status', IncidentStatus::Draft);
+            // Returned reports first: they are waiting on the reporter.
+            $query->where('reporter_id', $user->id)->where('status', IncidentStatus::Draft)
+                ->orderByRaw('supervisor_comments IS NULL');
         } elseif ($scope === 'all') {
             $this->authorize('viewAny', Incident::class);
             $query->where('status', '!=', IncidentStatus::Draft)->visibleTo($user);

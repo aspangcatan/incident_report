@@ -61,7 +61,7 @@ function switchTab(value) {
     <AuthenticatedLayout>
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-sm">
             <div class="flex flex-wrap items-center gap-space-sm">
-                <StatusBadge :status="incident.status" />
+                <StatusBadge :status="incident.status" :returned="incident.is_returned" />
                 <SeverityBadge :severity="incident.severity" />
                 <span v-if="incident.is_sentinel_event" class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-body-sm font-semibold">
                     Sentinel Event

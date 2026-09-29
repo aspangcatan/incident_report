@@ -46,6 +46,8 @@ class Incident extends Model
         'police_notified_at',
     ];
 
+    protected $appends = ['is_returned'];
+
     protected $casts = [
         'reporter_id' => 'integer',
         'department_id' => 'integer',
@@ -156,6 +158,17 @@ class Incident extends Model
     public function auditLogs(): MorphMany
     {
         return $this->morphMany(AuditLog::class, 'auditable');
+    }
+
+    /** Sent back to the reporter: a draft that carries the returner's remarks. */
+    public function getIsReturnedAttribute(): bool
+    {
+        return $this->status === IncidentStatus::Draft && $this->supervisor_comments !== null;
+    }
+
+    public function scopeReturned(Builder $query): Builder
+    {
+        return $query->where('status', IncidentStatus::Draft)->whereNotNull('supervisor_comments');
     }
 
     /**

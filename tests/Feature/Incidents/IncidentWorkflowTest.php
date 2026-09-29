@@ -492,4 +492,29 @@ class IncidentWorkflowTest extends TestCase
             ->where('incident.supervisor_comments', 'Please add the exact time.')
             ->where('incident.supervisor_reviewer.name', $head->name));
     }
+
+    public function test_returned_reports_are_flagged_listed_first_and_counted_in_the_sidebar(): void
+    {
+        $reporter = $this->makeReporter();
+        $returned = $this->submittedIncident($reporter);
+        $head = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $returned->department_id]);
+        app(IncidentService::class)->returnForRevision($returned->fresh(), $head, 'Add the time.');
+        $plainDraft = app(IncidentService::class)->createDraft($reporter, ['location' => 'Ward 1']);
+
+        $this->actingAs($reporter)->get('/incidents?scope=drafts')->assertInertia(fn ($page) => $page
+            ->where('incidents.data.0.id', $returned->id)
+            ->where('incidents.data.0.is_returned', true)
+            ->where('incidents.data.1.id', $plainDraft->id)
+            ->where('incidents.data.1.is_returned', false)
+            ->where('queueCounts.drafts', 1));
+    }
+
+    public function test_the_draft_count_ignores_drafts_that_were_never_returned(): void
+    {
+        $reporter = $this->makeReporter();
+        app(IncidentService::class)->createDraft($reporter, ['location' => 'Ward 1']);
+
+        $this->actingAs($reporter)->get('/incidents?scope=drafts')->assertInertia(fn ($page) => $page
+            ->missing('queueCounts.drafts'));
+    }
 }

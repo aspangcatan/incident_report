@@ -77,7 +77,7 @@ function switchScope(value) {
                             <td class="p-3">
                                 <SeverityBadge :severity="incident.severity" />
                             </td>
-                            <td class="p-3"><StatusBadge :status="incident.status" /></td>
+                            <td class="p-3"><StatusBadge :status="incident.status" :returned="incident.is_returned" /></td>
                         </tr>
                     </tbody>
                 </table>

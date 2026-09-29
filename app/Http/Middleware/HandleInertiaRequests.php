@@ -64,7 +64,8 @@ class HandleInertiaRequests extends Middleware
     /** Badge counts, from the same builders the queue pages use. Zero counts are omitted. */
     private function queueCounts(User $user): array
     {
-        $counts = [];
+        // Draft Reports counts only reports sent back to this reporter.
+        $counts = ['drafts' => Incident::returned()->where('reporter_id', $user->id)->count()];
 
         foreach (IncidentQueueQuery::QUEUES as $queue => [, , $badge]) {
             if ($badge && IncidentQueueQuery::allowed($queue, $user)) {
