@@ -10,7 +10,11 @@ class InvestigationFindingResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'tool' => $this->tool->value,
             'sequence' => $this->sequence,
+            'group_name' => $this->group_name,
+            'occurred_at' => $this->occurred_at,
+            'is_flagged' => $this->is_flagged,
             'category' => $this->category,
             'question' => $this->question,
             'finding' => $this->finding,

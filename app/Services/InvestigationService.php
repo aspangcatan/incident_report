@@ -7,6 +7,7 @@ use App\DataTransferObjects\Investigations\FindingData;
 use App\DataTransferObjects\Investigations\StartInvestigationData;
 use App\Enums\IncidentStatus;
 use App\Enums\InvestigationMethodology;
+use App\Enums\RcaTool;
 use App\Enums\InvestigationStatus;
 use App\Models\AuditLog;
 use App\Models\Incident;
@@ -83,10 +84,13 @@ class InvestigationService
 
     public function addFinding(Investigation $investigation, FindingData $data): InvestigationFinding
     {
-        $attributes = $data->toAttributes();
+        // Older 5 Whys investigations add 5 Whys rows by default.
+        $tool = $data->tool !== null ? RcaTool::from($data->tool)
+            : ($investigation->methodology === InvestigationMethodology::FiveWhys ? RcaTool::FiveWhys : RcaTool::Simple);
+        $attributes = [...$data->toAttributes(), 'tool' => $tool];
 
-        if ($investigation->methodology === InvestigationMethodology::FiveWhys) {
-            $attributes['sequence'] = $this->findings->countFor($investigation) + 1;
+        if ($tool->isSequenced()) {
+            $attributes['sequence'] = $investigation->findings()->where('tool', $tool->value)->count() + 1;
         }
 
         $finding = $this->findings->create($investigation, $attributes);
@@ -104,10 +108,12 @@ class InvestigationService
     public function deleteFinding(InvestigationFinding $finding): void
     {
         $investigation = $finding->investigation;
+        $tool = $finding->tool;
         $this->findings->delete($finding);
 
-        if ($investigation->methodology === InvestigationMethodology::FiveWhys) {
-            $this->findings->allFor($investigation)->values()->each(
+        // Keep the numbering of that tool's remaining steps contiguous.
+        if ($tool->isSequenced()) {
+            $this->findings->allFor($investigation)->where('tool', $tool)->values()->each(
                 fn (InvestigationFinding $remaining, int $index) => $this->findings->update($remaining, ['sequence' => $index + 1])
             );
         }
