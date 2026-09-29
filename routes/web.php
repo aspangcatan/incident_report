@@ -68,6 +68,7 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('/analytics/trends', [AnalyticsController::class, 'trends'])->name('analytics.trends');
 
     Route::get('/safety-alerts', [SafetyAlertController::class, 'index'])->name('safety-alerts.index');
     Route::get('/safety-alerts/create', [SafetyAlertController::class, 'create'])->name('safety-alerts.create');

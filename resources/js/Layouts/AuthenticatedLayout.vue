@@ -75,9 +75,7 @@ const allNavGroups = [
         can: 'viewAnalytics',
         items: [
             { label: 'Executive Overview', icon: 'chart-line', href: '/analytics' },
-            { label: 'Trends & Sentinels', icon: 'arrow-trend-up', href: '#' },
-            { label: 'Unit & Severity Heatmap', icon: 'table-cells', href: '#' },
-            { label: 'Resolution Times', icon: 'stopwatch', href: '#' },
+            { label: 'Trends', icon: 'arrow-trend-up', href: '/analytics/trends' },
         ],
     },
     {
