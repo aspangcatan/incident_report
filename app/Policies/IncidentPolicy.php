@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\ApprovalStatus;
+use App\Enums\EvidenceStage;
 use App\Enums\IncidentStatus;
 use App\Enums\Role;
 use App\Enums\Severity;
@@ -88,6 +89,32 @@ class IncidentPolicy
     public function delete(User $user, Incident $incident): bool
     {
         return $this->update($user, $incident);
+    }
+
+    /**
+     * Evidence after reporting: the department during its assessment, the
+     * investigation team during the investigation. (CAPA proof is added when
+     * completing a CAPA; the reporter adds files on the report form.)
+     */
+    public function evidenceStage(User $user, Incident $incident): ?EvidenceStage
+    {
+        if ($incident->status === IncidentStatus::Submitted && $this->assess($user, $incident)) {
+            return EvidenceStage::Assessment;
+        }
+
+        // Queried, not $incident->investigation: that would cache the relation and leak it
+        // into the incident page's `incident` prop (see IncidentController::show()).
+        $investigation = $incident->status === IncidentStatus::UnderInvestigation ? $incident->investigation()->first() : null;
+        if ($investigation && $user->can('recordFindings', $investigation)) {
+            return EvidenceStage::Investigation;
+        }
+
+        return null;
+    }
+
+    public function addEvidence(User $user, Incident $incident): bool
+    {
+        return $this->evidenceStage($user, $incident) !== null;
     }
 
     /** CQI triage: confirm or change the severity, or return to the department. */

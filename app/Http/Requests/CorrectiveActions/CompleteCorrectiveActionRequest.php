@@ -16,6 +16,8 @@ class CompleteCorrectiveActionRequest extends FormRequest
     {
         return [
             'completion_notes' => ['required', 'string'],
+            'attachments' => ['array'],
+            'attachments.*' => \App\Services\EvidenceService::FILE_RULES,
         ];
     }
 

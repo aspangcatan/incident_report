@@ -136,7 +136,7 @@ class IncidentController extends Controller
 
         $incident->load([
             'reporter', 'department', 'incidentTypes', 'assignedInvestigator', 'recommendedInvestigator', 'investigationSkippedBy', 'effectivenessCheckedBy',
-            'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments', 'assessor',
+            'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments.uploadedBy', 'attachments.correctiveAction', 'assessor',
         ]);
 
         $user = $request->user();
@@ -181,6 +181,7 @@ class IncidentController extends Controller
         return Inertia::render('Incidents/Show', [
             'injuryOptions' => self::injuryOptions(),
             'similarIncidents' => $this->similarIncidents($incident),
+            'evidenceStage' => app(\App\Policies\IncidentPolicy::class)->evidenceStage($user, $incident)?->label(),
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
             // Fetched separately rather than via load() above: Incident::auditLogs() is
@@ -228,6 +229,7 @@ class IncidentController extends Controller
                 'createCorrectiveAction' => $canCreateCorrectiveAction,
                 'requestApproval' => $user->can('requestApproval', $incident),
                 'checkEffectiveness' => $user->can('checkEffectiveness', $incident),
+                'addEvidence' => $user->can('addEvidence', $incident),
                 'issueSafetyAlert' => $user->can('create', \App\Models\SafetyAlert::class),
                 'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),
             ],

@@ -171,6 +171,7 @@ function confirmSubmit() {
                 :incident-types="incidentTypes"
                 :departments="departments"
                 :injury-options="injuryOptions"
+                :existing-attachments="incident?.attachments ?? []"
             />
         </div>
 

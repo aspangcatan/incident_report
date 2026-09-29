@@ -6,6 +6,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\CorrectiveActionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EvidenceController;
 use App\Http\Controllers\LeadershipDepartmentController;
 use App\Http\Controllers\LessonsLearnedController;
 use App\Http\Controllers\RecurrenceReviewController;
@@ -63,6 +64,7 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::post('/incidents/{incident}/no-corrective-action-needed', [ApprovalController::class, 'markNoCorrectiveActionNeeded'])->name('approvals.no-corrective-action');
     Route::post('/approvals/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
     Route::post('/approvals/{approval}/return', [ApprovalController::class, 'returnForRevision'])->name('approvals.return');
+    Route::post('/incidents/{incident}/evidence', [EvidenceController::class, 'store'])->name('incidents.evidence.store');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

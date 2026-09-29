@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -26,7 +26,19 @@ const props = defineProps({
     auditLogs: { type: Array, required: true },
     injuryOptions: { type: Object, required: true },
     similarIncidents: { type: Array, default: () => [] },
+    evidenceStage: { type: String, default: null },
 });
+
+const stageLabels = { report: 'Report', assessment: 'Department Assessment', investigation: 'Investigation', capa: 'Corrective Action proof' };
+const evidenceForm = useForm({ files: [] });
+
+function addEvidence() {
+    evidenceForm.post(`/incidents/${props.incident.id}/evidence`, {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => evidenceForm.reset(),
+    });
+}
 
 // Chosen labels plus the "Others (Specify)" text, as one readable line.
 function listWithOther(labels, other) {
@@ -204,7 +216,18 @@ function switchTab(value) {
             </div>
         </div>
 
-        <div v-else-if="activeTab === 'attachments'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-2">
+        <div v-else-if="activeTab === 'attachments'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
+            <form v-if="can.addEvidence" class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-container-low" @submit.prevent="addEvidence">
+                <label for="evidence_files" class="font-label-md text-label-md text-on-surface font-semibold">Add evidence ({{ evidenceStage }})</label>
+                <span class="font-body-sm text-body-sm text-outline">Photos, statements, logs or documents. PDF, PNG, JPG, DOC or DOCX, up to 25 MB each. Files can't be removed once added.</span>
+                <input id="evidence_files" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" class="font-body-sm text-body-sm" @change="evidenceForm.files = Array.from($event.target.files)" />
+                <span v-if="evidenceForm.errors.files" class="font-body-sm text-body-sm text-error">{{ evidenceForm.errors.files }}</span>
+                <span v-for="(message, key) in evidenceForm.errors" v-show="key.startsWith('files.')" :key="key" class="font-body-sm text-body-sm text-error">{{ message }}</span>
+                <button type="submit" :disabled="evidenceForm.processing || !evidenceForm.files.length" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60 w-fit">
+                    Upload
+                </button>
+            </form>
+
             <div v-if="!incident.attachments?.length" class="text-center font-body-sm text-body-sm text-outline p-space-lg">
                 No attachments uploaded.
             </div>
@@ -212,10 +235,16 @@ function switchTab(value) {
                 v-for="file in incident.attachments"
                 :key="file.id"
                 :href="`/attachments/${file.id}`"
-                class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between hover:bg-surface-container"
+                class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between gap-3 hover:bg-surface-container"
             >
-                <span class="font-body-sm text-body-sm text-on-surface">{{ file.original_filename }}</span>
-                <FontAwesomeIcon icon="eye" class="text-primary" />
+                <div class="flex flex-col min-w-0">
+                    <span class="font-body-md text-body-md text-on-surface truncate">{{ file.original_filename }}</span>
+                    <span class="font-body-sm text-body-sm text-outline">
+                        {{ stageLabels[file.stage] ?? 'Report' }}<template v-if="file.corrective_action"> · {{ file.corrective_action.capa_number }}</template>
+                        · {{ file.uploaded_by?.name ?? 'Unknown' }} · {{ formatDate(file.created_at) }}
+                    </span>
+                </div>
+                <FontAwesomeIcon icon="eye" class="text-primary flex-shrink-0" />
             </a>
         </div>
 

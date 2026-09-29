@@ -67,7 +67,7 @@ function markInProgress(actionId) {
 }
 
 const completingId = ref(null);
-const completeForm = useForm({ completion_notes: '' });
+const completeForm = useForm({ completion_notes: '', attachments: [] });
 
 function completeCorrectiveAction(actionId) {
     completeForm.post(`/corrective-actions/${actionId}/complete`, {
@@ -261,6 +261,10 @@ function verifyCorrectiveAction(actionId) {
                         <label :for="'completion_notes_' + action.id" class="font-label-md text-label-md text-on-surface font-semibold">What was done? *</label>
                         <textarea :id="'completion_notes_' + action.id" v-model="completeForm.completion_notes" rows="2" placeholder="Describe how the task was completed" class="p-2 rounded-lg bg-surface-container-low" />
                         <span v-if="completeForm.errors.completion_notes" class="font-body-sm text-body-sm text-error">{{ completeForm.errors.completion_notes }}</span>
+                        <label :for="'completion_files_' + action.id" class="font-label-md text-label-md text-on-surface font-semibold">Proof of completion</label>
+                        <span class="font-body-sm text-body-sm text-outline">Optional: e.g. attendance sheet, photo of the new signage. Added to the incident's evidence.</span>
+                        <input :id="'completion_files_' + action.id" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" class="font-body-sm text-body-sm" @change="completeForm.attachments = Array.from($event.target.files)" />
+                        <span v-for="(message, key) in completeForm.errors" v-show="key.startsWith('attachments')" :key="key" class="font-body-sm text-body-sm text-error">{{ message }}</span>
                         <div class="flex gap-2">
                             <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-body-sm" @click="completeCorrectiveAction(action.id)">Submit</button>
                             <button type="button" class="px-3 py-1.5 rounded-lg bg-surface-container-lowest font-label-sm text-body-sm" @click="completingId = null">Cancel</button>

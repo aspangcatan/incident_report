@@ -11,7 +11,9 @@ use App\Http\Requests\CorrectiveActions\CompleteCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\CreateCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\UpdateCorrectiveActionRequest;
 use App\Http\Requests\CorrectiveActions\VerifyCorrectiveActionRequest;
+use App\Enums\EvidenceStage;
 use App\Models\CorrectiveAction;
+use App\Services\EvidenceService;
 use App\Models\Incident;
 use App\Queries\CorrectiveActionQueueQuery;
 use Illuminate\Http\RedirectResponse;
@@ -80,6 +82,15 @@ class CorrectiveActionController extends Controller
     public function complete(CompleteCorrectiveActionRequest $request, CorrectiveAction $correctiveAction, CompleteCorrectiveActionAction $action): RedirectResponse
     {
         $action($correctiveAction, $request->toDto());
+
+        // Proof of completion goes into the incident's evidence, linked to this CAPA.
+        app(EvidenceService::class)->store(
+            $correctiveAction->incident,
+            $request->user(),
+            $request->file('attachments', []),
+            EvidenceStage::Capa,
+            $correctiveAction->id,
+        );
 
         return back()->with('success', 'Corrective action completed and sent for verification.');
     }

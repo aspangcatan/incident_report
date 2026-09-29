@@ -1,6 +1,8 @@
 <script setup>
 defineProps({
     form: { type: Object, required: true },
+    // Files already saved with this draft (they stay; new ones are added).
+    existingAttachments: { type: Array, default: () => [] },
 });
 
 let nextEventKey = 0;
@@ -55,6 +57,15 @@ function removeAttachment(form, index) {
                 <span class="font-body-sm text-body-sm text-outline">PDF, PNG, JPG, DOC — max 25MB per file</span>
                 <input type="file" multiple class="hidden" @change="onFilesSelected(form, $event)" />
             </label>
+            <a
+                v-for="file in existingAttachments"
+                :key="'saved-' + file.id"
+                :href="`/attachments/${file.id}`"
+                class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container"
+            >
+                <span class="font-body-sm text-body-sm text-on-surface truncate">{{ file.original_filename }}</span>
+                <span class="font-body-sm text-body-sm text-outline whitespace-nowrap">Already uploaded</span>
+            </a>
             <div v-for="(file, index) in form.attachments" :key="index" class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
                 <span class="font-body-sm text-body-sm text-on-surface truncate">{{ file.name }}</span>
                 <button type="button" class="text-error" @click="removeAttachment(form, index)">

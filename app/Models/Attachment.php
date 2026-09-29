@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AttachmentCategory;
+use App\Enums\EvidenceStage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -15,12 +16,19 @@ class Attachment extends Model
 
     protected $casts = [
         'category' => AttachmentCategory::class,
+        'stage' => EvidenceStage::class,
+        'corrective_action_id' => 'integer',
         'size' => 'integer',
     ];
 
     public function attachable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function correctiveAction(): BelongsTo
+    {
+        return $this->belongsTo(CorrectiveAction::class);
     }
 
     public function uploadedBy(): BelongsTo
