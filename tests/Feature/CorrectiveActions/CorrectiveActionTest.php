@@ -361,11 +361,44 @@ class CorrectiveActionTest extends TestCase
         $head = $this->headOf($incident);
 
         $this->assertTrue($responsible->can('progress', $capa));
-        $this->assertTrue($responsible->can('complete', $capa));
+        $this->assertFalse($responsible->can('complete', $capa), 'Not before Start Work');
         foreach ([$stranger, $qso, $admin, $head] as $other) {
             $this->assertFalse($other->can('progress', $capa));
+        }
+
+        $this->actingAs($responsible)->post("/corrective-actions/{$capa->id}/progress")->assertRedirect();
+        $capa->refresh();
+
+        $this->assertTrue($responsible->can('complete', $capa));
+        foreach ([$stranger, $qso, $admin, $head] as $other) {
             $this->assertFalse($other->can('complete', $capa));
         }
+    }
+
+    public function test_completing_before_start_work_is_refused(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $responsible = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
+
+        $this->actingAs($responsible)
+            ->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.'])
+            ->assertForbidden();
+        $this->assertSame(\App\Enums\CorrectiveActionStatus::Open, $capa->fresh()->status);
+    }
+
+    public function test_someone_cannot_start_or_complete_a_colleagues_capa_via_http(): void
+    {
+        $incident = $this->incidentReadyForCapa();
+        $owner = User::factory()->create();
+        $colleague = User::factory()->create();
+        $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $owner->id]));
+
+        $this->actingAs($colleague)->post("/corrective-actions/{$capa->id}/progress")->assertForbidden();
+        $this->actingAs($owner)->post("/corrective-actions/{$capa->id}/progress");
+        $this->actingAs($colleague)
+            ->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.'])
+            ->assertForbidden();
     }
 
     public function test_a_supervisor_can_verify_but_the_person_who_completed_it_cannot_even_if_also_a_supervisor(): void
@@ -495,6 +528,7 @@ class CorrectiveActionTest extends TestCase
         $responsible = User::factory()->create();
         $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
 
+        $this->actingAs($responsible)->post("/corrective-actions/{$capa->id}/progress");
         $this->actingAs($responsible)
             ->post("/corrective-actions/{$capa->id}/complete", [])
             ->assertSessionHasErrors(['completion_notes']);
@@ -506,6 +540,7 @@ class CorrectiveActionTest extends TestCase
         $responsible = User::factory()->create();
         $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $responsible->id]));
 
+        $this->actingAs($responsible)->post("/corrective-actions/{$capa->id}/progress");
         $this->actingAs($responsible)
             ->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.'])
             ->assertRedirect();
@@ -518,6 +553,7 @@ class CorrectiveActionTest extends TestCase
         $incident = $this->incidentReadyForCapa();
         $completer = User::factory()->create(['role' => Role::Supervisor]);
         $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $completer->id]));
+        $this->actingAs($completer)->post("/corrective-actions/{$capa->id}/progress");
         $this->actingAs($completer)->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.']);
 
         $this->actingAs($completer)
@@ -530,6 +566,7 @@ class CorrectiveActionTest extends TestCase
         $incident = $this->incidentReadyForCapa();
         $completer = User::factory()->create();
         $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $completer->id]));
+        $this->actingAs($completer)->post("/corrective-actions/{$capa->id}/progress");
         $this->actingAs($completer)->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.']);
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $verifier = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);

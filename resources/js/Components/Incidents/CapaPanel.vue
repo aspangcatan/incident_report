@@ -246,6 +246,7 @@ function verifyCorrectiveAction(actionId) {
                             <button v-if="action.can.progress" type="button" class="px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md" @click="markInProgress(action.id)">
                                 Start Work
                             </button>
+                            <span v-if="action.can.progress" class="font-body-sm text-body-sm text-outline">Start work first; then you can mark it complete.</span>
                             <button v-if="action.can.complete" type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md" @click="completingId = action.id">
                                 Mark Complete
                             </button>

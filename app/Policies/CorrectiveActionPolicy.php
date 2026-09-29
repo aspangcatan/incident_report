@@ -46,9 +46,10 @@ class CorrectiveActionPolicy
         return $correctiveAction->responsible_user_id === $user->id;
     }
 
+    /** Only after "Start Work": an action still Open can't be completed. */
     public function complete(User $user, CorrectiveAction $correctiveAction): bool
     {
-        if (! in_array($correctiveAction->status, [CorrectiveActionStatus::Open, CorrectiveActionStatus::InProgress], true)) {
+        if ($correctiveAction->status !== CorrectiveActionStatus::InProgress) {
             return false;
         }
 
