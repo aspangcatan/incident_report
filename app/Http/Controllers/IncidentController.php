@@ -102,7 +102,7 @@ class IncidentController extends Controller
     {
         $this->authorize('update', $incident);
 
-        $incident->load(['incidentTypes', 'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments']);
+        $incident->load(['supervisorReviewer', 'incidentTypes', 'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments']);
 
         return Inertia::render('Incidents/Wizard', [
             'incident' => $incident,

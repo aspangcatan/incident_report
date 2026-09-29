@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmationDialog from '@/Components/ConfirmationDialog.vue';
+import { formatDate } from '@/Utils/formatDate';
 import Step1ReporterInfo from '@/Components/Incidents/Step1ReporterInfo.vue';
 import Step2IncidentDetails from '@/Components/Incidents/Step2IncidentDetails.vue';
 import Step3InjuryDetails from '@/Components/Incidents/Step3InjuryDetails.vue';
@@ -135,6 +136,22 @@ function confirmSubmit() {
             >
                 {{ index + 1 }}. {{ step.title }}
             </button>
+        </div>
+
+        <div
+            v-if="incident?.supervisor_comments"
+            role="note"
+            class="rounded-lg bg-amber-50 text-amber-900 p-space-md flex flex-col gap-1 border-l-4 border-amber-500"
+        >
+            <span class="font-title-sm text-title-sm font-semibold flex items-center gap-2">
+                <FontAwesomeIcon icon="triangle-exclamation" />
+                Returned for revision
+                <span class="font-body-sm text-body-sm font-normal">
+                    by {{ incident.supervisor_reviewer?.name ?? 'the department' }} on {{ formatDate(incident.supervisor_reviewed_at) }}
+                </span>
+            </span>
+            <p class="font-body-md text-body-md whitespace-pre-line">"{{ incident.supervisor_comments }}"</p>
+            <span class="font-body-sm text-body-sm">Fix the report, then submit it again from the last step.</span>
         </div>
 
         <div

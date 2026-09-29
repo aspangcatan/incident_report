@@ -478,4 +478,18 @@ class IncidentWorkflowTest extends TestCase
             ->where('auditLogs.1.id', $earlier->id)
         );
     }
+
+    public function test_the_edit_page_of_a_returned_report_shows_who_returned_it_and_why(): void
+    {
+        $reporter = $this->makeReporter();
+        $incident = $this->submittedIncident($reporter);
+        $head = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $incident->department_id]);
+
+        app(IncidentService::class)->returnForRevision($incident->fresh(), $head, 'Please add the exact time.');
+
+        $this->actingAs($reporter)->get("/incidents/{$incident->id}/edit")->assertInertia(fn ($page) => $page
+            ->component('Incidents/Wizard')
+            ->where('incident.supervisor_comments', 'Please add the exact time.')
+            ->where('incident.supervisor_reviewer.name', $head->name));
+    }
 }

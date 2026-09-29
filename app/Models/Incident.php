@@ -97,6 +97,12 @@ class Incident extends Model
         return $this->belongsTo(User::class, 'assigned_investigator_id');
     }
 
+    /** Who last reviewed it, or returned it to the reporter (with supervisor_comments). */
+    public function supervisorReviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_reviewed_by');
+    }
+
     public function assessor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assessed_by');
