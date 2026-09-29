@@ -2,25 +2,28 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 
-// Placeholder counts until Incident Reporting (Phase 3) and Analytics (Phase 8)
-// wire this dashboard to real database-driven data.
+const props = defineProps({
+    stages: { type: Object, required: true },
+    kpis: { type: Object, required: true },
+});
+
+// Counts are live and limited to the incidents you can see; drafts are not counted.
 const lifecycleStages = [
-    { label: 'Reported', icon: 'clipboard-user', count: 0 },
-    { label: 'For Review', icon: 'hourglass-half', count: 0 },
-    { label: 'Investigation', icon: 'magnifying-glass', count: 0 },
-    { label: 'CAPA Action', icon: 'list-check', count: 0 },
-    { label: 'Verification', icon: 'shield-halved', count: 0 },
-    { label: 'Closed', icon: 'circle-check', count: 0 },
-    { label: 'Learn & CQI', icon: 'chart-line', count: 0 },
+    { label: 'Reported', icon: 'clipboard-user', count: props.stages.reported },
+    { label: 'For Review', icon: 'hourglass-half', count: props.stages.forReview },
+    { label: 'Investigation', icon: 'magnifying-glass', count: props.stages.investigation },
+    { label: 'CAPA Action', icon: 'list-check', count: props.stages.capa },
+    { label: 'Verification & Approval', icon: 'shield-halved', count: props.stages.verification },
+    { label: 'Closed', icon: 'circle-check', count: props.stages.closed },
 ];
 
 const kpiCards = [
-    { label: 'Total Incidents (YTD)', value: 0, icon: 'chart-line' },
-    { label: 'Pending Review', value: 0, icon: 'hourglass-half' },
-    { label: 'Active Investigations', value: 0, icon: 'magnifying-glass' },
-    { label: 'Overdue CAPA', value: 0, icon: 'triangle-exclamation' },
-    { label: 'Sentinel Incidents', value: 0, icon: 'circle-exclamation' },
-    { label: 'Closed & Verified', value: 0, icon: 'square-check' },
+    { label: 'Total Incidents (This Year)', value: props.kpis.totalThisYear, icon: 'chart-line' },
+    { label: 'Pending Review', value: props.kpis.pendingReview, icon: 'hourglass-half' },
+    { label: 'Active Investigations', value: props.kpis.activeInvestigations, icon: 'magnifying-glass' },
+    { label: 'Overdue CAPA', value: props.kpis.overdueCapa, icon: 'triangle-exclamation' },
+    { label: 'Sentinel Incidents (This Year)', value: props.kpis.sentinelThisYear, icon: 'circle-exclamation' },
+    { label: 'Closed & Verified', value: props.kpis.closedAndVerified, icon: 'square-check' },
 ];
 </script>
 
@@ -45,7 +48,7 @@ const kpiCards = [
                 <FontAwesomeIcon icon="sitemap" class="text-primary text-title-md" />
                 <h2 class="font-title-lg text-title-lg text-on-surface">Incident Governance Pipeline</h2>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                 <div
                     v-for="(stage, index) in lifecycleStages"
                     :key="stage.label"
@@ -81,14 +84,6 @@ const kpiCards = [
                     <div class="font-headline-xl text-headline-xl text-on-surface font-bold">{{ card.value }}</div>
                 </div>
             </div>
-        </section>
-
-        <section class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col items-center text-center gap-2">
-            <FontAwesomeIcon icon="circle-info" class="text-primary text-title-lg" />
-            <p class="font-body-md text-body-md text-on-surface-variant max-w-xl">
-                The incident reporting form, investigation workspace, and analytics are being built in the next
-                phases. This dashboard will populate with real data as those modules ship.
-            </p>
         </section>
     </AuthenticatedLayout>
 </template>
