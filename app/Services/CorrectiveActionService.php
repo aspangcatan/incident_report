@@ -147,6 +147,13 @@ class CorrectiveActionService
 
         if (! $unverified && $incident->correctiveActions()->exists()) {
             $incident->status = IncidentStatus::Verified;
+            // Effectiveness check: wait, then the Department Head confirms the actions worked.
+            $incident->effectiveness_due_at = now()->addDays((int) config('incident_workflow.effectiveness_wait_days', 30));
+            $incident->effectiveness_result = null;
+            $incident->effectiveness_notes = null;
+            $incident->effectiveness_checked_by = null;
+            $incident->effectiveness_checked_at = null;
+            $incident->effectiveness_notified_at = null;
             $incident->save();
         }
     }

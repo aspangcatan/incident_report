@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Severity;
 use App\Http\Requests\Incidents\AssignIncidentRequest;
 use App\Http\Requests\Incidents\CompleteAssessmentRequest;
+use App\Http\Requests\Incidents\RecordEffectivenessRequest;
 use App\Http\Requests\Incidents\ReturnIncidentRequest;
 use App\Http\Requests\Incidents\ReturnToDepartmentRequest;
 use App\Http\Requests\Incidents\ReviewIncidentRequest;
@@ -27,6 +28,15 @@ class IncidentWorkflowController extends Controller
         $this->incidents->markReviewed($incident, $request->user(), $request->validated('comments'), $severity);
 
         return redirect()->route('incidents.show', $incident)->with('success', 'Triage done - now assign an investigator or record that none is needed.');
+    }
+
+    public function recordEffectiveness(RecordEffectivenessRequest $request, Incident $incident): RedirectResponse
+    {
+        $effective = $request->boolean('effective');
+        $this->incidents->recordEffectiveness($incident, $request->user(), $effective, $request->validated('notes'));
+
+        return redirect()->route('incidents.show', ['incident' => $incident, 'tab' => $effective ? 'approvals' : 'capa'])
+            ->with('success', $effective ? 'Recorded as effective - you can now request closure.' : 'Recorded as not effective - add new corrective actions.');
     }
 
     public function skipInvestigation(SkipInvestigationRequest $request, Incident $incident): RedirectResponse

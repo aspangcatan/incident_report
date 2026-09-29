@@ -178,14 +178,24 @@ class IncidentPolicy
         return $incident->assigned_investigator_id === $user->id;
     }
 
-    /** The incident's department runs the CAPA stage, so its Department Head asks for closure. */
+    /** The incident's department runs the CAPA stage, so its Department Head asks for closure - once the actions proved effective. */
     public function requestApproval(User $user, Incident $incident): bool
     {
-        if ($incident->status !== IncidentStatus::Verified) {
+        if ($incident->status !== IncidentStatus::Verified || $incident->effectiveness_result !== 'effective') {
             return false;
         }
 
         return $this->isHeadOfIncidentDepartment($user, $incident);
+    }
+
+    /** After the waiting period, the Department Head confirms whether the actions worked. */
+    public function checkEffectiveness(User $user, Incident $incident): bool
+    {
+        return $incident->status === IncidentStatus::Verified
+            && $incident->effectiveness_result !== 'effective'
+            && $incident->effectiveness_due_at !== null
+            && $incident->effectiveness_due_at->isPast()
+            && $this->isHeadOfIncidentDepartment($user, $incident);
     }
 
     public function markNoCorrectiveActionNeeded(User $user, Incident $incident): bool

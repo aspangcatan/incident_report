@@ -8,6 +8,7 @@ use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\Investigation;
 use App\Models\User;
+use App\Notifications\EffectivenessCheckDueNotification;
 use App\Notifications\IncidentEscalationNotification;
 use App\Queries\OverdueApprovalsQuery;
 use App\Queries\OverdueCorrectiveActionsQuery;
@@ -15,6 +16,7 @@ use App\Queries\OverdueInvestigationsQuery;
 use App\Repositories\ApprovalRepository;
 use App\Repositories\CorrectiveActionRepository;
 use App\Repositories\InvestigationRepository;
+use App\Support\IncidentReviewers;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -38,6 +40,8 @@ class CheckOverdueIncidents extends Command
 
     public function handle(): int
     {
+        $this->notifyDueEffectivenessChecks();
+
         $recipients = User::active()->withRole(config('incident_workflow.escalation_recipient_roles'))->get();
 
         if ($recipients->isEmpty()) {
@@ -54,6 +58,23 @@ class CheckOverdueIncidents extends Command
         $this->escalateOverdueApprovals($recipients);
 
         return self::SUCCESS;
+    }
+
+    /** Tell the Department Head once when an effectiveness check becomes due. */
+    private function notifyDueEffectivenessChecks(): void
+    {
+        Incident::where('status', IncidentStatus::Verified)
+            ->whereNull('effectiveness_result')
+            ->whereNull('effectiveness_notified_at')
+            ->where('effectiveness_due_at', '<=', now())
+            ->get()
+            ->each(function (Incident $incident) {
+                $heads = IncidentReviewers::departmentHeads($incident);
+                if ($heads->isNotEmpty()) {
+                    Notification::send($heads, new EffectivenessCheckDueNotification($incident));
+                }
+                $incident->forceFill(['effectiveness_notified_at' => now()])->saveQuietly();
+            });
     }
 
     private function escalateOverdueAssessments(Collection $recipients): void

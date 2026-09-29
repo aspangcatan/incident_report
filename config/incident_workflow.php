@@ -47,6 +47,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Effectiveness check: days after every CAPA is verified before the
+    | Department Head can confirm the actions worked (and request closure)
+    |--------------------------------------------------------------------------
+    */
+    'effectiveness_wait_days' => 30,
+
+    /*
+    |--------------------------------------------------------------------------
     | Escalation recipients (role values — see App\Enums\Role)
     |--------------------------------------------------------------------------
     */

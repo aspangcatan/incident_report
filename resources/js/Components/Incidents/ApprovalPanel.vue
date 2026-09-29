@@ -28,6 +28,13 @@ function markNoCorrectiveActionNeeded() {
     });
 }
 
+// Effectiveness check (Department Head, after the waiting period).
+const effectivenessForm = useForm({ effective: null, notes: '' });
+
+function recordEffectiveness() {
+    effectivenessForm.post(`/incidents/${props.incident.id}/effectiveness`, { preserveScroll: true });
+}
+
 const decidingId = ref(null);
 const decidingMode = ref(null); // 'approve' | 'return'
 const decideForm = useForm({ comments: '' });
@@ -55,6 +62,54 @@ function submitDecision(approvalId) {
 
 <template>
     <div class="flex flex-col gap-space-lg">
+        <div
+            v-if="incident.effectiveness_due_at && ['verified', 'for_approval', 'closed', 'corrective_action'].includes(incident.status)"
+            class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md"
+        >
+            <div>
+                <h2 class="font-title-lg text-title-lg text-primary font-bold">Effectiveness Check</h2>
+                <p class="font-body-sm text-body-sm text-outline">Did the corrective actions work? Closure can only be requested after an "Effective" result.</p>
+            </div>
+
+            <div v-if="incident.effectiveness_result" class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+                <span class="font-body-md text-body-md text-on-surface">
+                    Result: <strong>{{ incident.effectiveness_result === 'effective' ? 'Effective' : 'Not effective' }}</strong>
+                </span>
+                <span class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ incident.effectiveness_notes }}</span>
+                <span class="font-body-sm text-body-sm text-outline">
+                    By {{ incident.effectiveness_checked_by?.name ?? 'the Department Head' }} on {{ formatDate(incident.effectiveness_checked_at) }}
+                </span>
+            </div>
+            <p v-else-if="incident.status === 'verified' && !can.checkEffectiveness" class="font-body-md text-body-md text-on-surface">
+                Waiting period: the Department Head can check effectiveness from {{ formatDate(incident.effectiveness_due_at) }}.
+            </p>
+
+            <form v-if="can.checkEffectiveness" class="flex flex-col gap-space-md" @submit.prevent="recordEffectiveness">
+                <fieldset class="flex flex-col gap-1.5">
+                    <legend class="font-label-md text-label-md text-on-surface font-semibold">Were the actions effective? *</legend>
+                    <div class="flex items-center gap-space-md mt-1">
+                        <label class="flex items-center gap-2 font-body-md text-body-md text-on-surface">
+                            <input v-model="effectivenessForm.effective" type="radio" name="effective" :value="true" /> Effective
+                        </label>
+                        <label class="flex items-center gap-2 font-body-md text-body-md text-on-surface">
+                            <input v-model="effectivenessForm.effective" type="radio" name="effective" :value="false" /> Not effective
+                        </label>
+                    </div>
+                    <span class="font-body-sm text-body-sm text-outline">"Not effective" sends the incident back to corrective actions so you can add new ones.</span>
+                    <span v-if="effectivenessForm.errors.effective" class="font-body-sm text-body-sm text-error">{{ effectivenessForm.errors.effective }}</span>
+                </fieldset>
+                <div class="flex flex-col gap-1.5">
+                    <label for="effectiveness_notes" class="font-label-md text-label-md text-on-surface font-semibold">Evidence *</label>
+                    <span class="font-body-sm text-body-sm text-outline">Has it happened again? What did you check (records, audits, staff feedback)?</span>
+                    <textarea id="effectiveness_notes" v-model="effectivenessForm.notes" rows="3" class="w-full p-3 rounded-lg bg-surface-container-low" />
+                    <span v-if="effectivenessForm.errors.notes" class="font-body-sm text-body-sm text-error">{{ effectivenessForm.errors.notes }}</span>
+                </div>
+                <button type="submit" :disabled="effectivenessForm.processing" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60 w-fit">
+                    Record Effectiveness
+                </button>
+            </form>
+        </div>
+
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <div class="flex flex-wrap items-center justify-between gap-space-sm">
                 <h2 class="font-title-lg text-title-lg text-primary font-bold">Closure Approval</h2>

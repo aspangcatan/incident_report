@@ -142,6 +142,26 @@ class IncidentService
         return $incident;
     }
 
+    /** Effective: closure can be requested. Not effective: back to CAPA for new actions. */
+    public function recordEffectiveness(Incident $incident, User $checker, bool $effective, string $notes): Incident
+    {
+        DB::transaction(function () use ($incident, $checker, $effective, $notes) {
+            $incident->effectiveness_result = $effective ? 'effective' : 'not_effective';
+            $incident->effectiveness_notes = $notes;
+            $incident->effectiveness_checked_by = $checker->id;
+            $incident->effectiveness_checked_at = now();
+            $incident->auditComment = ($effective ? 'Effectiveness check: effective. ' : 'Effectiveness check: NOT effective, back to corrective actions. ') . $notes;
+
+            if (! $effective) {
+                $incident->status = IncidentStatus::CorrectiveAction;
+            }
+
+            $incident->save();
+        });
+
+        return $incident;
+    }
+
     /** CQI Office decides no investigation is needed; the department goes straight to CAPA. */
     public function skipInvestigation(Incident $incident, User $decidedBy, string $reason): Incident
     {

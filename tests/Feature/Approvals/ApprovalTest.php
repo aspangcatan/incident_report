@@ -86,6 +86,9 @@ class ApprovalTest extends TestCase
         $verifier = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         app(CorrectiveActionService::class)->verify($capa->fresh(), $verifier, VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
 
+        // The effectiveness check has passed, so closure can be requested.
+        $incident->fresh()->forceFill(['effectiveness_result' => 'effective'])->saveQuietly();
+
         return $incident->fresh();
     }
 

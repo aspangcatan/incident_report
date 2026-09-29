@@ -74,6 +74,10 @@ class Incident extends Model
         'recommended_investigator_id' => 'integer',
         'investigation_skipped_by' => 'integer',
         'investigation_skipped_at' => 'datetime',
+        'effectiveness_due_at' => 'datetime',
+        'effectiveness_checked_by' => 'integer',
+        'effectiveness_checked_at' => 'datetime',
+        'effectiveness_notified_at' => 'datetime',
         'assessment_escalated_at' => 'datetime',
     ];
 
@@ -117,6 +121,11 @@ class Incident extends Model
     public function investigationSkippedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'investigation_skipped_by');
+    }
+
+    public function effectivenessCheckedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'effectiveness_checked_by');
     }
 
     public function assessor(): BelongsTo
