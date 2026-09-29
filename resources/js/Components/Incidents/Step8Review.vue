@@ -55,6 +55,10 @@ function departmentName(departments, id) {
                     <span class="font-label-sm text-body-sm text-outline">Agent of injury:</span>
                     <span class="font-body-md text-body-md text-on-surface">{{ injuryText(form, injuryOptions.agents, 'injury_agents', 'injury_agent_other') }}</span>
                 </div>
+                <div v-if="form.injury_chemical_details" class="flex items-start gap-2">
+                    <span class="font-label-sm text-body-sm text-outline">Chemical involved:</span>
+                    <span class="font-body-md text-body-md text-on-surface">{{ form.injury_chemical_details }}</span>
+                </div>
             </template>
             <div class="flex flex-col gap-1">
                 <span class="font-label-sm text-body-sm text-outline">Summary:</span>

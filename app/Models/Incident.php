@@ -35,6 +35,7 @@ class Incident extends Model
         'injury_causes',
         'injury_cause_other',
         'injury_agents',
+        'injury_chemical_details',
         'injury_agent_other',
         'summary',
         'recommendations',

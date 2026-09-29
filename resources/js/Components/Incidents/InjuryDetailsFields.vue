@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import ChecklistWithOther from '@/Components/Incidents/ChecklistWithOther.vue';
 
 const props = defineProps({
@@ -10,6 +10,11 @@ const props = defineProps({
 const toList = (map) => Object.entries(map).map(([value, label]) => ({ value, label }));
 const causes = computed(() => toList(props.injuryOptions.causes));
 const agents = computed(() => toList(props.injuryOptions.agents));
+
+// Chemical details belong only to the Chemicals agent.
+watch(() => props.form.injury_agents.includes('chemicals'), (ticked) => {
+    if (!ticked) props.form.injury_chemical_details = '';
+});
 </script>
 
 <template>
@@ -47,6 +52,19 @@ const agents = computed(() => toList(props.injuryOptions.agents));
                 hint="What object, substance or person caused the injury? Tick all that apply."
                 id-prefix="injury_agent"
             />
+
+            <div v-if="form.injury_agents.includes('chemicals')" class="flex flex-col gap-1.5">
+                <label for="injury_chemical_details" class="font-label-md text-label-md text-on-surface font-semibold">Chemical involved *</label>
+                <p class="font-body-sm text-body-sm text-outline">Name of the chemical and how it was involved (e.g. splashed, inhaled).</p>
+                <input
+                    id="injury_chemical_details"
+                    v-model="form.injury_chemical_details"
+                    type="text"
+                    maxlength="255"
+                    class="w-full p-3 rounded-lg bg-surface-container-low"
+                />
+                <span v-if="form.errors.injury_chemical_details" class="font-body-sm text-body-sm text-error">{{ form.errors.injury_chemical_details }}</span>
+            </div>
         </template>
     </div>
 </template>

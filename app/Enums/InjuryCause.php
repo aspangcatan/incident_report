@@ -5,38 +5,32 @@ namespace App\Enums;
 /** How an injury happened (accident report). "Others (Specify)" is the free-text incidents.injury_cause_other. */
 enum InjuryCause: string
 {
-    case SlipTripFall = 'slip_trip_fall';
-    case FallFromHeight = 'fall_from_height';
+    case CaughtBetween = 'caught_between';
     case StruckBy = 'struck_by';
     case StruckAgainst = 'struck_against';
-    case CaughtInBetween = 'caught_in_between';
-    case Needlestick = 'needlestick';
-    case CutLaceration = 'cut_laceration';
-    case BurnScald = 'burn_scald';
-    case ChemicalExposure = 'chemical_exposure';
-    case BodyFluidExposure = 'body_fluid_exposure';
-    case ElectricShock = 'electric_shock';
-    case Overexertion = 'overexertion';
-    case AssaultViolence = 'assault_violence';
-    case AnimalInsectBite = 'animal_insect_bite';
+    case SlipsTripsFalls = 'slips_trips_falls';
+    case SharpObject = 'sharp_object';
+    case ExtremeTemperature = 'extreme_temperature';
+    case ImproperHandling = 'improper_handling';
+    case EquipmentFailure = 'equipment_failure';
+    case ElectricCurrent = 'electric_current';
+    case InhalationAbsorptionIngestion = 'inhalation_absorption_ingestion';
+    case ChemicalBiologicalSplash = 'chemical_biological_splash';
 
     public function label(): string
     {
         return match ($this) {
-            self::SlipTripFall => 'Slip, trip or fall (same level)',
-            self::FallFromHeight => 'Fall from height / stairs',
-            self::StruckBy => 'Struck by an object',
-            self::StruckAgainst => 'Struck against an object',
-            self::CaughtInBetween => 'Caught in or between objects',
-            self::Needlestick => 'Needlestick / sharps injury',
-            self::CutLaceration => 'Cut or laceration',
-            self::BurnScald => 'Burn or scald',
-            self::ChemicalExposure => 'Exposure to chemicals / hazardous substances',
-            self::BodyFluidExposure => 'Exposure to blood or body fluids',
-            self::ElectricShock => 'Electric shock',
-            self::Overexertion => 'Lifting / overexertion / manual handling',
-            self::AssaultViolence => 'Assault or violence',
-            self::AnimalInsectBite => 'Animal or insect bite',
+            self::CaughtBetween => 'Caught Between',
+            self::StruckBy => 'Struck By',
+            self::StruckAgainst => 'Struck Against',
+            self::SlipsTripsFalls => 'Slips/Trips/Falls',
+            self::SharpObject => 'Sharp Object',
+            self::ExtremeTemperature => 'Extreme Temperature',
+            self::ImproperHandling => 'Improper Handling',
+            self::EquipmentFailure => 'Equipment Failure',
+            self::ElectricCurrent => 'Contact w/ Electric Current',
+            self::InhalationAbsorptionIngestion => 'Inhalation/Absorption/Ingestion',
+            self::ChemicalBiologicalSplash => 'Chemical/Biological Splash',
         };
     }
 

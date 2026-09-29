@@ -34,6 +34,7 @@ const form = useForm({
     injury_cause_other: '',
     injury_agents: [],
     injury_agent_other: '',
+    injury_chemical_details: '',
     summary: '',
     legal_attestation: false,
     website: '',

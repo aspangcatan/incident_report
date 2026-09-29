@@ -75,15 +75,15 @@ class IncidentTypesAndInjuryTest extends TestCase
     {
         $this->actingAs($this->reporter())->post('/incidents', $this->report([
             'has_injury' => true,
-            'injury_causes' => ['slip_trip_fall', 'struck_against'],
-            'injury_agents' => ['floor_stairs_walkway'],
+            'injury_causes' => ['slips_trips_falls', 'struck_against'],
+            'injury_agents' => ['surfaces'],
             'injury_agent_other' => 'Wet mop',
         ]))->assertSessionHasNoErrors();
 
         $incident = Incident::first();
         $this->assertTrue($incident->has_injury);
-        $this->assertSame(['slip_trip_fall', 'struck_against'], $incident->injury_causes);
-        $this->assertSame(['floor_stairs_walkway'], $incident->injury_agents);
+        $this->assertSame(['slips_trips_falls', 'struck_against'], $incident->injury_causes);
+        $this->assertSame(['surfaces'], $incident->injury_agents);
         $this->assertSame('Wet mop', $incident->injury_agent_other);
     }
 
@@ -91,11 +91,11 @@ class IncidentTypesAndInjuryTest extends TestCase
     {
         $reporter = $this->reporter();
         $this->actingAs($reporter)->post('/incidents', $this->report([
-            'action' => 'draft', 'has_injury' => true, 'injury_causes' => ['burn_scald'], 'injury_cause_other' => 'Steam',
+            'action' => 'draft', 'has_injury' => true, 'injury_causes' => ['extreme_temperature'], 'injury_cause_other' => 'Steam',
         ]));
         $incident = Incident::first();
 
-        $this->actingAs($reporter)->patch("/incidents/{$incident->id}", $this->report(['action' => 'draft', 'has_injury' => false, 'injury_causes' => ['burn_scald']]));
+        $this->actingAs($reporter)->patch("/incidents/{$incident->id}", $this->report(['action' => 'draft', 'has_injury' => false, 'injury_causes' => ['extreme_temperature']]));
 
         $incident->refresh();
         $this->assertFalse($incident->has_injury);
@@ -116,8 +116,8 @@ class IncidentTypesAndInjuryTest extends TestCase
             'occurred_at' => now()->subHour()->format('Y-m-d H:i'),
             'location' => 'Lobby',
             'has_injury' => true,
-            'injury_causes' => ['fall_from_height'],
-            'injury_agents' => ['furniture_fixtures'],
+            'injury_causes' => ['caught_between'],
+            'injury_agents' => ['ladders'],
             'summary' => 'The chair collapsed.',
             'legal_attestation' => true,
         ])->assertRedirect('/report/submitted');
@@ -125,14 +125,29 @@ class IncidentTypesAndInjuryTest extends TestCase
         $incident = Incident::first();
         $this->assertSame([$type->id], $incident->incidentTypes->pluck('id')->all());
         $this->assertSame('Broken chair', $incident->incident_type_other);
-        $this->assertSame(['fall_from_height'], $incident->injury_causes);
-        $this->assertSame(['furniture_fixtures'], $incident->injury_agents);
+        $this->assertSame(['caught_between'], $incident->injury_causes);
+        $this->assertSame(['ladders'], $incident->injury_agents);
+    }
+
+    public function test_chemicals_needs_the_chemical_named(): void
+    {
+        $injured = ['has_injury' => true, 'injury_causes' => ['chemical_biological_splash'], 'injury_agents' => ['chemicals']];
+
+        $this->actingAs($this->reporter())
+            ->post('/incidents', $this->report($injured))
+            ->assertSessionHasErrors('injury_chemical_details');
+
+        $this->actingAs($this->reporter())
+            ->post('/incidents', $this->report([...$injured, 'injury_chemical_details' => 'Sodium hypochlorite, splashed in eye']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Sodium hypochlorite, splashed in eye', Incident::first()->injury_chemical_details);
     }
 
     public function test_the_forms_receive_the_injury_choices(): void
     {
         $this->get('/report')->assertInertia(fn ($page) => $page
-            ->where('injuryOptions.causes.needlestick', 'Needlestick / sharps injury')
+            ->where('injuryOptions.causes.electric_current', 'Contact w/ Electric Current')
             ->where('injuryOptions.agents.vehicle', 'Vehicle'));
 
         $this->actingAs($this->reporter())->get('/incidents/create')->assertInertia(fn ($page) => $page

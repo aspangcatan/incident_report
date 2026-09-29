@@ -228,14 +228,14 @@ class IncidentService
     {
         $columns = array_intersect_key($data, array_flip([
             'department_id', 'incident_type_other', 'severity', 'occurred_at', 'location',
-            'has_injury', 'injury_causes', 'injury_cause_other', 'injury_agents', 'injury_agent_other',
+            'has_injury', 'injury_causes', 'injury_cause_other', 'injury_agents', 'injury_agent_other', 'injury_chemical_details',
             'summary', 'recommendations', 'police_notified', 'police_station',
             'police_officer_in_charge', 'police_blotter_no', 'police_notified_at',
         ]));
 
         // Cause and agent of injury only apply when someone was injured.
         if (array_key_exists('has_injury', $columns) && ! $columns['has_injury']) {
-            $columns = [...$columns, 'injury_causes' => null, 'injury_cause_other' => null, 'injury_agents' => null, 'injury_agent_other' => null];
+            $columns = [...$columns, 'injury_causes' => null, 'injury_cause_other' => null, 'injury_agents' => null, 'injury_agent_other' => null, 'injury_chemical_details' => null];
         }
 
         return $columns;

@@ -34,7 +34,7 @@ const showConfirm = ref(false);
 const STEP_FIELDS = {
     1: ['legal_attestation'],
     2: ['incident_type_ids', 'incident_type_other', 'department_id', 'occurred_at', 'location'],
-    3: ['has_injury', 'injury_causes', 'injury_cause_other', 'injury_agents', 'injury_agent_other'],
+    3: ['has_injury', 'injury_causes', 'injury_cause_other', 'injury_agents', 'injury_agent_other', 'injury_chemical_details'],
     4: ['individuals'],
     5: ['witnesses', 'police_notified', 'police_station', 'police_officer_in_charge', 'police_blotter_no', 'police_notified_at'],
     6: ['summary', 'narrative_events', 'attachments'],
@@ -65,6 +65,7 @@ const form = useForm({
     injury_cause_other: props.incident?.injury_cause_other ?? '',
     injury_agents: props.incident?.injury_agents ?? [],
     injury_agent_other: props.incident?.injury_agent_other ?? '',
+    injury_chemical_details: props.incident?.injury_chemical_details ?? '',
     summary: props.incident?.summary ?? '',
     legal_attestation: !!props.incident?.legal_attestation_at,
     police_notified: props.incident?.police_notified ?? false,

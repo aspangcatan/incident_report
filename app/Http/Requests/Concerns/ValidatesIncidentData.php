@@ -81,6 +81,9 @@ trait ValidatesIncidentData
             'injury_agents' => [$needs('injury_agent_other'), 'nullable', 'array'],
             'injury_agents.*' => [new Enum(InjuryAgent::class)],
             'injury_agent_other' => ['nullable', 'string', 'max:255'],
+            'injury_chemical_details' => [Rule::requiredIf(fn () => $submitting
+                && $this->boolean('has_injury')
+                && in_array(InjuryAgent::Chemicals->value, (array) $this->input('injury_agents'), true)), 'nullable', 'string', 'max:255'],
         ];
     }
 
@@ -91,6 +94,7 @@ trait ValidatesIncidentData
             'has_injury.required' => 'Answer whether anyone was injured.',
             'injury_causes.required' => 'Choose at least one cause of injury, or tick Others and specify it.',
             'injury_agents.required' => 'Choose at least one agent of injury, or tick Others and specify it.',
+            'injury_chemical_details.required' => 'Say which chemical was involved.',
         ];
     }
 }

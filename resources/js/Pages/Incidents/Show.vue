@@ -133,6 +133,7 @@ function switchTab(value) {
                     <template v-if="incident.has_injury">
                         <span class="font-body-md text-body-md text-on-surface">Cause of injury: {{ injuryCauses }}</span>
                         <span class="font-body-md text-body-md text-on-surface">Agent of injury: {{ injuryAgents }}</span>
+                        <span v-if="incident.injury_chemical_details" class="font-body-md text-body-md text-on-surface">Chemical involved: {{ incident.injury_chemical_details }}</span>
                     </template>
                 </div>
             </div>
