@@ -489,6 +489,20 @@ class InvestigationTest extends TestCase
         $this->assertDatabaseMissing('investigations', ['incident_id' => $incident->id]);
     }
 
+    public function test_the_lead_cannot_be_removed_from_the_team(): void
+    {
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, $this->startData('simple'));
+        $leadRow = $investigation->teamMembers()->where('user_id', $investigator->id)->first();
+
+        $this->actingAs($investigator)
+            ->delete("/investigations/{$investigation->id}/team-members/{$leadRow->id}")
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('investigation_team_members', ['id' => $leadRow->id]);
+    }
+
     public function test_removing_a_team_member_scoped_to_another_investigation_is_rejected(): void
     {
         $investigatorA = User::factory()->create(['role' => Role::Investigator]);

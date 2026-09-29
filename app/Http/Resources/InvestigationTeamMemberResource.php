@@ -11,6 +11,7 @@ class InvestigationTeamMemberResource extends JsonResource
         return [
             'id' => $this->id,
             'role_in_team' => $this->role_in_team,
+            'user_id' => $this->user_id,
             // Null when the member was deleted from tdh_user (no FK guards it).
             'user' => $this->whenLoaded('user', fn () => $this->user ? [
                 'id' => $this->user->id,

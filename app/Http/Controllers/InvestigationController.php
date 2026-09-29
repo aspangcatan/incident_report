@@ -43,6 +43,10 @@ class InvestigationController extends Controller
         $this->authorize('manageTeam', $investigation);
         abort_unless($teamMember->investigation_id === $investigation->id, 404);
 
+        if ($teamMember->user_id === $investigation->lead_investigator_id) {
+            return back()->with('error', 'The lead investigator stays on the team. Ask the CQI Office to reassign the investigation instead.');
+        }
+
         $action($teamMember);
 
         return back()->with('success', 'Team member removed.');

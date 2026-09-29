@@ -118,8 +118,14 @@ function completeInvestigation() {
                                 <span class="font-title-sm text-title-sm text-on-surface truncate">{{ member.user?.name }}</span>
                                 <span class="font-label-sm text-body-sm text-outline truncate">{{ member.role_in_team }}</span>
                             </div>
+                            <span
+                                v-if="member.user_id === investigation.lead_investigator?.id"
+                                class="font-label-sm text-body-sm text-primary font-semibold"
+                            >
+                                Lead
+                            </span>
                             <button
-                                v-if="can.manageInvestigationTeam"
+                                v-else-if="can.manageInvestigationTeam"
                                 type="button"
                                 class="font-label-sm text-body-sm text-error"
                                 @click="removeTeamMember(member.id)"
