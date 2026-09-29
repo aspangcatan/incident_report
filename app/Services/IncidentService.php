@@ -12,6 +12,7 @@ use App\Events\IncidentReviewed;
 use App\Events\IncidentSubmitted;
 use App\Models\ContributingFactor;
 use App\Models\Incident;
+use App\Models\IncidentType;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
@@ -59,6 +60,8 @@ class IncidentService
             $incident->reporter_id = null;
             $incident->status = IncidentStatus::Draft;
             $incident->save();
+
+            $this->syncChildRecords($incident, Arr::only($data, ['incident_type_ids']));
 
             return $incident;
         });
@@ -223,15 +226,29 @@ class IncidentService
 
     private function onlyIncidentColumns(array $data): array
     {
-        return array_intersect_key($data, array_flip([
-            'department_id', 'incident_type_id', 'severity', 'occurred_at', 'location',
+        $columns = array_intersect_key($data, array_flip([
+            'department_id', 'incident_type_other', 'severity', 'occurred_at', 'location',
+            'has_injury', 'injury_causes', 'injury_cause_other', 'injury_agents', 'injury_agent_other',
             'summary', 'recommendations', 'police_notified', 'police_station',
             'police_officer_in_charge', 'police_blotter_no', 'police_notified_at',
         ]));
+
+        // Cause and agent of injury only apply when someone was injured.
+        if (array_key_exists('has_injury', $columns) && ! $columns['has_injury']) {
+            $columns = [...$columns, 'injury_causes' => null, 'injury_cause_other' => null, 'injury_agents' => null, 'injury_agent_other' => null];
+        }
+
+        return $columns;
     }
 
     private function syncChildRecords(Incident $incident, array $data): void
     {
+        if (array_key_exists('incident_type_ids', $data)) {
+            $incident->incidentTypes()->sync(
+                IncidentType::whereIn('id', $data['incident_type_ids'] ?? [])->pluck('id')
+            );
+        }
+
         if (array_key_exists('individuals', $data)) {
             $incident->individuals()->delete();
             $incident->individuals()->createMany($data['individuals'] ?? []);

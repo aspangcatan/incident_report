@@ -41,7 +41,7 @@ class InvestigationTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',
@@ -290,7 +290,7 @@ class InvestigationTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',

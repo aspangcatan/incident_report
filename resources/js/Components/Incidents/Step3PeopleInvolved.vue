@@ -19,7 +19,7 @@ function removeIndividual(form, index) {
 <template>
     <div class="flex flex-col gap-space-md">
         <div class="flex items-center justify-between">
-            <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 3: People Involved</h2>
+            <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 4: People Involved</h2>
             <button type="button" class="font-label-sm text-label-sm font-bold text-primary" @click="addIndividual(form)">
                 + Add Person
             </button>

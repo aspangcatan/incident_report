@@ -25,10 +25,10 @@ function removeAttachment(form, index) {
 
 <template>
     <div class="flex flex-col gap-space-lg">
-        <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 5: Description & Evidence</h2>
+        <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 6: Description & Evidence</h2>
 
         <div class="flex flex-col gap-1.5">
-            <label for="summary" class="font-label-md text-label-md text-on-surface font-semibold">Executive Narrative Summary *</label>
+            <label for="summary" class="font-label-md text-label-md text-on-surface font-semibold">Complete description of incident *</label>
             <textarea id="summary" v-model="form.summary" rows="4" class="w-full p-3 rounded-lg bg-surface-container-low" />
             <span v-if="form.errors.summary" class="font-body-sm text-body-sm text-error">{{ form.errors.summary }}</span>
         </div>

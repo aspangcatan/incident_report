@@ -19,4 +19,9 @@ class StoreIncidentRequest extends FormRequest
     {
         return $this->incidentRules();
     }
+
+    public function messages(): array
+    {
+        return $this->incidentMessages();
+    }
 }

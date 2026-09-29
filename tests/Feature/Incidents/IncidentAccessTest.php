@@ -34,7 +34,7 @@ class IncidentAccessTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',
@@ -135,7 +135,7 @@ class IncidentAccessTest extends TestCase
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => Department::factory()->create()->id]);
         $incident = app(IncidentService::class)->createDraft($supervisor, [
             'department_id' => Department::factory()->create()->id,
-            'incident_type_id' => IncidentType::factory()->create()->id,
+            'incident_type_ids' => [IncidentType::factory()->create()->id],
             'occurred_at' => now(),
             'location' => 'Lobby',
             'summary' => 'Filed in another department.',

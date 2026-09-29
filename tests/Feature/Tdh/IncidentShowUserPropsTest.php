@@ -38,7 +38,7 @@ class IncidentShowUserPropsTest extends TestCase
     {
         $incident = app(IncidentService::class)->createDraft($this->reporter, [
             'department_id' => $this->department->id,
-            'incident_type_id' => IncidentType::factory()->create()->id,
+            'incident_type_ids' => [IncidentType::factory()->create()->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',

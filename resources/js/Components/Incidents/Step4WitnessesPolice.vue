@@ -18,7 +18,7 @@ function removeWitness(form, index) {
     <div class="flex flex-col gap-space-lg">
         <div class="flex flex-col gap-space-md">
             <div class="flex items-center justify-between">
-                <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 4: Witnesses</h2>
+                <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 5: Witnesses</h2>
                 <button type="button" class="font-label-sm text-label-sm font-bold text-primary" @click="addWitness(form)">
                     + Add Witness
                 </button>

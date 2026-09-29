@@ -27,10 +27,15 @@ class Incident extends Model
 
     protected $fillable = [
         'department_id',
-        'incident_type_id',
+        'incident_type_other',
         'severity',
         'occurred_at',
         'location',
+        'has_injury',
+        'injury_causes',
+        'injury_cause_other',
+        'injury_agents',
+        'injury_agent_other',
         'summary',
         'recommendations',
         'police_notified',
@@ -48,6 +53,9 @@ class Incident extends Model
         'status' => IncidentStatus::class,
         'is_sentinel_event' => 'boolean',
         'police_notified' => 'boolean',
+        'has_injury' => 'boolean',
+        'injury_causes' => 'array',
+        'injury_agents' => 'array',
         'occurred_at' => 'datetime',
         'reported_at' => 'datetime',
         'police_notified_at' => 'datetime',
@@ -77,9 +85,10 @@ class Incident extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function incidentType(): BelongsTo
+    /** One or more types; incident_type_other holds the reporter's own "Others (Specify)" text. */
+    public function incidentTypes(): BelongsToMany
     {
-        return $this->belongsTo(IncidentType::class);
+        return $this->belongsToMany(IncidentType::class)->orderBy('incident_types.id');
     }
 
     public function assignedInvestigator(): BelongsTo

@@ -72,7 +72,7 @@ function switchScope(value) {
                                     {{ incident.incident_number ?? `Draft #${incident.id}` }}
                                 </Link>
                             </td>
-                            <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ incident.incident_type?.name ?? '—' }}</td>
+                            <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ [...(incident.incident_types ?? []).map((type) => type.name), ...(incident.incident_type_other ? [incident.incident_type_other] : [])].join(', ') || '—' }}</td>
                             <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ incident.department?.name ?? '—' }}</td>
                             <td class="p-3">
                                 <SeverityBadge :severity="incident.severity" />

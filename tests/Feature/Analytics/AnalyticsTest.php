@@ -55,7 +55,7 @@ class AnalyticsTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => $severity->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',
@@ -262,6 +262,22 @@ class AnalyticsTest extends TestCase
         $departmentNames = collect($overview['departmentSafety'])->pluck('departmentName')->all();
         $this->assertContains('Emergency Medicine', $departmentNames);
         $this->assertNotContains('Surgery', $departmentNames);
+    }
+
+    public function test_an_incident_with_two_types_counts_toward_each_recurring_pattern(): void
+    {
+        $department = Department::factory()->create();
+        $fall = IncidentType::factory()->create();
+        $equipment = IncidentType::factory()->create();
+        foreach (range(1, 3) as $i) {
+            $this->incidentThroughReview($department, $fall)->incidentTypes()->attach($equipment->id);
+        }
+
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $patterns = collect(app(AnalyticsService::class)->overview($qso)['recurringPatterns']);
+
+        $this->assertSame(3, $patterns->firstWhere('incidentTypeName', $fall->name)['incidentCount']);
+        $this->assertSame(3, $patterns->firstWhere('incidentTypeName', $equipment->name)['incidentCount']);
     }
 
     public function test_hourly_volume_buckets_incidents_by_hour_and_shift(): void

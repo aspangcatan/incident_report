@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -24,7 +24,19 @@ const props = defineProps({
     departments: { type: Array, default: () => [] },
     approvals: { type: Array, default: () => [] },
     auditLogs: { type: Array, required: true },
+    injuryOptions: { type: Object, required: true },
 });
+
+// Chosen labels plus the "Others (Specify)" text, as one readable line.
+function listWithOther(labels, other) {
+    const all = [...labels, ...(other ? [`Others: ${other}`] : [])];
+    return all.length ? all.join('; ') : '—';
+}
+
+const typeNames = computed(() => listWithOther((props.incident.incident_types ?? []).map((type) => type.name), props.incident.incident_type_other));
+const injuryCauses = computed(() => listWithOther((props.incident.injury_causes ?? []).map((v) => props.injuryOptions.causes[v] ?? v), props.incident.injury_cause_other));
+const injuryAgents = computed(() => listWithOther((props.incident.injury_agents ?? []).map((v) => props.injuryOptions.agents[v] ?? v), props.incident.injury_agent_other));
+
 
 const tabs = [
     { value: 'overview', label: 'Overview & Case Summary' },
@@ -87,7 +99,7 @@ function switchTab(value) {
             </div>
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Type</span>
-                <span class="font-body-md text-body-md text-on-surface font-semibold">{{ incident.incident_type?.name ?? '—' }}</span>
+                <span class="font-body-md text-body-md text-on-surface font-semibold">{{ typeNames }}</span>
             </div>
         </div>
 
@@ -112,6 +124,17 @@ function switchTab(value) {
             <div class="flex flex-col gap-1">
                 <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Executive Narrative Summary</span>
                 <p class="font-body-md text-body-md text-on-surface">{{ incident.summary || '—' }}</p>
+            </div>
+
+            <div v-if="incident.has_injury !== null" class="flex flex-col gap-1">
+                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Accident / Injury Details</span>
+                <div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-1">
+                    <span class="font-body-md text-body-md text-on-surface">Anyone injured: <strong>{{ incident.has_injury ? 'Yes' : 'No' }}</strong></span>
+                    <template v-if="incident.has_injury">
+                        <span class="font-body-md text-body-md text-on-surface">Cause of injury: {{ injuryCauses }}</span>
+                        <span class="font-body-md text-body-md text-on-surface">Agent of injury: {{ injuryAgents }}</span>
+                    </template>
+                </div>
             </div>
 
             <div v-if="incident.individuals?.length" class="flex flex-col gap-2">

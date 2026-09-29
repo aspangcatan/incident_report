@@ -53,7 +53,7 @@ class IncidentReportingTest extends TestCase
 
         $first = $service->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',
@@ -63,7 +63,7 @@ class IncidentReportingTest extends TestCase
 
         $second = $service->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level1Low->value,
             'occurred_at' => now(),
             'location' => 'Ward 4',
@@ -281,7 +281,7 @@ class IncidentReportingTest extends TestCase
             'action' => 'submit',
         ]);
 
-        $response->assertSessionHasErrors(['incident_type_id', 'department_id', 'occurred_at', 'location', 'summary', 'legal_attestation']);
+        $response->assertSessionHasErrors(['incident_type_ids', 'has_injury', 'department_id', 'occurred_at', 'location', 'summary', 'legal_attestation']);
         $this->assertDatabaseCount('incidents', 0);
     }
 
@@ -294,10 +294,11 @@ class IncidentReportingTest extends TestCase
         $response = $this->actingAs($reporter)->post('/incidents', [
             'action' => 'submit',
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now()->toDateTimeString(),
             'location' => 'ICU',
+            'has_injury' => false,
             'summary' => 'Full incident summary.',
             'legal_attestation' => true,
         ]);
@@ -423,7 +424,7 @@ class IncidentReportingTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'ICU Bed 4',
@@ -476,10 +477,11 @@ class IncidentReportingTest extends TestCase
         $response = $this->actingAs($reporter)->post('/incidents', [
             'action' => 'submit',
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now()->toDateTimeString(),
             'location' => 'ICU',
+            'has_injury' => false,
             'summary' => 'Full incident summary.',
             'legal_attestation' => true,
             'attachments' => [UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf')],
@@ -509,10 +511,11 @@ class IncidentReportingTest extends TestCase
         $this->actingAs($reporter)->post('/incidents', [
             'action' => 'submit',
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now()->toDateTimeString(),
             'location' => 'ICU',
+            'has_injury' => false,
             'summary' => 'Full incident summary.',
             'legal_attestation' => true,
             'attachments' => [UploadedFile::fake()->create('evidence.pdf', 100, 'application/pdf')],
@@ -546,9 +549,10 @@ class IncidentReportingTest extends TestCase
         $this->actingAs($reporter)->post('/incidents', [
             'action' => 'submit',
             'department_id' => $department->id,
-            'incident_type_id' => $type->id,
+            'incident_type_ids' => [$type->id],
             'occurred_at' => now()->subHour()->format('Y-m-d H:i'),
             'location' => 'Ward 3',
+            'has_injury' => false,
             'summary' => 'Patient slipped.',
             'legal_attestation' => true,
         ])->assertSessionHasNoErrors();
@@ -569,7 +573,7 @@ class IncidentReportingTest extends TestCase
         $this->actingAs($reporter)->post('/incidents', [
             'action' => 'draft',
             'department_id' => $department->id,
-            'incident_type_id' => $type->id,
+            'incident_type_ids' => [$type->id],
             'severity' => Severity::Level4CriticalSentinel->value,
             'recommendations' => 'Install rails.',
             'actions_taken' => [['description' => 'Called doctor']],

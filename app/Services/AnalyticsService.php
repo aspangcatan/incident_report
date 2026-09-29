@@ -135,7 +135,8 @@ class AnalyticsService
         $sentinels = $this->baseQuery($user)
             ->where('is_sentinel_event', true)
             ->where('reported_at', '>=', now()->subDays(self::SENTINEL_WINDOW_DAYS))
-            ->get(['id', 'incident_type_id', 'department_id', 'reported_at']);
+            ->with('incidentTypes')
+            ->get(['id', 'department_id', 'reported_at']);
 
         if ($sentinels->isEmpty()) {
             return ['recurrences' => 0, 'total' => 0, 'rate' => 0.0];
@@ -153,7 +154,8 @@ class AnalyticsService
         $recurrences = $sentinels->filter(function (Incident $sentinel) {
             return Incident::query()
                 ->where('is_sentinel_event', true)
-                ->where('incident_type_id', $sentinel->incident_type_id)
+                // An incident can have several types; sharing any one counts as a repeat.
+                ->whereHas('incidentTypes', fn (Builder $q) => $q->whereIn('incident_types.id', $sentinel->incidentTypes->pluck('id')))
                 ->where('department_id', $sentinel->department_id)
                 ->where('id', '!=', $sentinel->id)
                 ->where('reported_at', '<', $sentinel->reported_at)
@@ -354,14 +356,17 @@ class AnalyticsService
      */
     private function recurringPatterns(User $user): array
     {
-        $rows = $this->baseQuery($user)
-            ->where('reported_at', '>=', now()->subDays(self::REPEAT_PATTERN_WINDOW_DAYS))
-            ->whereNotNull('department_id')
-            ->whereNotNull('incident_type_id')
-            ->groupBy('department_id', 'incident_type_id')
+        // An incident with several types counts once toward each of its types.
+        $rows = DB::table('incident_incident_type')
+            ->join('incidents', 'incidents.id', '=', 'incident_incident_type.incident_id')
+            ->whereIn('incidents.id', $this->baseQuery($user)
+                ->where('reported_at', '>=', now()->subDays(self::REPEAT_PATTERN_WINDOW_DAYS))
+                ->whereNotNull('department_id')
+                ->select('incidents.id'))
+            ->groupBy('incidents.department_id', 'incident_incident_type.incident_type_id')
             ->havingRaw('COUNT(*) >= ?', [self::REPEAT_PATTERN_MIN_COUNT])
             ->orderByDesc('incidentCount')
-            ->selectRaw('department_id, incident_type_id, COUNT(*) as incidentCount')
+            ->selectRaw('incidents.department_id as department_id, incident_incident_type.incident_type_id as incident_type_id, COUNT(*) as incidentCount')
             ->get();
 
         if ($rows->isEmpty()) {

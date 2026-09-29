@@ -22,7 +22,7 @@ class DashboardTest extends TestCase
     {
         $incident = app(IncidentService::class)->createDraft($reporter ?? User::factory()->create(), [
             'department_id' => $department->id,
-            'incident_type_id' => IncidentType::factory()->create()->id,
+            'incident_type_ids' => [IncidentType::factory()->create()->id],
             'severity' => Severity::Level2Moderate->value,
             'occurred_at' => now(),
             'location' => 'Ward 3',

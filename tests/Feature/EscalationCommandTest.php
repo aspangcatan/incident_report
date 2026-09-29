@@ -30,7 +30,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level4CriticalSentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU',
@@ -64,7 +64,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level1Low->value,
             'occurred_at' => now(),
             'location' => 'ER',
@@ -95,7 +95,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level1Low->value,
             'occurred_at' => now(),
             'location' => 'ER',
@@ -178,7 +178,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level4CriticalSentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU',
@@ -224,7 +224,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level4CriticalSentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU',
@@ -268,7 +268,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'occurred_at' => now(),
             'location' => 'ER',
             'summary' => 'Overdue department assessment test incident.',
@@ -305,7 +305,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level4CriticalSentinel->value, // review SLA 24h
             'occurred_at' => now(),
             'location' => 'ER',
@@ -343,7 +343,7 @@ class EscalationCommandTest extends TestCase
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
-            'incident_type_id' => $incidentType->id,
+            'incident_type_ids' => [$incidentType->id],
             'severity' => Severity::Level1Low->value,
             'occurred_at' => now(),
             'location' => 'ER',

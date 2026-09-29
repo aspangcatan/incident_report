@@ -32,7 +32,7 @@ class DepartmentAssessmentTest extends TestCase
     {
         $incident = app(IncidentService::class)->createDraft(User::factory()->create(), [
             'department_id' => $this->department->id,
-            'incident_type_id' => IncidentType::factory()->create()->id,
+            'incident_type_ids' => [IncidentType::factory()->create()->id],
             'occurred_at' => now(),
             'location' => 'Ward 3',
             'summary' => 'Test incident.',

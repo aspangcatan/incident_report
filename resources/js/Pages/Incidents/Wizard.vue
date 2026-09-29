@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ConfirmationDialog from '@/Components/ConfirmationDialog.vue';
 import Step1ReporterInfo from '@/Components/Incidents/Step1ReporterInfo.vue';
 import Step2IncidentDetails from '@/Components/Incidents/Step2IncidentDetails.vue';
+import Step3InjuryDetails from '@/Components/Incidents/Step3InjuryDetails.vue';
 import Step3PeopleInvolved from '@/Components/Incidents/Step3PeopleInvolved.vue';
 import Step4WitnessesPolice from '@/Components/Incidents/Step4WitnessesPolice.vue';
 import Step5Description from '@/Components/Incidents/Step5Description.vue';
@@ -14,11 +15,13 @@ const props = defineProps({
     incident: { type: Object, default: null },
     incidentTypes: { type: Array, required: true },
     departments: { type: Array, required: true },
+    injuryOptions: { type: Object, required: true },
 });
 
 const steps = [
     { title: 'Reporter Info', component: Step1ReporterInfo },
     { title: 'Incident Details', component: Step2IncidentDetails },
+    { title: 'Injury Details', component: Step3InjuryDetails },
     { title: 'People Involved', component: Step3PeopleInvolved },
     { title: 'Witnesses & Police', component: Step4WitnessesPolice },
     { title: 'Description', component: Step5Description },
@@ -30,10 +33,11 @@ const showConfirm = ref(false);
 
 const STEP_FIELDS = {
     1: ['legal_attestation'],
-    2: ['incident_type_id', 'department_id', 'occurred_at', 'location'],
-    3: ['individuals'],
-    4: ['witnesses', 'police_notified', 'police_station', 'police_officer_in_charge', 'police_blotter_no', 'police_notified_at'],
-    5: ['summary', 'narrative_events', 'attachments'],
+    2: ['incident_type_ids', 'incident_type_other', 'department_id', 'occurred_at', 'location'],
+    3: ['has_injury', 'injury_causes', 'injury_cause_other', 'injury_agents', 'injury_agent_other'],
+    4: ['individuals'],
+    5: ['witnesses', 'police_notified', 'police_station', 'police_officer_in_charge', 'police_blotter_no', 'police_notified_at'],
+    6: ['summary', 'narrative_events', 'attachments'],
 };
 
 function firstStepWithError() {
@@ -51,10 +55,16 @@ function firstStepWithError() {
 
 const form = useForm({
     action: 'draft',
-    incident_type_id: props.incident?.incident_type_id ?? null,
+    incident_type_ids: props.incident?.incident_types?.map((type) => type.id) ?? [],
+    incident_type_other: props.incident?.incident_type_other ?? '',
     department_id: props.incident?.department_id ?? null,
     occurred_at: props.incident?.occurred_at?.slice(0, 16) ?? '',
     location: props.incident?.location ?? '',
+    has_injury: props.incident?.has_injury ?? null,
+    injury_causes: props.incident?.injury_causes ?? [],
+    injury_cause_other: props.incident?.injury_cause_other ?? '',
+    injury_agents: props.incident?.injury_agents ?? [],
+    injury_agent_other: props.incident?.injury_agent_other ?? '',
     summary: props.incident?.summary ?? '',
     legal_attestation: !!props.incident?.legal_attestation_at,
     police_notified: props.incident?.police_notified ?? false,
@@ -142,6 +152,7 @@ function confirmSubmit() {
                 :form="form"
                 :incident-types="incidentTypes"
                 :departments="departments"
+                :injury-options="injuryOptions"
             />
         </div>
 

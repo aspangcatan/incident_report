@@ -19,6 +19,7 @@ class GuestReportController extends Controller
         return Inertia::render('Guest/Report', [
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
             'departments' => Department::options(),
+            'injuryOptions' => IncidentController::injuryOptions(),
         ]);
     }
 

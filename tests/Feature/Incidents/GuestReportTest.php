@@ -24,10 +24,11 @@ class GuestReportTest extends TestCase
             'guest_name' => 'Maria Santos',
             'guest_contact' => '0917 123 4567',
             'guest_relationship' => 'relative',
-            'incident_type_id' => IncidentType::factory()->create()->id,
+            'incident_type_ids' => [IncidentType::factory()->create()->id],
             'department_id' => Department::factory()->create()->id,
             'occurred_at' => now()->subHour()->format('Y-m-d H:i'),
             'location' => 'Ward 3, bed 12',
+            'has_injury' => false,
             'summary' => 'My mother fell while walking to the bathroom.',
         ], $extra);
     }
@@ -95,7 +96,7 @@ class GuestReportTest extends TestCase
         $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
 
         $this->post('/report', ['website' => ''])->assertSessionHasErrors([
-            'guest_name', 'guest_contact', 'guest_relationship', 'incident_type_id',
+            'guest_name', 'guest_contact', 'guest_relationship', 'incident_type_ids', 'has_injury',
             'occurred_at', 'location', 'summary', 'legal_attestation',
         ]);
         $this->post_(['guest_relationship' => 'doctor'])->assertSessionHasErrors('guest_relationship');

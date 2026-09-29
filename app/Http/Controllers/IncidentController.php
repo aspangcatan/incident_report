@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\IncidentStatus;
+use App\Enums\InjuryAgent;
+use App\Enums\InjuryCause;
 use App\Http\Requests\Incidents\StoreIncidentRequest;
 use App\Http\Requests\Incidents\UpdateIncidentRequest;
 use App\Http\Resources\ApprovalResource;
@@ -40,14 +42,14 @@ class IncidentController extends Controller
 
             return Inertia::render('Incidents/Index', [
                 'incidents' => IncidentQueueQuery::builder($scope, $user)
-                    ->with(['incidentType', 'department', 'reporter'])
+                    ->with(['incidentTypes', 'department', 'reporter'])
                     ->latest('id')->paginate(15)->withQueryString(),
                 'scope' => $scope,
                 'queue' => ['title' => $title, 'description' => $description],
             ]);
         }
 
-        $query = Incident::query()->with(['incidentType', 'department', 'reporter']);
+        $query = Incident::query()->with(['incidentTypes', 'department', 'reporter']);
 
         if ($scope === 'drafts') {
             $query->where('reporter_id', $user->id)->where('status', IncidentStatus::Draft);
@@ -74,6 +76,7 @@ class IncidentController extends Controller
             'incident' => null,
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
             'departments' => Department::options(),
+            'injuryOptions' => self::injuryOptions(),
         ]);
     }
 
@@ -99,12 +102,13 @@ class IncidentController extends Controller
     {
         $this->authorize('update', $incident);
 
-        $incident->load(['individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments']);
+        $incident->load(['incidentTypes', 'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments']);
 
         return Inertia::render('Incidents/Wizard', [
             'incident' => $incident,
             'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
             'departments' => Department::options(),
+            'injuryOptions' => self::injuryOptions(),
         ]);
     }
 
@@ -129,7 +133,7 @@ class IncidentController extends Controller
         $this->authorize('view', $incident);
 
         $incident->load([
-            'reporter', 'department', 'incidentType', 'assignedInvestigator',
+            'reporter', 'department', 'incidentTypes', 'assignedInvestigator',
             'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments', 'assessor',
         ]);
 
@@ -173,6 +177,7 @@ class IncidentController extends Controller
             ->get();
 
         return Inertia::render('Incidents/Show', [
+            'injuryOptions' => self::injuryOptions(),
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),
             // Fetched separately rather than via load() above: Incident::auditLogs() is
@@ -256,5 +261,11 @@ class IncidentController extends Controller
                 'category' => 'evidence',
             ]);
         }
+    }
+
+    /** Cause/agent of injury choices (value => label) for the report forms and incident page. */
+    public static function injuryOptions(): array
+    {
+        return ['causes' => InjuryCause::options(), 'agents' => InjuryAgent::options()];
     }
 }

@@ -1,11 +1,17 @@
 <script setup>
+import { computed } from 'vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
+import ChecklistWithOther from '@/Components/Incidents/ChecklistWithOther.vue';
+import InjuryDetailsFields from '@/Components/Incidents/InjuryDetailsFields.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
-defineProps({
+const props = defineProps({
     incidentTypes: { type: Array, required: true },
     departments: { type: Array, required: true },
+    injuryOptions: { type: Object, required: true },
 });
+
+const typeOptions = computed(() => props.incidentTypes.map((type) => ({ value: type.id, label: type.name })));
 
 const relationships = [
     { value: 'patient', label: 'Patient' },
@@ -18,10 +24,16 @@ const form = useForm({
     guest_name: '',
     guest_contact: '',
     guest_relationship: null,
-    incident_type_id: null,
+    incident_type_ids: [],
+    incident_type_other: '',
     department_id: null,
     occurred_at: '',
     location: '',
+    has_injury: null,
+    injury_causes: [],
+    injury_cause_other: '',
+    injury_agents: [],
+    injury_agent_other: '',
     summary: '',
     legal_attestation: false,
     website: '',
@@ -96,15 +108,16 @@ function submit() {
             <div class="flex flex-col gap-space-md">
                 <h2 class="font-title-lg text-title-lg text-primary font-bold">What happened</h2>
 
+                <ChecklistWithOther
+                    :form="form"
+                    field="incident_type_ids"
+                    other-field="incident_type_other"
+                    :options="typeOptions"
+                    label="Incident Type"
+                    id-prefix="incident_type"
+                />
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                    <div class="flex flex-col gap-1.5">
-                        <label for="incident_type_id" class="font-label-md text-label-md text-on-surface font-semibold">Incident Type *</label>
-                        <select id="incident_type_id" v-model="form.incident_type_id" class="w-full p-3 rounded-lg bg-surface-container-low">
-                            <option :value="null" disabled>Select a type</option>
-                            <option v-for="type in incidentTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
-                        </select>
-                        <span v-if="form.errors.incident_type_id" class="font-body-sm text-body-sm text-error">{{ form.errors.incident_type_id }}</span>
-                    </div>
 
                     <div class="flex flex-col gap-1.5">
                         <label for="department_id" class="font-label-md text-label-md text-on-surface font-semibold">Department / Clinical Unit</label>
@@ -128,7 +141,7 @@ function submit() {
                     </div>
 
                     <div class="flex flex-col gap-1.5">
-                        <label for="location" class="font-label-md text-label-md text-on-surface font-semibold">Precise Location *</label>
+                        <label for="location" class="font-label-md text-label-md text-on-surface font-semibold">Location of Incident *</label>
                         <input
                             id="location"
                             v-model="form.location"
@@ -139,6 +152,8 @@ function submit() {
                         <span v-if="form.errors.location" class="font-body-sm text-body-sm text-error">{{ form.errors.location }}</span>
                     </div>
                 </div>
+
+                <InjuryDetailsFields :form="form" :injury-options="injuryOptions" />
 
                 <div class="flex flex-col gap-1.5">
                     <label for="summary" class="font-label-md text-label-md text-on-surface font-semibold">What happened? *</label>
