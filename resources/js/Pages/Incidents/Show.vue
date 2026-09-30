@@ -46,14 +46,6 @@ function listWithOther(labels, other) {
     return all.length ? all.join('; ') : '—';
 }
 
-// A short page title: the first incident type and the location. The full description
-// is on the Overview tab, where it reads as ordinary text.
-const headline = computed(() => {
-    const types = [...(props.incident.incident_types ?? []).map((type) => type.name), ...(props.incident.incident_type_other ? [props.incident.incident_type_other] : [])];
-    const type = types.length ? types[0] + (types.length > 1 ? ` +${types.length - 1} more` : '') : 'Incident report';
-    return props.incident.location ? `${type} · ${props.incident.location}` : type;
-});
-
 const typeNames = computed(() => listWithOther((props.incident.incident_types ?? []).map((type) => type.name), props.incident.incident_type_other));
 const injuryCauses = computed(() => listWithOther((props.incident.injury_causes ?? []).map((v) => props.injuryOptions.causes[v] ?? v), props.incident.injury_cause_other));
 const injuryAgents = computed(() => listWithOther((props.incident.injury_agents ?? []).map((v) => props.injuryOptions.agents[v] ?? v), props.incident.injury_agent_other));
@@ -89,9 +81,8 @@ function switchTab(value) {
                 </span>
                 <span class="font-code-tabular text-body-sm text-outline">{{ incident.incident_number ?? `Draft #${incident.id}` }}</span>
             </div>
-            <h1 class="font-headline-md text-headline-md text-primary tracking-tight">
-                {{ headline }}
-            </h1>
+            <!-- The whole description as readable text; the reporter's line breaks are kept. -->
+            <h1 class="font-body-lg text-body-lg font-normal text-on-surface leading-relaxed whitespace-pre-line max-w-5xl">{{ incident.summary || 'Incident report' }}</h1>
             <Link
                 v-if="can.issueSafetyAlert && incident.incident_number"
                 :href="`/safety-alerts/create?incident=${incident.id}`"
