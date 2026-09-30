@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatusBadge from '@/Components/StatusBadge.vue';
@@ -53,6 +53,15 @@ const headline = computed(() => {
     return props.incident.location ? `${type} · ${props.incident.location}` : type;
 });
 
+// Long descriptions start folded to 6 lines so the tabs stay in view.
+const descriptionEl = ref(null);
+const showFullDescription = ref(false);
+const descriptionIsLong = ref(false);
+onMounted(() => {
+    const el = descriptionEl.value;
+    descriptionIsLong.value = !!el && el.scrollHeight > el.clientHeight + 1;
+});
+
 const typeNames = computed(() => listWithOther((props.incident.incident_types ?? []).map((type) => type.name), props.incident.incident_type_other));
 const injuryCauses = computed(() => listWithOther((props.incident.injury_causes ?? []).map((v) => props.injuryOptions.causes[v] ?? v), props.incident.injury_cause_other));
 const injuryAgents = computed(() => listWithOther((props.incident.injury_agents ?? []).map((v) => props.injuryOptions.agents[v] ?? v), props.incident.injury_agent_other));
@@ -92,7 +101,20 @@ function switchTab(value) {
             <!-- The whole description, easy to read: the reporter's line breaks and paragraphs are kept. -->
             <div v-if="incident.summary" class="flex flex-col gap-1.5 border-l-4 border-secondary pl-space-md max-w-5xl">
                 <span class="font-label-sm text-body-sm uppercase tracking-wider text-outline font-semibold">What happened</span>
-                <p class="font-body-lg text-[17px] leading-[1.75] text-on-surface whitespace-pre-line">{{ incident.summary }}</p>
+                <p
+                    ref="descriptionEl"
+                    class="font-body-lg text-[17px] leading-[1.75] text-on-surface whitespace-pre-line"
+                    :class="showFullDescription ? '' : 'line-clamp-6'"
+                >{{ incident.summary }}</p>
+                <button
+                    v-if="descriptionIsLong"
+                    type="button"
+                    class="self-start font-label-md text-label-md text-primary font-semibold"
+                    :aria-expanded="showFullDescription"
+                    @click="showFullDescription = !showFullDescription"
+                >
+                    {{ showFullDescription ? 'Show less' : 'Show full description' }}
+                </button>
             </div>
             <Link
                 v-if="can.issueSafetyAlert && incident.incident_number"
@@ -150,11 +172,6 @@ function switchTab(value) {
 
         <div v-if="activeTab === 'overview'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
             <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" />
-
-            <div class="flex flex-col gap-1">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Complete Description of Incident</span>
-                <p class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ incident.summary || '—' }}</p>
-            </div>
 
             <div v-if="similarIncidents.length" class="flex flex-col gap-2">
                 <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Similar Past Incidents & Lessons</span>
