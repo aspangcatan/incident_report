@@ -46,6 +46,14 @@ function listWithOther(labels, other) {
     return all.length ? all.join('; ') : '—';
 }
 
+// A short page title: the first incident type and the location. The full description
+// is on the Overview tab, where it reads as ordinary text.
+const headline = computed(() => {
+    const types = [...(props.incident.incident_types ?? []).map((type) => type.name), ...(props.incident.incident_type_other ? [props.incident.incident_type_other] : [])];
+    const type = types.length ? types[0] + (types.length > 1 ? ` +${types.length - 1} more` : '') : 'Incident report';
+    return props.incident.location ? `${type} · ${props.incident.location}` : type;
+});
+
 const typeNames = computed(() => listWithOther((props.incident.incident_types ?? []).map((type) => type.name), props.incident.incident_type_other));
 const injuryCauses = computed(() => listWithOther((props.incident.injury_causes ?? []).map((v) => props.injuryOptions.causes[v] ?? v), props.incident.injury_cause_other));
 const injuryAgents = computed(() => listWithOther((props.incident.injury_agents ?? []).map((v) => props.injuryOptions.agents[v] ?? v), props.incident.injury_agent_other));
@@ -82,7 +90,7 @@ function switchTab(value) {
                 <span class="font-code-tabular text-body-sm text-outline">{{ incident.incident_number ?? `Draft #${incident.id}` }}</span>
             </div>
             <h1 class="font-headline-md text-headline-md text-primary tracking-tight">
-                {{ incident.summary || 'Incident report' }}
+                {{ headline }}
             </h1>
             <Link
                 v-if="can.issueSafetyAlert && incident.incident_number"
@@ -142,8 +150,8 @@ function switchTab(value) {
             <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" />
 
             <div class="flex flex-col gap-1">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Executive Narrative Summary</span>
-                <p class="font-body-md text-body-md text-on-surface">{{ incident.summary || '—' }}</p>
+                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Complete Description of Incident</span>
+                <p class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ incident.summary || '—' }}</p>
             </div>
 
             <div v-if="similarIncidents.length" class="flex flex-col gap-2">
