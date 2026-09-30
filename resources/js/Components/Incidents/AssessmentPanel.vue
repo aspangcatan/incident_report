@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import ConfirmationDialog from '@/Components/ConfirmationDialog.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
+import { formatDate } from '@/Utils/formatDate';
 
 const props = defineProps({
     incident: { type: Object, required: true },
@@ -151,18 +152,33 @@ function returnToReporter() {
                         <span class="font-label-sm text-label-sm uppercase text-outline">Action {{ index + 1 }}</span>
                         <button type="button" class="text-error font-label-sm text-body-sm" @click="removeAction(index)">Remove</button>
                     </div>
-                    <label class="sr-only" :for="'assessment-action-' + index">Intervention taken</label>
-                    <textarea :id="'assessment-action-' + index" v-model="action.description" rows="2" placeholder="Intervention taken" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                    <span v-if="form.errors[`actions_taken.${index}.description`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`actions_taken.${index}.description`] }}</span>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <label class="sr-only" :for="'assessment-responsible-' + index">Responsible officer</label>
-                        <input :id="'assessment-responsible-' + index" v-model="action.responsible_name" type="text" placeholder="Responsible officer" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                        <label class="sr-only" :for="'assessment-performed-' + index">Date and time performed</label>
-                        <input :id="'assessment-performed-' + index" v-model="action.performed_at" type="datetime-local" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                        <label class="sr-only" :for="'assessment-status-' + index">Status</label>
-                        <select :id="'assessment-status-' + index" v-model="action.status" class="p-2.5 rounded-lg bg-surface-container-lowest">
-                            <option v-for="status in actionStatuses" :key="status.value" :value="status.value">{{ status.label }}</option>
-                        </select>
+                    <div class="flex flex-col gap-1">
+                        <label :for="'assessment-action-' + index" class="font-label-md text-label-md text-on-surface font-semibold">What was done? *</label>
+                        <p class="font-body-sm text-body-sm text-outline">The immediate step taken right after the incident, e.g. "Patient assisted back to bed and assessed".</p>
+                        <textarea :id="'assessment-action-' + index" v-model="action.description" rows="2" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                        <span v-if="form.errors[`actions_taken.${index}.description`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`actions_taken.${index}.description`] }}</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+                        <div class="flex flex-col gap-1">
+                            <label :for="'assessment-responsible-' + index" class="font-label-md text-label-md text-on-surface font-semibold">Done by</label>
+                            <p class="font-body-sm text-body-sm text-outline">Name of the person who did it.</p>
+                            <input :id="'assessment-responsible-' + index" v-model="action.responsible_name" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                            <span v-if="form.errors[`actions_taken.${index}.responsible_name`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`actions_taken.${index}.responsible_name`] }}</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label :for="'assessment-performed-' + index" class="font-label-md text-label-md text-on-surface font-semibold">Date & time done</label>
+                            <p class="font-body-sm text-body-sm text-outline">When the step was taken.</p>
+                            <input :id="'assessment-performed-' + index" v-model="action.performed_at" type="datetime-local" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                            <span v-if="form.errors[`actions_taken.${index}.performed_at`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`actions_taken.${index}.performed_at`] }}</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label :for="'assessment-status-' + index" class="font-label-md text-label-md text-on-surface font-semibold">Status</label>
+                            <p class="font-body-sm text-body-sm text-outline">Pending = still being done. Completed = done.</p>
+                            <select :id="'assessment-status-' + index" v-model="action.status" class="p-2.5 rounded-lg bg-surface-container-lowest">
+                                <option v-for="status in actionStatuses" :key="status.value" :value="status.value">{{ status.label }}</option>
+                            </select>
+                            <span v-if="form.errors[`actions_taken.${index}.status`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`actions_taken.${index}.status`] }}</span>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -170,7 +186,8 @@ function returnToReporter() {
                 <li v-for="action in incident.actions" :key="action.id" class="p-3 rounded-lg bg-surface-container-low">
                     <p class="font-body-md text-body-md text-on-surface">{{ action.description }}</p>
                     <p class="font-body-sm text-body-sm text-outline">
-                        {{ action.responsible_name || '—' }} · {{ action.performed_at ? new Date(action.performed_at).toLocaleString() : '—' }} · {{ action.status }}
+                        Done by: {{ action.responsible_name || '—' }} · When: {{ action.performed_at ? formatDate(action.performed_at) : '—' }} ·
+                        Status: {{ actionStatuses.find((s) => s.value === action.status)?.label ?? action.status }}
                     </p>
                 </li>
             </ul>
