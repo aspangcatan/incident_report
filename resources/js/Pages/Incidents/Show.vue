@@ -46,6 +46,13 @@ function listWithOther(labels, other) {
     return all.length ? all.join('; ') : '—';
 }
 
+// Header headline: every incident type and the location, e.g. "Bodily Injury, Falls · Room 312".
+const headline = computed(() => {
+    const types = [...(props.incident.incident_types ?? []).map((type) => type.name), ...(props.incident.incident_type_other ? [props.incident.incident_type_other] : [])];
+    const type = types.length ? types.join(', ') : 'Incident report';
+    return props.incident.location ? `${type} · ${props.incident.location}` : type;
+});
+
 const typeNames = computed(() => listWithOther((props.incident.incident_types ?? []).map((type) => type.name), props.incident.incident_type_other));
 const injuryCauses = computed(() => listWithOther((props.incident.injury_causes ?? []).map((v) => props.injuryOptions.causes[v] ?? v), props.incident.injury_cause_other));
 const injuryAgents = computed(() => listWithOther((props.incident.injury_agents ?? []).map((v) => props.injuryOptions.agents[v] ?? v), props.incident.injury_agent_other));
@@ -81,8 +88,12 @@ function switchTab(value) {
                 </span>
                 <span class="font-code-tabular text-body-sm text-outline">{{ incident.incident_number ?? `Draft #${incident.id}` }}</span>
             </div>
-            <!-- The whole description as readable text; the reporter's line breaks are kept. -->
-            <h1 class="font-body-lg text-body-lg font-normal text-on-surface leading-relaxed whitespace-pre-line max-w-5xl">{{ incident.summary || 'Incident report' }}</h1>
+            <h1 class="font-headline-md text-headline-md text-primary tracking-tight">{{ headline }}</h1>
+            <!-- The whole description, easy to read: the reporter's line breaks and paragraphs are kept. -->
+            <div v-if="incident.summary" class="flex flex-col gap-1.5 border-l-4 border-secondary pl-space-md max-w-5xl">
+                <span class="font-label-sm text-body-sm uppercase tracking-wider text-outline font-semibold">What happened</span>
+                <p class="font-body-lg text-[17px] leading-[1.75] text-on-surface whitespace-pre-line">{{ incident.summary }}</p>
+            </div>
             <Link
                 v-if="can.issueSafetyAlert && incident.incident_number"
                 :href="`/safety-alerts/create?incident=${incident.id}`"
