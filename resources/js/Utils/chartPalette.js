@@ -1,3 +1,5 @@
+import { SEVERITIES, severityOrder as orderedSeverities } from '@/Utils/severities';
+
 /**
  * The dataviz skill's validated default categorical palette (8 hues, fixed
  * order - the order is the CVD-safety mechanism, not cosmetic, so don't
@@ -23,19 +25,16 @@ export const nightShiftColor = categoricalPalette[1];
 
 /**
  * Severity is ordered (Low -> Sentinel), so it uses one hue light->dark, not
- * categorical colors: blue ramp steps 250/400/550/700, validated with
- * validate_palette.js --ordinal on the white card surface (all checks pass).
- * "Not yet assessed" is a neutral gray, outside the ramp.
+ * categorical colors: one blue hue, five steps of the sequential ramp below
+ * (values live in severities.js). "Not yet assessed" is a neutral gray,
+ * outside the ramp.
  */
 export const severityRamp = {
-    level_1_low: '#86b6ef',
-    level_2_moderate: '#3987e5',
-    level_3_high: '#1c5cab',
-    level_4_critical_sentinel: '#0d366b',
+    ...Object.fromEntries(SEVERITIES.map((severity) => [severity.value, severity.chart])),
     unassessed: '#c5c5d3',
 };
 
-export const severityOrder = ['level_1_low', 'level_2_moderate', 'level_3_high', 'level_4_critical_sentinel'];
+export const severityOrder = orderedSeverities;
 
 /** Full sequential blue ramp (100 -> 700) for magnitude, e.g. heatmap cells. */
 export const sequentialBlue = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b'];

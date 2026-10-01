@@ -1,3 +1,5 @@
+import { findSeverity } from '@/Utils/severities';
+
 const STATUS_LABELS = {
     draft: 'Draft',
     submitted: 'Submitted',
@@ -26,20 +28,6 @@ const STATUS_CLASSES = {
     closed: 'bg-emerald-100 text-emerald-900',
 };
 
-const SEVERITY_LABELS = {
-    level_1_low: 'Low Risk',
-    level_2_moderate: 'Moderate Risk',
-    level_3_high: 'High Severity',
-    level_4_critical_sentinel: 'Critical / Sentinel',
-};
-
-const SEVERITY_CLASSES = {
-    level_1_low: 'bg-surface-container text-on-surface-variant',
-    level_2_moderate: 'bg-amber-50 text-amber-900',
-    level_3_high: 'bg-amber-200 text-amber-950',
-    level_4_critical_sentinel: 'bg-error-container text-on-error-container',
-};
-
 export function statusLabel(status) {
     return STATUS_LABELS[status] ?? status;
 }
@@ -49,9 +37,10 @@ export function statusBadgeClasses(status) {
 }
 
 export function severityLabel(severity) {
-    return SEVERITY_LABELS[severity] ?? severity;
+    const found = findSeverity(severity);
+    return found ? `${found.numeral} – ${found.label}` : severity;
 }
 
 export function severityBadgeClasses(severity) {
-    return SEVERITY_CLASSES[severity] ?? 'bg-surface-container text-on-surface-variant';
+    return findSeverity(severity)?.badge ?? 'bg-surface-container text-on-surface-variant';
 }

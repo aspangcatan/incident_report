@@ -4,6 +4,7 @@ import { useForm } from '@inertiajs/vue3';
 import ConfirmationDialog from '@/Components/ConfirmationDialog.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
 import { formatDate } from '@/Utils/formatDate';
+import { SEVERITIES as severities } from '@/Utils/severities';
 
 const props = defineProps({
     incident: { type: Object, required: true },
@@ -11,13 +12,6 @@ const props = defineProps({
     departments: { type: Array, default: () => [] },
     investigators: { type: Array, default: () => [] },
 });
-
-const severities = [
-    { value: 'level_1_low', label: 'Low Risk', numeral: 'Level I' },
-    { value: 'level_2_moderate', label: 'Moderate Risk', numeral: 'Level II' },
-    { value: 'level_3_high', label: 'High Severity', numeral: 'Level III' },
-    { value: 'level_4_critical_sentinel', label: 'Critical / Sentinel', numeral: 'Level IV' },
-];
 
 const actionStatuses = [
     { value: 'pending', label: 'Pending' },
@@ -97,16 +91,18 @@ function returnToReporter() {
         <!-- Severity -->
         <div class="flex flex-col gap-1.5">
             <span class="font-label-md text-label-md text-on-surface font-semibold">Severity</span>
-            <div v-if="editable && can.completeAssessment" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <span v-if="editable && can.completeAssessment" class="font-body-sm text-body-sm text-outline">Choose the level that best matches the harm.</span>
+            <div v-if="editable && can.completeAssessment" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <label
                     v-for="option in severities"
                     :key="option.value"
-                    class="p-3 rounded-lg cursor-pointer text-center"
+                    class="p-3 rounded-lg cursor-pointer flex flex-col gap-1"
                     :class="form.severity === option.value ? 'bg-amber-50 ring-2 ring-amber-500' : 'bg-surface-container-low hover:bg-surface-container'"
                 >
                     <input v-model="form.severity" type="radio" :value="option.value" class="hidden" />
                     <span class="block font-label-sm text-body-sm text-outline">{{ option.numeral }}</span>
                     <span class="block font-body-md text-body-md text-on-surface font-semibold">{{ option.label }}</span>
+                    <span class="block font-body-sm text-body-sm text-on-surface-variant">{{ option.meaning }}</span>
                 </label>
             </div>
             <SeverityBadge v-else :severity="incident.severity" class="self-start" />

@@ -2,19 +2,13 @@
 import { computed, ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import ConfirmationDialog from '@/Components/ConfirmationDialog.vue';
+import { SEVERITIES as severities } from '@/Utils/severities';
 
 const props = defineProps({
     incident: { type: Object, required: true },
     can: { type: Object, required: true },
     investigators: { type: Array, default: () => [] },
 });
-
-const severities = [
-    { value: 'level_1_low', label: 'Level I — Low Risk' },
-    { value: 'level_2_moderate', label: 'Level II — Moderate Risk' },
-    { value: 'level_3_high', label: 'Level III — High Severity' },
-    { value: 'level_4_critical_sentinel', label: 'Level IV — Critical / Sentinel' },
-];
 
 // CQI triage: confirm or change the department's severity.
 const reviewForm = useForm({ comments: '', severity: props.incident.severity ?? null });
@@ -85,17 +79,27 @@ function skipInvestigation() {
     >
         <div>
             <h2 class="font-title-lg text-title-lg text-primary font-bold">CQI Triage</h2>
-            <p class="font-body-sm text-body-sm text-outline">Confirm the department's classification or change it. High and Sentinel alert Executives, the CQI Committee and Leadership.</p>
+            <p class="font-body-sm text-body-sm text-outline">Confirm the department's classification or change it. Changing it alerts the people the new level requires.</p>
         </div>
 
-        <div class="flex flex-col gap-1.5">
-            <label class="font-label-md text-label-md text-on-surface font-semibold" for="triage_severity">Severity *</label>
-            <select id="triage_severity" v-model="reviewForm.severity" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low">
-                <option v-for="option in severities" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
+        <fieldset class="flex flex-col gap-1.5">
+            <legend class="font-label-md text-label-md text-on-surface font-semibold">Severity *</legend>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 mt-1">
+                <label
+                    v-for="option in severities"
+                    :key="option.value"
+                    class="p-3 rounded-lg cursor-pointer flex flex-col gap-1"
+                    :class="reviewForm.severity === option.value ? 'bg-amber-50 ring-2 ring-amber-500' : 'bg-surface-container-low hover:bg-surface-container'"
+                >
+                    <input v-model="reviewForm.severity" type="radio" name="triage_severity" :value="option.value" class="sr-only" />
+                    <span class="font-label-sm text-body-sm text-outline">{{ option.numeral }}</span>
+                    <span class="font-body-md text-body-md text-on-surface font-semibold">{{ option.label }}</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">{{ option.meaning }}</span>
+                </label>
+            </div>
             <span v-if="severityChanged" class="font-body-sm text-body-sm text-amber-900">This changes the severity the department set.</span>
             <span v-if="reviewForm.errors.severity" class="font-body-sm text-body-sm text-error">{{ reviewForm.errors.severity }}</span>
-        </div>
+        </fieldset>
 
         <div class="flex flex-col gap-1.5">
             <label class="font-label-md text-label-md text-on-surface font-semibold" for="review_comments">Triage comments</label>

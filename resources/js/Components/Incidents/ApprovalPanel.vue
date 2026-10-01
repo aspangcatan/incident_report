@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { formatDate } from '@/Utils/formatDate';
+import { HIGH_OR_ABOVE } from '@/Utils/severities';
 
 const props = defineProps({
     incident: { type: Object, required: true },
@@ -202,7 +203,7 @@ function submitDecision(approvalId) {
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <button v-if="approval.can.approve" type="button" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md" @click="startDeciding(approval.id, 'approve')">
-                            {{ approval.stage.value === 'cqi_office' && ['level_3_high', 'level_4_critical_sentinel'].includes(incident.severity) ? 'Approve (to Committee)' : 'Approve & Close' }}
+                            {{ approval.stage.value === 'cqi_office' && HIGH_OR_ABOVE.includes(incident.severity) ? 'Approve (to Committee)' : 'Approve & Close' }}
                         </button>
                         <button v-if="approval.can.return" type="button" class="px-3 py-1.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md" @click="startDeciding(approval.id, 'return')">
                             Return for Revision
