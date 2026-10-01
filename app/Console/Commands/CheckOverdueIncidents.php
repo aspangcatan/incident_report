@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\IncidentStatus;
+use App\Enums\Role;
 use App\Models\Approval;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
@@ -16,7 +17,6 @@ use App\Queries\OverdueInvestigationsQuery;
 use App\Repositories\ApprovalRepository;
 use App\Repositories\CorrectiveActionRepository;
 use App\Repositories\InvestigationRepository;
-use App\Support\IncidentReviewers;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -60,7 +60,7 @@ class CheckOverdueIncidents extends Command
         return self::SUCCESS;
     }
 
-    /** Tell the Department Head once when an effectiveness check becomes due. */
+    /** Tell the CQI Committee once when an effectiveness check becomes due. */
     private function notifyDueEffectivenessChecks(): void
     {
         Incident::where('status', IncidentStatus::Verified)
@@ -69,9 +69,9 @@ class CheckOverdueIncidents extends Command
             ->where('effectiveness_due_at', '<=', now())
             ->get()
             ->each(function (Incident $incident) {
-                $heads = IncidentReviewers::departmentHeads($incident);
-                if ($heads->isNotEmpty()) {
-                    Notification::send($heads, new EffectivenessCheckDueNotification($incident));
+                $committee = User::active()->withRole(Role::CqiCommittee)->get();
+                if ($committee->isNotEmpty()) {
+                    Notification::send($committee, new EffectivenessCheckDueNotification($incident));
                 }
                 $incident->forceFill(['effectiveness_notified_at' => now()])->saveQuietly();
             });

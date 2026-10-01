@@ -8,11 +8,11 @@ Agreed with the client/user on 2026-09-29. Builds on
 Matches the client flow: Action Monitoring → Effectiveness Verification → Closure.
 
 - When all CAPAs are verified (incident → Verified), `effectiveness_due_at` = now + `incident_workflow.effectiveness_wait_days` (30).
-- From that date, the incident's Department Head answers "Did the actions work? Any recurrence?": **Effective** or **Not effective**, with required evidence notes.
+- From that date, a CQI Committee member answers (changed 2026-10-01 per the client; was the Department Head) "Did the actions work? Any recurrence?": **Effective** or **Not effective**, with required evidence notes.
 - Effective → recorded; the Department Head can now request closure.
 - Not effective → back to Corrective Action to add new CAPAs; once those are verified a new 30-day wait starts.
 - Closure can only be requested after an Effective result. "No corrective action needed" (zero CAPAs) has nothing to check and is unaffected.
-- The daily `incidents:check-overdue` run notifies the Department Head once when the check becomes due.
+- The daily `incidents:check-overdue` run notifies the CQI Committee once when the check becomes due.
 
 ## Lessons learned
 

@@ -32,7 +32,7 @@ function markNoCorrectiveActionNeeded() {
     });
 }
 
-// Effectiveness check (Department Head, after the waiting period).
+// Effectiveness check (CQI Committee, after the waiting period).
 const effectivenessForm = useForm({ effective: null, notes: '' });
 
 function recordEffectiveness() {
@@ -82,11 +82,11 @@ function submitDecision(approvalId) {
                 </span>
                 <span class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ incident.effectiveness_notes }}</span>
                 <span class="font-body-sm text-body-sm text-outline">
-                    By {{ incident.effectiveness_checked_by?.name ?? 'the Department Head' }} on {{ formatDate(incident.effectiveness_checked_at) }}
+                    By {{ incident.effectiveness_checked_by?.name ?? 'the CQI Committee' }} on {{ formatDate(incident.effectiveness_checked_at) }}
                 </span>
             </div>
             <p v-else-if="incident.status === 'verified' && !can.checkEffectiveness" class="font-body-md text-body-md text-on-surface">
-                Waiting period: the Department Head can check effectiveness from {{ formatDate(incident.effectiveness_due_at) }}.
+                Waiting period: the CQI Committee can check effectiveness from {{ formatDate(incident.effectiveness_due_at) }}.
             </p>
 
             <form v-if="can.checkEffectiveness" class="flex flex-col gap-space-md" @submit.prevent="recordEffectiveness">
@@ -100,7 +100,7 @@ function submitDecision(approvalId) {
                             <input v-model="effectivenessForm.effective" type="radio" name="effective" :value="false" /> Not effective
                         </label>
                     </div>
-                    <span class="font-body-sm text-body-sm text-outline">"Not effective" sends the incident back to corrective actions so you can add new ones.</span>
+                    <span class="font-body-sm text-body-sm text-outline">"Not effective" sends the incident back to the department to add new corrective actions.</span>
                     <span v-if="effectivenessForm.errors.effective" class="font-body-sm text-body-sm text-error">{{ effectivenessForm.errors.effective }}</span>
                 </fieldset>
                 <div class="flex flex-col gap-1.5">

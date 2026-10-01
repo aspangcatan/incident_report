@@ -27,6 +27,8 @@ class EffectivenessCheckTest extends TestCase
 
     private User $head;
 
+    private User $committee;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -34,6 +36,7 @@ class EffectivenessCheckTest extends TestCase
         config(['incident_workflow.effectiveness_wait_days' => 30]);
         $this->department = Department::factory()->create();
         $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $this->committee = User::factory()->create(['role' => Role::CqiCommittee]);
     }
 
     /** Reported, triaged low, investigation skipped, one CAPA done and verified. */
@@ -71,7 +74,7 @@ class EffectivenessCheckTest extends TestCase
 
         $this->assertSame(IncidentStatus::Verified, $incident->status);
         $this->assertTrue($incident->effectiveness_due_at->between(now()->addDays(29), now()->addDays(31)));
-        $this->assertFalse($this->head->can('checkEffectiveness', $incident));
+        $this->assertFalse($this->committee->can('checkEffectiveness', $incident));
         $this->assertFalse($this->head->can('requestApproval', $incident));
     }
 
@@ -80,9 +83,9 @@ class EffectivenessCheckTest extends TestCase
         $incident = $this->verifiedIncident();
         $this->travel(31)->days();
 
-        $this->actingAs($this->head)->post("/incidents/{$incident->id}/effectiveness", ['effective' => true])
+        $this->actingAs($this->committee)->post("/incidents/{$incident->id}/effectiveness", ['effective' => true])
             ->assertSessionHasErrors('notes');
-        $this->actingAs($this->head)
+        $this->actingAs($this->committee)
             ->post("/incidents/{$incident->id}/effectiveness", ['effective' => true, 'notes' => 'No falls in 30 days.'])
             ->assertRedirect();
 
@@ -90,7 +93,7 @@ class EffectivenessCheckTest extends TestCase
         $this->assertSame('effective', $incident->effectiveness_result);
         $this->assertSame(IncidentStatus::Verified, $incident->status);
         $this->assertTrue($this->head->can('requestApproval', $incident));
-        $this->assertFalse($this->head->can('checkEffectiveness', $incident));
+        $this->assertFalse($this->committee->can('checkEffectiveness', $incident));
     }
 
     public function test_not_effective_sends_it_back_to_corrective_action(): void
@@ -98,7 +101,7 @@ class EffectivenessCheckTest extends TestCase
         $incident = $this->verifiedIncident();
         $this->travel(31)->days();
 
-        $this->actingAs($this->head)
+        $this->actingAs($this->committee)
             ->post("/incidents/{$incident->id}/effectiveness", ['effective' => false, 'notes' => 'Two more falls.'])
             ->assertRedirect();
 
@@ -107,32 +110,35 @@ class EffectivenessCheckTest extends TestCase
         $this->assertTrue($this->head->can('create', [\App\Models\CorrectiveAction::class, $incident]));
     }
 
-    public function test_only_the_incidents_department_head_checks_effectiveness(): void
+    public function test_only_the_cqi_committee_checks_effectiveness(): void
     {
         $incident = $this->verifiedIncident();
         $this->travel(31)->days();
 
+        $this->assertTrue($this->committee->can('checkEffectiveness', $incident));
         foreach ([
+            $this->head,
             User::factory()->create(['role' => Role::Supervisor, 'department_id' => $this->department->id]),
             User::factory()->create(['role' => Role::QualitySafetyOfficer]),
-            User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]),
+            User::factory()->create(['role' => Role::Management]),
         ] as $user) {
             $this->assertFalse($user->can('checkEffectiveness', $incident), $user->role->value);
         }
     }
 
-    public function test_the_daily_run_tells_the_department_head_once_when_the_check_is_due(): void
+    public function test_the_daily_run_tells_the_cqi_committee_once_when_the_check_is_due(): void
     {
         Notification::fake();
         User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $this->verifiedIncident();
 
         $this->artisan('incidents:check-overdue');
-        Notification::assertNotSentTo($this->head, EffectivenessCheckDueNotification::class);
+        Notification::assertNotSentTo($this->committee, EffectivenessCheckDueNotification::class);
 
         $this->travel(31)->days();
         $this->artisan('incidents:check-overdue');
         $this->artisan('incidents:check-overdue');
-        Notification::assertSentToTimes($this->head, EffectivenessCheckDueNotification::class, 1);
+        Notification::assertSentToTimes($this->committee, EffectivenessCheckDueNotification::class, 1);
+        Notification::assertNotSentTo($this->head, EffectivenessCheckDueNotification::class);
     }
 }

@@ -209,14 +209,14 @@ class IncidentPolicy
         return $this->isHeadOfIncidentDepartment($user, $incident);
     }
 
-    /** After the waiting period, the Department Head confirms whether the actions worked. */
+    /** After the waiting period, the CQI Committee confirms whether the actions worked. */
     public function checkEffectiveness(User $user, Incident $incident): bool
     {
         return $incident->status === IncidentStatus::Verified
             && $incident->effectiveness_result !== 'effective'
             && $incident->effectiveness_due_at !== null
             && $incident->effectiveness_due_at->isPast()
-            && $this->isHeadOfIncidentDepartment($user, $incident);
+            && $user->role === Role::CqiCommittee;
     }
 
     public function markNoCorrectiveActionNeeded(User $user, Incident $incident): bool
