@@ -425,3 +425,20 @@ Spec: `docs/superpowers/specs/2026-10-01-severity-levels-and-escalation-matrix-d
 - **Migration** `2026_10_01_000002_add_reminder_sent_at_columns.php`: nullable `reminder_sent_at` on `investigations` and `corrective_actions`.
 - **Unchanged:** assessment, review, assignment and approval escalations still go to `config('incident_workflow.escalation_recipient_roles')`.
 - **Not built:** a sentinel-event pathway (distinct workflow for Level V) — waiting on the client's definition. `is_sentinel_event` is still derived from severity.
+
+## 9p. Sentinel Event Pathway (2026-10-01)
+
+Spec/plan: `docs/superpowers/specs/2026-10-01-sentinel-event-pathway-design.md`, `docs/superpowers/plans/2026-10-01-sentinel-event-pathway.md`.
+
+For incidents rated **Level V – Sentinel** (`is_sentinel_event = true`) the incident page shows a red "Sentinel Event" banner and a **Sentinel Event Pathway** panel (`SentinelPathwayPanel.vue`) at the top of the Overview tab. Its six steps, derived from existing data:
+
+| Step | Done when |
+|---|---|
+| 1 Immediate patient safety / clinical response | guidance only, no status |
+| 2 Records, equipment and evidence preserved | `incidents.evidence_preserved_at` set (who: `evidence_preserved_by`) |
+| 3 Designated leadership notified | always done on a sentinel incident - the §9o severity alert goes out when the level is set |
+| 4 Formal investigation / RCA assigned | `assigned_investigator_id` set |
+| 5 Corrective actions & governance review | status `closed` (closure of High+ needs verified CAPAs and CQI Committee approval) |
+| 6 Learning and prevention documented | `lessons_learned` recorded (published at closure) |
+
+Step 2 is the only manual step: `POST /incidents/{incident}/evidence-preserved` (`IncidentWorkflowController::confirmEvidencePreserved` → `IncidentService::confirmEvidencePreserved`, audit action `evidence_preserved`). `IncidentPolicy::confirmEvidencePreserved`: sentinel, not yet confirmed, not closed, user is the **Focal Person (supervisor) or Department Head of the incident's department**. It is **tracking only** - nothing is blocked by it (clinical response comes first). RCA tools stay optional for sentinel events (the formal investigation is already mandatory for High+).
