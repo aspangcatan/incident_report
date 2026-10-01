@@ -86,6 +86,8 @@ class InvestigationEscalationTest extends TestCase
         Notification::fake();
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $investigation = app(InvestigationService::class)->start($incident, $investigator, StartInvestigationData::fromArray([
             'objective' => 'x', 'methodology' => 'five_whys', 'target_completion_at' => now()->addHours(10)->toDateTimeString(),
         ]));
@@ -93,6 +95,7 @@ class InvestigationEscalationTest extends TestCase
         Artisan::call('incidents:check-overdue');
 
         Notification::assertSentTo($investigator, DeadlineReminderNotification::class);
+        Notification::assertNotSentTo([$head, $qso], DeadlineReminderNotification::class);
         Notification::assertNotSentTo($investigator, IncidentEscalationNotification::class);
         $this->assertNotNull($investigation->fresh()->reminder_sent_at);
 

@@ -113,6 +113,8 @@ class CorrectiveActionEscalationTest extends TestCase
         Notification::fake();
         $incident = $this->incidentReadyForCapa();
         $owner = User::factory()->create(['department_id' => $incident->department_id]);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $capa = app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
             'description' => 'x', 'action_type' => 'corrective', 'priority' => 'medium',
             'due_date' => now()->addDay()->toDateString(), 'responsible_user_id' => $owner->id,
@@ -121,6 +123,8 @@ class CorrectiveActionEscalationTest extends TestCase
         Artisan::call('incidents:check-overdue');
 
         Notification::assertSentTo($owner, DeadlineReminderNotification::class);
+        Notification::assertNotSentTo([$head, $qso], DeadlineReminderNotification::class);
+        Notification::assertNotSentTo($owner, IncidentEscalationNotification::class);
         $this->assertNotNull($capa->fresh()->reminder_sent_at);
 
         Notification::fake();
