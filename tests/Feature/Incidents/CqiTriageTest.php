@@ -71,6 +71,19 @@ class CqiTriageTest extends TestCase
         $this->assertStringContainsString('Severity changed from', $incident->supervisor_comments);
     }
 
+    public function test_triaging_to_critical_is_not_a_sentinel_event(): void
+    {
+        $incident = $this->assessed(Severity::Level2Moderate);
+
+        $this->actingAs($this->cqi())
+            ->post("/incidents/{$incident->id}/review", ['severity' => Severity::Level4Critical->value, 'comments' => 'Life-threatening harm.'])
+            ->assertRedirect();
+
+        $incident->refresh();
+        $this->assertSame(Severity::Level4Critical, $incident->severity);
+        $this->assertFalse($incident->is_sentinel_event);
+    }
+
     public function test_high_risk_triage_alerts_executives_committee_and_the_departments_leadership(): void
     {
         Notification::fake();
