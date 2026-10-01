@@ -96,10 +96,10 @@ function returnToReporter() {
                 <label
                     v-for="option in severities"
                     :key="option.value"
-                    class="p-3 rounded-lg cursor-pointer flex flex-col gap-1"
+                    class="p-3 rounded-lg cursor-pointer flex flex-col gap-1 focus-within:ring-2 focus-within:ring-primary"
                     :class="form.severity === option.value ? 'bg-amber-50 ring-2 ring-amber-500' : 'bg-surface-container-low hover:bg-surface-container'"
                 >
-                    <input v-model="form.severity" type="radio" :value="option.value" class="hidden" />
+                    <input v-model="form.severity" type="radio" name="assessment_severity" :value="option.value" class="sr-only" />
                     <span class="block font-label-sm text-body-sm text-outline">{{ option.numeral }}</span>
                     <span class="block font-body-md text-body-md text-on-surface font-semibold">{{ option.label }}</span>
                     <span class="block font-body-sm text-body-sm text-on-surface-variant">{{ option.meaning }}</span>

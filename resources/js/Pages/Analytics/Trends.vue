@@ -6,6 +6,7 @@ import KpiStatTile from '@/Components/Analytics/KpiStatTile.vue';
 import MonthlySeverityChart from '@/Components/Analytics/MonthlySeverityChart.vue';
 import ChangeBarList from '@/Components/Analytics/ChangeBarList.vue';
 import { sequentialBlue } from '@/Utils/chartPalette';
+import { severityLabel } from '@/Composables/useIncidentStatus';
 
 const props = defineProps({
     filters: { type: Object, required: true },
@@ -128,7 +129,7 @@ const days = (value) => (value === null ? 'No data yet' : `${value} days`);
                     <thead>
                         <tr class="font-label-sm text-body-sm uppercase text-outline">
                             <th class="p-2">Department</th>
-                            <th v-for="severity in heatmap.severities" :key="severity.value" class="p-2 text-center">{{ severity.label }}</th>
+                            <th v-for="severity in heatmap.severities" :key="severity.value" class="p-2 text-center">{{ severityLabel(severity.value) }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -139,7 +140,7 @@ const days = (value) => (value === null ? 'No data yet' : `${value} days`);
                                 :key="severity.value"
                                 class="p-2 text-center font-code-tabular text-body-sm rounded bg-surface-container-low"
                                 :style="cellStyle(row.cells[severity.value])"
-                                :title="`${row.department} · ${severity.label}: ${row.cells[severity.value]}`"
+                                :title="`${row.department} · ${severityLabel(severity.value)}: ${row.cells[severity.value]}`"
                             >
                                 {{ row.cells[severity.value] }}
                             </td>
@@ -164,7 +165,7 @@ const days = (value) => (value === null ? 'No data yet' : `${value} days`);
                 </thead>
                 <tbody>
                     <tr v-for="row in resolution.bySeverity" :key="row.value" class="font-body-sm text-body-sm text-on-surface border-t border-surface-container">
-                        <td class="py-1.5">{{ row.label }}</td>
+                        <td class="py-1.5">{{ severityLabel(row.value) }}</td>
                         <td class="py-1.5 text-right font-code-tabular">{{ row.count }}</td>
                         <td class="py-1.5 text-right font-code-tabular">{{ row.averageDays ?? '—' }}</td>
                     </tr>

@@ -88,7 +88,7 @@ function skipInvestigation() {
                 <label
                     v-for="option in severities"
                     :key="option.value"
-                    class="p-3 rounded-lg cursor-pointer flex flex-col gap-1"
+                    class="p-3 rounded-lg cursor-pointer flex flex-col gap-1 focus-within:ring-2 focus-within:ring-primary"
                     :class="reviewForm.severity === option.value ? 'bg-amber-50 ring-2 ring-amber-500' : 'bg-surface-container-low hover:bg-surface-container'"
                 >
                     <input v-model="reviewForm.severity" type="radio" name="triage_severity" :value="option.value" class="sr-only" />
