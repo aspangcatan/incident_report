@@ -28,4 +28,9 @@ class InvestigationRepository
     {
         $investigation->forceFill(['escalated_at' => now()])->save();
     }
+
+    public function markReminded(Investigation $investigation): void
+    {
+        $investigation->forceFill(['reminder_sent_at' => now()])->save();
+    }
 }

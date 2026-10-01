@@ -30,6 +30,7 @@ class Investigation extends Model
         'target_completion_at' => 'datetime',
         'completed_at' => 'datetime',
         'escalated_at' => 'datetime',
+        'reminder_sent_at' => 'datetime',
     ];
 
     public function incident(): BelongsTo

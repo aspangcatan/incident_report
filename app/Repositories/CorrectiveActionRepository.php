@@ -27,4 +27,9 @@ class CorrectiveActionRepository
     {
         $correctiveAction->forceFill(['escalated_at' => now()])->save();
     }
+
+    public function markReminded(CorrectiveAction $correctiveAction): void
+    {
+        $correctiveAction->forceFill(['reminder_sent_at' => now()])->save();
+    }
 }
