@@ -63,6 +63,17 @@ class SeverityAlertTest extends TestCase
         Notification::assertNotSentTo([$this->head, $this->leader, $this->executive], SeverityAlertNotification::class);
     }
 
+    public function test_a_department_head_who_did_not_set_the_level_is_alerted(): void
+    {
+        Notification::fake();
+        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+
+        $this->assessedBy($this->head, Severity::Level2Moderate);
+
+        Notification::assertSentTo($otherHead, SeverityAlertNotification::class);
+        Notification::assertNotSentTo($this->head, SeverityAlertNotification::class);
+    }
+
     public function test_a_high_assessment_alerts_cqi_and_the_mapped_leadership(): void
     {
         Notification::fake();

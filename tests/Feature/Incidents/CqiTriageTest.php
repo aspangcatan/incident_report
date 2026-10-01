@@ -11,8 +11,6 @@ use App\Models\IncidentType;
 use App\Models\User;
 use App\Services\IncidentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class CqiTriageTest extends TestCase
