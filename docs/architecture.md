@@ -40,7 +40,7 @@ Confirmed stack decisions (2026-09-16): Font Awesome for icons (not the Material
 - `reporter_id` (FK users)
 - `department_id` (FK departments — clinical unit where it occurred)
 - `incident_type_id` (FK incident_types)
-- `severity` — enum `level_1_low, level_2_moderate, level_3_high, level_4_critical_sentinel` (matches the Stitch form's Level I–IV cards)
+- `severity` — enum `level_1_low, level_2_moderate, level_3_high, level_4_critical, level_5_sentinel` (five levels since 2026-10-01, see §9o; originally four, with Level IV `level_4_critical_sentinel`)
 - `status` — enum, see §3
 - `occurred_at`, `reported_at` (datetime)
 - `location` (string — precise location/bed, per form Section 2)
@@ -128,7 +128,7 @@ draft → submitted → for_review → reviewed → assigned → under_investiga
 
 ### 3.3 Severity
 
-`level_1_low, level_2_moderate, level_3_high, level_4_critical_sentinel` — matches the Stitch form's Level I–IV cards exactly.
+`level_1_low, level_2_moderate, level_3_high, level_4_critical, level_5_sentinel` — the client's five-level Risk Triage scale (Level I–V). Originally four levels (Level IV was "Critical / Sentinel"); split 2026-10-01, see §9o.
 
 ---
 
@@ -399,3 +399,29 @@ The sidebar's Incident Management, Investigation Workspace and CAPA Operations i
 - **Known gap, not changed:** the "Root cause distribution" chart groups by incident contributing factors, which reporters no longer enter (removed from the form per the client). It will stay empty for new incidents unless it is re-based on investigation findings.
 - **RCA methodology removed (2026-09-25, user request "don't overcomplicate for the user").** Starting an investigation asks only for an objective, target date and team; every investigation is `InvestigationMethodology::Simple` (`StartInvestigationData` default; the request no longer accepts a methodology). Findings are plain text with a "Mark as root cause" tick (still used to link CAPAs to a root cause). The old enum cases stay only so any older rows still load; the UI no longer shows or offers them.
 - **CAPA stage and closure approval (2026-09-25, supersedes the earlier "CAPA ownership" rule): the department runs the CAPA stage; the Quality office / Management come in only at approval.** Create/edit CAPAs and assign each to a staff member: the incident department's **Department Head** only (QSO/Admin can no longer create or edit). Responsible person: must be **active staff of the incident's department** (`User::canBeResponsibleFor()`, shared by the `potentialResponsibleUsers` picker and both CAPA form requests; an edit may keep the CAPA's *current* responsible person even if since deactivated/moved). Mark in progress / complete: the **assigned responsible person only** (no QSO/Admin override). Verify: a **Supervisor or Department Head of the incident's department**, never the completer (QSO/Admin removed). "No corrective action needed" (zero CAPAs, written justification still required) and "Request closure approval" (incident `Verified`): the incident department's **Department Head** (was QSO/Admin). Approve / return closure: **QSO, Management or Administrator**, never the user who requested that Approval row (Department Heads no longer approve, not even for their own department). Rationale: the department that had the incident does and signs off its own fixes, and closure approval is the independent check by people outside that department. QSO/Admin still *see* the CAPA queues (`CorrectiveActionQueueQuery::allowed()`, sidebar `capaOperations`) read-only. No approval-request notifications exist; overdue-approval escalation recipients are unchanged. Implemented in `CorrectiveActionPolicy` and `IncidentPolicy` (`requestApproval`, `markNoCorrectiveActionNeeded`, `hasApprovalAuthority`); the UI buttons follow the existing `can.*` flags.
+
+## 9o. Five severity levels & escalation matrix (2026-10-01)
+
+Spec: `docs/superpowers/specs/2026-10-01-severity-levels-and-escalation-matrix-design.md`. Supersedes the four-level scale in §2.2/§3.3 and the "High-risk alert to Executives/Committee/Leadership after triage" behaviour (the CQI Committee is no longer alerted).
+
+- **Levels** (`App\Enums\Severity`, mirrored by `resources/js/Utils/severities.js` — keep both in sync; `meaning()` is shown wherever a level is picked):
+
+  | Level | Value | Meaning |
+  |---|---|---|
+  | I Low | `level_1_low` | Near miss / no harm or low-risk event |
+  | II Moderate | `level_2_moderate` | Temporary harm or intervention required |
+  | III High | `level_3_high` | Significant harm, prolonged hospitalization or high-risk event |
+  | IV Critical | `level_4_critical` | Permanent or life-threatening harm |
+  | V Sentinel | `level_5_sentinel` | Death or serious permanent harm / other agency-defined sentinel event |
+
+  `isSentinel()` is true only for Level V; `isHighOrAbove()` covers III–V. Per-severity config tables (`review_sla_hours`, `approval_sla_hours`, etc.) have five keys.
+- **Data migration** `2026_10_01_000001_split_critical_and_sentinel_severity.php`: existing `level_4_critical_sentinel` rows in `incidents.severity` and `incident_types.default_severity` become `level_5_sentinel` (decision: existing rows are treated as Sentinel). `down()` maps both new levels back.
+- **`App\Support\EscalationRecipients`** is the single place for the client's matrix. Callers exclude the acting user themselves.
+  - `forSeverity()`: Low none; Moderate = Department Head + CQI; High = Department Head + CQI + Leadership; Critical and Sentinel = CQI + Leadership + Executives (the Department Head is not included). CQI = `QualitySafetyOfficer`, Executives = `Management`; Leadership = users with the `Leadership` role mapped to the incident's department via `leadership_departments`.
+  - `forOverdueInvestigation()`: lead investigator + Department Head + CQI.
+  - `forOverdueCorrectiveAction()`: responsible person + Department Head + CQI, plus Executives when the CAPA priority is `critical`.
+- **Severity alert:** `SendSeverityAlert` (one listener on `IncidentAssessed` and `IncidentReviewed`) sends `SeverityAlertNotification` as soon as severity is set at department assessment, and at CQI triage only when triage changed it (`IncidentReviewed::$previousSeverity`). The actor is excluded, so a Department Head who completes the assessment is not alerted about their own call; the CQI Committee is not a recipient.
+- **Daily command** (`incidents:check-overdue`) now runs, in order: effectiveness-check notices; **due-soon reminders** for investigations and CAPAs (`DueSoonInvestigationsQuery`, `DueSoonCorrectiveActionsQuery`; `DeadlineReminderNotification` to the lead investigator / responsible person only, stamped once in `reminder_sent_at`); **overdue escalations** for investigations and CAPAs via `EscalationRecipients` (still one-shot `escalated_at`; these run even if no CQI user exists); then the role-config sweeps. A CAPA due tomorrow gets a reminder, one past its due date gets an escalation, never both.
+- **Migration** `2026_10_01_000002_add_reminder_sent_at_columns.php`: nullable `reminder_sent_at` on `investigations` and `corrective_actions`.
+- **Unchanged:** assessment, review, assignment and approval escalations still go to `config('incident_workflow.escalation_recipient_roles')`.
+- **Not built:** a sentinel-event pathway (distinct workflow for Level V) — waiting on the client's definition. `is_sentinel_event` is still derived from severity.
