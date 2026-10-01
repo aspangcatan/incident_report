@@ -7,6 +7,7 @@ import SeverityBadge from '@/Components/SeverityBadge.vue';
 import WorkflowActionsPanel from '@/Components/Incidents/WorkflowActionsPanel.vue';
 import AssessmentPanel from '@/Components/Incidents/AssessmentPanel.vue';
 import InvestigationPanel from '@/Components/Incidents/InvestigationPanel.vue';
+import SentinelPathwayPanel from '@/Components/Incidents/SentinelPathwayPanel.vue';
 import CapaPanel from '@/Components/Incidents/CapaPanel.vue';
 import ApprovalPanel from '@/Components/Incidents/ApprovalPanel.vue';
 import { formatDate } from '@/Utils/formatDate';
@@ -130,6 +131,14 @@ function switchTab(value) {
             </Link>
         </div>
 
+        <div v-if="incident.is_sentinel_event" role="alert" class="rounded-lg bg-error text-on-error p-space-md flex items-start gap-3">
+            <FontAwesomeIcon icon="triangle-exclamation" class="mt-1" />
+            <div class="flex flex-col gap-0.5">
+                <span class="font-title-sm text-title-sm font-bold">Sentinel Event</span>
+                <span class="font-body-md text-body-md">Immediate patient safety and clinical response takes priority over documentation. Follow the Sentinel Event Pathway on the Overview tab.</span>
+            </div>
+        </div>
+
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-surface-container-low p-space-md rounded-xl">
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Incident Time</span>
@@ -176,6 +185,7 @@ function switchTab(value) {
         </div>
 
         <template v-if="activeTab === 'overview'">
+            <SentinelPathwayPanel v-if="incident.is_sentinel_event" :incident="incident" :can="can" />
             <!-- What the reporter recorded: read this first, then assess. -->
             <section class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
                 <div class="flex flex-col gap-1">
