@@ -83,8 +83,6 @@ final class EscalationRecipients
     /** @param  array<Collection>  $groups */
     private static function merge(array $groups): Collection
     {
-        return (new Collection(array_merge(...array_map(fn (Collection $group) => $group->all(), [new Collection(), ...$groups]))))
-            ->unique('id')
-            ->values();
+        return new Collection(collect($groups)->flatten(1)->unique('id')->values()->all());
     }
 }
