@@ -163,6 +163,20 @@ class DepartmentAssessmentTest extends TestCase
             ->assertSessionHasErrors('severity');
     }
 
+    public function test_complete_requires_at_least_one_immediate_action(): void
+    {
+        $incident = $this->submittedIncident();
+
+        $this->actingAs($this->departmentHead())
+            ->post("/incidents/{$incident->id}/assessment/complete", $this->payload([
+                'severity' => Severity::Level1Low->value,
+                'actions_taken' => [],
+            ]))
+            ->assertSessionHasErrors(['actions_taken' => 'Add at least one immediate action taken before completing the assessment.']);
+
+        $this->assertSame(IncidentStatus::Submitted, $incident->fresh()->status);
+    }
+
     public function test_supervisor_and_staff_cannot_complete(): void
     {
         $incident = $this->submittedIncident();

@@ -65,6 +65,11 @@ onMounted(() => {
 const typeNames = computed(() => listWithOther((props.incident.incident_types ?? []).map((type) => type.name), props.incident.incident_type_other));
 const injuryCauses = computed(() => listWithOther((props.incident.injury_causes ?? []).map((v) => props.injuryOptions.causes[v] ?? v), props.incident.injury_cause_other));
 const injuryAgents = computed(() => listWithOther((props.incident.injury_agents ?? []).map((v) => props.injuryOptions.agents[v] ?? v), props.incident.injury_agent_other));
+const hasReportDetails = computed(() => props.incident.has_injury !== null
+    || props.incident.individuals?.length
+    || props.incident.witnesses?.length
+    || props.incident.police_notified
+    || props.incident.narrative_events?.length);
 
 
 const tabs = [
@@ -170,78 +175,92 @@ function switchTab(value) {
             </button>
         </div>
 
-        <div v-if="activeTab === 'overview'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
-            <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" />
+        <template v-if="activeTab === 'overview'">
+            <!-- What the reporter recorded: read this first, then assess. -->
+            <section class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
+                <div class="flex flex-col gap-1">
+                    <h2 class="font-title-lg text-title-lg text-primary font-bold">Report Details</h2>
+                    <span class="font-body-sm text-body-sm text-outline">What the reporter recorded about the incident.</span>
+                </div>
+                <div v-if="incident.has_injury !== null" class="flex flex-col gap-1">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Accident / Injury Details</span>
+                    <div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-1">
+                        <span class="font-body-md text-body-md text-on-surface">Anyone injured: <strong>{{ incident.has_injury ? 'Yes' : 'No' }}</strong></span>
+                        <template v-if="incident.has_injury">
+                            <span class="font-body-md text-body-md text-on-surface">Cause of injury: {{ injuryCauses }}</span>
+                            <span class="font-body-md text-body-md text-on-surface">Agent of injury: {{ injuryAgents }}</span>
+                            <span v-if="incident.injury_chemical_details" class="font-body-md text-body-md text-on-surface">Chemical involved: {{ incident.injury_chemical_details }}</span>
+                        </template>
+                    </div>
+                </div>
 
-            <div v-if="similarIncidents.length" class="flex flex-col gap-2">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Similar Past Incidents & Lessons</span>
-                <span class="font-body-sm text-body-sm text-outline -mt-1">Closed incidents of the same type, and what the hospital learned from them.</span>
-                <div v-for="similar in similarIncidents" :key="similar.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
-                    <span class="font-label-md text-label-md text-on-surface font-semibold">
-                        {{ similar.types.join(', ') }} · {{ similar.department ?? 'Department not recorded' }} · {{ formatDate(similar.published_at) }}
-                    </span>
-                    <span class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ similar.lesson }}</span>
+                <div v-if="incident.individuals?.length" class="flex flex-col gap-2">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">People Involved</span>
+                    <div v-for="person in incident.individuals" :key="person.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col">
+                        <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ person.name }} <span class="capitalize">({{ person.person_type }})</span></span>
+                        <span class="font-body-sm text-body-sm text-on-surface-variant">
+                            {{ [person.identifier, person.role_description].filter(Boolean).join(' · ') }}
+                        </span>
+                        <span v-if="person.details" class="font-body-sm text-body-sm text-on-surface-variant">{{ person.details }}</span>
+                    </div>
+                </div>
+
+                <div v-if="incident.witnesses?.length" class="flex flex-col gap-2">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Witnesses</span>
+                    <div v-for="witness in incident.witnesses" :key="witness.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col">
+                        <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ witness.name }}</span>
+                        <span class="font-body-sm text-body-sm text-on-surface-variant">{{ witness.statement }}</span>
+                    </div>
+                </div>
+
+                <div v-if="incident.police_notified" class="flex flex-col gap-1">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Police Notification</span>
+                    <div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+                        <span class="font-body-md text-body-md text-on-surface">{{ incident.police_station || '—' }}</span>
+                        <span class="font-body-sm text-body-sm text-on-surface-variant">
+                            Officer: {{ incident.police_officer_in_charge || '—' }} · Blotter #: {{ incident.police_blotter_no || '—' }}
+                        </span>
+                        <span class="font-body-sm text-body-sm text-on-surface-variant">
+                            Notified: {{ formatDate(incident.police_notified_at) }}
+                        </span>
+                    </div>
+                </div>
+
+                <div v-if="incident.narrative_events?.length" class="flex flex-col gap-2">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Sequence of Events</span>
+                    <div v-for="event in incident.narrative_events" :key="event.id" class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low">
+                        <span class="font-code-tabular text-body-sm text-primary font-semibold min-w-[70px]">{{ event.occurred_at }}</span>
+                        <span class="font-body-sm text-body-sm text-on-surface">{{ event.description }}</span>
+                    </div>
+                </div>
+
+                <p v-if="!hasReportDetails" class="font-body-sm text-body-sm text-outline">No further details were recorded.</p>
+            </section>
+
+            <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
+                <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" />
+
+                <div v-if="incident.contributing_factors?.length" class="flex flex-col gap-2">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Contributing Factors</span>
+                    <div class="flex flex-wrap gap-2">
+                        <span v-for="factor in incident.contributing_factors" :key="factor.id" class="px-2.5 py-0.5 rounded-full bg-surface-container-low text-on-surface font-label-sm text-body-sm">
+                            {{ factor.label }}
+                        </span>
+                    </div>
+                </div>
+
+                <div v-if="similarIncidents.length" class="flex flex-col gap-2">
+                    <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Similar Past Incidents & Lessons</span>
+                    <span class="font-body-sm text-body-sm text-outline -mt-1">Closed incidents of the same type, and what the hospital learned from them.</span>
+                    <div v-for="similar in similarIncidents" :key="similar.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
+                        <span class="font-label-md text-label-md text-on-surface font-semibold">
+                            {{ similar.types.join(', ') }} · {{ similar.department ?? 'Department not recorded' }} · {{ formatDate(similar.published_at) }}
+                        </span>
+                        <span class="font-body-md text-body-md text-on-surface whitespace-pre-line">{{ similar.lesson }}</span>
+                    </div>
                 </div>
             </div>
-
-            <div v-if="incident.has_injury !== null" class="flex flex-col gap-1">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Accident / Injury Details</span>
-                <div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-1">
-                    <span class="font-body-md text-body-md text-on-surface">Anyone injured: <strong>{{ incident.has_injury ? 'Yes' : 'No' }}</strong></span>
-                    <template v-if="incident.has_injury">
-                        <span class="font-body-md text-body-md text-on-surface">Cause of injury: {{ injuryCauses }}</span>
-                        <span class="font-body-md text-body-md text-on-surface">Agent of injury: {{ injuryAgents }}</span>
-                        <span v-if="incident.injury_chemical_details" class="font-body-md text-body-md text-on-surface">Chemical involved: {{ incident.injury_chemical_details }}</span>
-                    </template>
-                </div>
-            </div>
-
-            <div v-if="incident.individuals?.length" class="flex flex-col gap-2">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">People Involved</span>
-                <div v-for="person in incident.individuals" :key="person.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col">
-                    <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ person.name }} ({{ person.person_type }})</span>
-                    <span class="font-body-sm text-body-sm text-on-surface-variant">{{ person.role_description }}</span>
-                </div>
-            </div>
-
-            <div v-if="incident.witnesses?.length" class="flex flex-col gap-2">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Witnesses</span>
-                <div v-for="witness in incident.witnesses" :key="witness.id" class="p-3 rounded-lg bg-surface-container-low flex flex-col">
-                    <span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ witness.name }}</span>
-                    <span class="font-body-sm text-body-sm text-on-surface-variant">{{ witness.statement }}</span>
-                </div>
-            </div>
-
-            <div v-if="incident.police_notified" class="flex flex-col gap-1">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Police Notification</span>
-                <div class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-0.5">
-                    <span class="font-body-md text-body-md text-on-surface">{{ incident.police_station || '—' }}</span>
-                    <span class="font-body-sm text-body-sm text-on-surface-variant">
-                        Officer: {{ incident.police_officer_in_charge || '—' }} · Blotter #: {{ incident.police_blotter_no || '—' }}
-                    </span>
-                    <span class="font-body-sm text-body-sm text-on-surface-variant">
-                        Notified: {{ formatDate(incident.police_notified_at) }}
-                    </span>
-                </div>
-            </div>
-
-            <div v-if="incident.narrative_events?.length" class="flex flex-col gap-2">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Sequence of Events</span>
-                <div v-for="event in incident.narrative_events" :key="event.id" class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low">
-                    <span class="font-code-tabular text-body-sm text-primary font-semibold min-w-[70px]">{{ event.occurred_at }}</span>
-                    <span class="font-body-sm text-body-sm text-on-surface">{{ event.description }}</span>
-                </div>
-            </div>
-
-            <div v-if="incident.contributing_factors?.length" class="flex flex-col gap-2">
-                <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Contributing Factors</span>
-                <div class="flex flex-wrap gap-2">
-                    <span v-for="factor in incident.contributing_factors" :key="factor.id" class="px-2.5 py-0.5 rounded-full bg-surface-container-low text-on-surface font-label-sm text-body-sm">
-                        {{ factor.label }}
-                    </span>
-                </div>
-            </div>
-        </div>
+        </template>
 
         <div v-else-if="activeTab === 'attachments'" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <form v-if="can.addEvidence" class="flex flex-col gap-1.5 p-space-md rounded-lg bg-surface-container-low" @submit.prevent="addEvidence">

@@ -37,4 +37,9 @@ class StoreGuestReportRequest extends FormRequest
     {
         return $this->incidentMessages();
     }
+
+    public function attributes(): array
+    {
+        return $this->incidentAttributes();
+    }
 }

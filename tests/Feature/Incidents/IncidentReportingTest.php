@@ -540,6 +540,20 @@ class IncidentReportingTest extends TestCase
         ])->assertSessionHasErrors(['department_id', 'individuals.0.department_id']);
     }
 
+    public function test_people_and_witness_errors_name_the_row_in_plain_words(): void
+    {
+        $reporter = $this->makeReporter();
+
+        $this->actingAs($reporter)->post('/incidents', [
+            'action' => 'draft',
+            'individuals' => [['person_type' => 'patient', 'name' => 'Juan'], ['person_type' => 'staff', 'name' => '']],
+            'witnesses' => [['name' => str_repeat('a', 256)]],
+        ])->assertSessionHasErrors([
+            'individuals.1.name' => 'Enter the full name of person 2.',
+            'witnesses.0.name' => 'The full name of witness 1 must not be greater than 255 characters.',
+        ]);
+    }
+
     public function test_the_reporter_can_submit_without_a_severity(): void
     {
         $reporter = $this->makeReporter();

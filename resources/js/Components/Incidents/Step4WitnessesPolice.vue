@@ -34,16 +34,31 @@ function removeWitness(form, index) {
                     <button type="button" class="text-error font-label-sm text-body-sm" @click="removeWitness(form, index)">Remove</button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
-                    <label class="sr-only" :for="'witness-name-' + index">Full name</label>
-                    <input :id="'witness-name-' + index" v-model="witness.name" type="text" placeholder="Full name" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                    <label class="sr-only" :for="'witness-designation-' + index">Designation</label>
-                    <input :id="'witness-designation-' + index" v-model="witness.designation" type="text" placeholder="Designation" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                    <label class="sr-only" :for="'witness-address-' + index">Address</label>
-                    <input :id="'witness-address-' + index" v-model="witness.address" type="text" placeholder="Address" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                    <label class="sr-only" :for="'witness-contact-' + index">Contact number</label>
-                    <input :id="'witness-contact-' + index" v-model="witness.contact_number" type="text" placeholder="Contact number" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                    <label class="sr-only" :for="'witness-statement-' + index">Statement</label>
-                    <textarea :id="'witness-statement-' + index" v-model="witness.statement" placeholder="Statement" class="p-2.5 rounded-lg bg-surface-container-lowest md:col-span-2" rows="2" />
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'witness-name-' + index">Full name *</label>
+                        <input :id="'witness-name-' + index" v-model="witness.name" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                        <span v-if="form.errors[`witnesses.${index}.name`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`witnesses.${index}.name`] }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'witness-designation-' + index">Designation</label>
+                        <input :id="'witness-designation-' + index" v-model="witness.designation" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                        <span v-if="form.errors[`witnesses.${index}.designation`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`witnesses.${index}.designation`] }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'witness-address-' + index">Address</label>
+                        <input :id="'witness-address-' + index" v-model="witness.address" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                        <span v-if="form.errors[`witnesses.${index}.address`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`witnesses.${index}.address`] }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'witness-contact-' + index">Contact number</label>
+                        <input :id="'witness-contact-' + index" v-model="witness.contact_number" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                        <span v-if="form.errors[`witnesses.${index}.contact_number`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`witnesses.${index}.contact_number`] }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 md:col-span-2">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'witness-statement-' + index">Statement</label>
+                        <textarea :id="'witness-statement-' + index" v-model="witness.statement" class="p-2.5 rounded-lg bg-surface-container-lowest" rows="2" />
+                        <span v-if="form.errors[`witnesses.${index}.statement`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`witnesses.${index}.statement`] }}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -56,10 +71,26 @@ function removeWitness(form, index) {
                 </span>
             </label>
             <div v-if="form.police_notified" class="grid grid-cols-1 md:grid-cols-2 gap-space-sm pt-2">
-                <input v-model="form.police_station" type="text" placeholder="Police station / precinct" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <input v-model="form.police_officer_in_charge" type="text" placeholder="Officer-in-charge" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <input v-model="form.police_blotter_no" type="text" placeholder="Blotter reference no." class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <input v-model="form.police_notified_at" type="datetime-local" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                <div class="flex flex-col gap-1.5">
+                    <label for="police_station" class="font-label-md text-label-md text-on-surface font-semibold">Police station / precinct</label>
+                    <input id="police_station" v-model="form.police_station" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors.police_station" class="font-body-sm text-body-sm text-error">{{ form.errors.police_station }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="police_officer_in_charge" class="font-label-md text-label-md text-on-surface font-semibold">Officer-in-charge</label>
+                    <input id="police_officer_in_charge" v-model="form.police_officer_in_charge" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors.police_officer_in_charge" class="font-body-sm text-body-sm text-error">{{ form.errors.police_officer_in_charge }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="police_blotter_no" class="font-label-md text-label-md text-on-surface font-semibold">Blotter reference no.</label>
+                    <input id="police_blotter_no" v-model="form.police_blotter_no" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors.police_blotter_no" class="font-body-sm text-body-sm text-error">{{ form.errors.police_blotter_no }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="police_notified_at" class="font-label-md text-label-md text-on-surface font-semibold">Date & time notified</label>
+                    <input id="police_notified_at" v-model="form.police_notified_at" type="datetime-local" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors.police_notified_at" class="font-body-sm text-body-sm text-error">{{ form.errors.police_notified_at }}</span>
+                </div>
             </div>
         </div>
     </div>

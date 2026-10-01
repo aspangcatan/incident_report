@@ -110,6 +110,9 @@ function returnToReporter() {
                 </label>
             </div>
             <SeverityBadge v-else :severity="incident.severity" class="self-start" />
+            <span v-if="incident.status === 'submitted' && !can.completeAssessment" class="font-body-sm text-body-sm text-outline">
+                The Department / Service Head sets the severity when completing the assessment.<template v-if="editable"> You can still add actions and recommendations below.</template>
+            </span>
             <span v-if="form.errors.severity" class="font-body-sm text-body-sm text-error">{{ form.errors.severity }}</span>
         </div>
 
@@ -139,12 +142,31 @@ function returnToReporter() {
 
         <!-- Immediate actions -->
         <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-                <span class="font-label-md text-label-md text-on-surface font-semibold">Immediate Actions Taken</span>
-                <button v-if="editable" type="button" class="font-label-sm text-label-sm font-bold text-primary" @click="addAction">+ Add Action</button>
+            <div class="flex items-start justify-between gap-space-md">
+                <div class="flex flex-col gap-1">
+                    <span class="font-label-md text-label-md text-on-surface font-semibold">
+                        Immediate Actions Taken<template v-if="editable"> *</template>
+                    </span>
+                    <span v-if="editable" class="font-body-sm text-body-sm text-outline">
+                        What was done right after the incident to keep the patient, staff or area safe? List each step, who did it and when.
+                        At least one is needed before the assessment can be completed.
+                    </span>
+                    <span v-if="form.errors.actions_taken" class="font-body-sm text-body-sm text-error">{{ form.errors.actions_taken }}</span>
+                </div>
+                <button v-if="editable && form.actions_taken.length" type="button" class="font-label-sm text-label-sm font-bold text-primary whitespace-nowrap" @click="addAction">+ Add Action</button>
             </div>
 
             <p v-if="!editable && !(incident.actions ?? []).length" class="font-body-sm text-body-sm text-outline">No immediate actions recorded.</p>
+
+            <div v-if="editable && form.actions_taken.length === 0" class="p-space-md rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low flex flex-col items-center gap-2 text-center">
+                <span class="font-body-sm text-body-sm text-on-surface-variant">No actions added yet. For example:</span>
+                <span class="font-body-sm text-body-sm text-outline italic">
+                    Patient assisted back to bed and vital signs checked. &nbsp;·&nbsp; Wet floor dried and a warning sign placed.
+                </span>
+                <button type="button" class="mt-1 px-4 py-2 rounded-lg bg-surface-container-high text-primary font-label-md text-label-md font-semibold" @click="addAction">
+                    + Add the first action
+                </button>
+            </div>
 
             <template v-if="editable">
                 <div v-for="(action, index) in form.actions_taken" :key="action._key" class="p-3 rounded-lg bg-surface-container-low flex flex-col gap-2">

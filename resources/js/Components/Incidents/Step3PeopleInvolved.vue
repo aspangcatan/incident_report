@@ -3,7 +3,12 @@ defineProps({
     form: { type: Object, required: true },
 });
 
-const personTypes = ['patient', 'staff', 'visitor', 'other'];
+const personTypes = [
+    { value: 'patient', label: 'Patient' },
+    { value: 'staff', label: 'Staff' },
+    { value: 'visitor', label: 'Visitor' },
+    { value: 'other', label: 'Other' },
+];
 
 let nextKey = 0;
 
@@ -35,18 +40,33 @@ function removeIndividual(form, index) {
                 <button type="button" class="text-error font-label-sm text-body-sm" @click="removeIndividual(form, index)">Remove</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
-                <label class="sr-only" :for="'person-type-' + index">Person type</label>
-                <select :id="'person-type-' + index" v-model="person.person_type" class="p-2.5 rounded-lg bg-surface-container-lowest">
-                    <option v-for="type in personTypes" :key="type" :value="type">{{ type }}</option>
-                </select>
-                <label class="sr-only" :for="'person-name-' + index">Full name</label>
-                <input :id="'person-name-' + index" v-model="person.name" type="text" placeholder="Full name" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <label class="sr-only" :for="'person-identifier-' + index">HRN / Employee No.</label>
-                <input :id="'person-identifier-' + index" v-model="person.identifier" type="text" placeholder="HRN / Employee No." class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <label class="sr-only" :for="'person-role-' + index">Role / designation</label>
-                <input :id="'person-role-' + index" v-model="person.role_description" type="text" placeholder="Role / designation" class="p-2.5 rounded-lg bg-surface-container-lowest" />
-                <label class="sr-only" :for="'person-details-' + index">Additional details</label>
-                <textarea :id="'person-details-' + index" v-model="person.details" placeholder="Additional details" class="p-2.5 rounded-lg bg-surface-container-lowest md:col-span-2" rows="2" />
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'person-type-' + index">Person type</label>
+                    <select :id="'person-type-' + index" v-model="person.person_type" class="p-2.5 rounded-lg bg-surface-container-lowest">
+                        <option v-for="type in personTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+                    </select>
+                    <span v-if="form.errors[`individuals.${index}.person_type`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`individuals.${index}.person_type`] }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'person-name-' + index">Full name *</label>
+                    <input :id="'person-name-' + index" v-model="person.name" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors[`individuals.${index}.name`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`individuals.${index}.name`] }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'person-identifier-' + index">HRN / Employee No.</label>
+                    <input :id="'person-identifier-' + index" v-model="person.identifier" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors[`individuals.${index}.identifier`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`individuals.${index}.identifier`] }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'person-role-' + index">Role / Designation</label>
+                    <input :id="'person-role-' + index" v-model="person.role_description" type="text" class="p-2.5 rounded-lg bg-surface-container-lowest" />
+                    <span v-if="form.errors[`individuals.${index}.role_description`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`individuals.${index}.role_description`] }}</span>
+                </div>
+                <div class="flex flex-col gap-1.5 md:col-span-2">
+                    <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'person-details-' + index">Additional details</label>
+                    <textarea :id="'person-details-' + index" v-model="person.details" class="p-2.5 rounded-lg bg-surface-container-lowest" rows="2" />
+                    <span v-if="form.errors[`individuals.${index}.details`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`individuals.${index}.details`] }}</span>
+                </div>
             </div>
         </div>
     </div>

@@ -36,16 +36,46 @@ function removeAttachment(form, index) {
         </div>
 
         <div class="flex flex-col gap-space-sm">
-            <div class="flex items-center justify-between">
-                <label class="font-label-md text-label-md text-on-surface font-semibold">Chronological Sequence of Events</label>
-                <button type="button" class="font-label-sm text-label-sm font-bold text-primary" @click="addEvent(form)">+ Add Event</button>
+            <div class="flex items-start justify-between gap-space-md">
+                <div class="flex flex-col gap-1">
+                    <span class="font-label-md text-label-md text-on-surface font-semibold">
+                        Chronological Sequence of Events <span class="font-normal text-outline">(optional)</span>
+                    </span>
+                    <span class="font-body-sm text-body-sm text-outline">
+                        Break the incident down into steps, in the order they happened, with the time of each. This helps the investigator see exactly what happened when.
+                    </span>
+                </div>
+                <button v-if="form.narrative_events.length" type="button" class="font-label-sm text-label-sm font-bold text-primary whitespace-nowrap" @click="addEvent(form)">+ Add Event</button>
             </div>
-            <div v-for="(event, index) in form.narrative_events" :key="event._key ?? index" class="flex items-start gap-2 bg-surface-container-low p-2.5 rounded-lg">
-                <label class="sr-only" :for="'event-occurred-at-' + index">Time</label>
-                <input :id="'event-occurred-at-' + index" v-model="event.occurred_at" type="text" placeholder="Time" class="w-32 p-2 rounded bg-surface-container-lowest" />
-                <label class="sr-only" :for="'event-description-' + index">What happened</label>
-                <input :id="'event-description-' + index" v-model="event.description" type="text" placeholder="What happened" class="flex-1 p-2 rounded bg-surface-container-lowest" />
-                <button type="button" class="text-error" @click="removeEvent(form, index)">✕</button>
+
+            <div v-if="form.narrative_events.length === 0" class="p-space-md rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low flex flex-col items-center gap-2 text-center">
+                <span class="font-body-sm text-body-sm text-on-surface-variant">No events added yet. For example:</span>
+                <span class="font-body-sm text-body-sm text-outline italic">
+                    2:30 PM: Patient found on the floor beside the bed. &nbsp;·&nbsp; 2:35 PM: Nurse on duty checked vital signs and called the doctor.
+                </span>
+                <button type="button" class="mt-1 px-4 py-2 rounded-lg bg-surface-container-high text-primary font-label-md text-label-md font-semibold" @click="addEvent(form)">
+                    + Add the first event
+                </button>
+            </div>
+            <div v-for="(event, index) in form.narrative_events" :key="event._key ?? index" class="flex flex-col gap-space-sm bg-surface-container-low p-2.5 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <span class="font-label-sm text-label-sm uppercase text-outline">Event {{ index + 1 }}</span>
+                    <button type="button" class="text-error font-label-sm text-body-sm" @click="removeEvent(form, index)">Remove</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-[10rem_1fr] gap-space-sm">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'event-occurred-at-' + index">Time</label>
+                        <span class="font-body-sm text-body-sm text-outline">e.g. 2:30 PM</span>
+                        <input :id="'event-occurred-at-' + index" v-model="event.occurred_at" type="text" class="p-2 rounded bg-surface-container-lowest" />
+                        <span v-if="form.errors[`narrative_events.${index}.occurred_at`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`narrative_events.${index}.occurred_at`] }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'event-description-' + index">What happened *</label>
+                        <span class="font-body-sm text-body-sm text-outline">One step of the incident, in the order it happened.</span>
+                        <input :id="'event-description-' + index" v-model="event.description" type="text" class="p-2 rounded bg-surface-container-lowest" />
+                        <span v-if="form.errors[`narrative_events.${index}.description`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`narrative_events.${index}.description`] }}</span>
+                    </div>
+                </div>
             </div>
         </div>
 

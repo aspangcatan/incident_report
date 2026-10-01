@@ -157,10 +157,11 @@ function submitDecision(approvalId) {
             </form>
 
             <form v-if="showNoCorrectiveActionForm" class="flex flex-col gap-2 p-space-md rounded-lg bg-surface-container-low" @submit.prevent="markNoCorrectiveActionNeeded">
+                <label for="no_capa_justification" class="font-label-md text-label-md text-on-surface font-semibold">Why is no corrective action needed? *</label>
                 <textarea
+                    id="no_capa_justification"
                     v-model="noCorrectiveActionForm.justification"
                     rows="2"
-                    placeholder="Why does this incident need no corrective action?"
                     class="p-2 rounded-lg bg-surface-container"
                 />
                 <span v-if="noCorrectiveActionForm.errors.justification" class="font-body-sm text-body-sm text-error">{{ noCorrectiveActionForm.errors.justification }}</span>
@@ -210,10 +211,13 @@ function submitDecision(approvalId) {
                 </div>
 
                 <div v-if="decidingId === approval.id" class="flex flex-col gap-2 p-space-sm rounded-lg bg-surface-container">
+                    <label :for="'decide_comments_' + approval.id" class="font-label-md text-label-md text-on-surface font-semibold">
+                        {{ decidingMode === 'approve' ? 'Approval comments' : 'Reason for returning' }} *
+                    </label>
                     <textarea
+                        :id="'decide_comments_' + approval.id"
                         v-model="decideForm.comments"
                         rows="2"
-                        :placeholder="decidingMode === 'approve' ? 'Approval comments' : 'Reason for returning'"
                         class="p-2 rounded-lg bg-surface-container-low"
                     />
                     <span v-if="decideForm.errors.comments" class="font-body-sm text-body-sm text-error">{{ decideForm.errors.comments }}</span>

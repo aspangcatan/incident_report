@@ -82,8 +82,87 @@ const form = useForm({
 
 const isLastStep = computed(() => currentStep.value === steps.length);
 
+const blank = (value) => value === null || value === undefined || String(value).trim() === '';
+
+// What a step needs before Next (the Section 1 attestation is checked only on Submit).
+// Messages match the server's (ValidatesIncidentData).
+function stepErrors(step) {
+    const errors = {};
+
+    if (step === 2) {
+        if (form.incident_type_ids.length === 0 && blank(form.incident_type_other)) {
+            errors.incident_type_ids = 'Choose at least one incident type, or tick Others and specify it.';
+        }
+        if (blank(form.department_id)) errors.department_id = 'Choose the department or clinical unit.';
+        if (blank(form.occurred_at)) errors.occurred_at = 'Enter the date and time of the incident.';
+        if (blank(form.location)) errors.location = 'Enter where the incident happened.';
+    }
+
+    if (step === 3) {
+        if (form.has_injury === null) errors.has_injury = 'Answer whether anyone was injured.';
+        if (form.has_injury) {
+            if (form.injury_causes.length === 0 && blank(form.injury_cause_other)) {
+                errors.injury_causes = 'Choose at least one cause of injury, or tick Others and specify it.';
+            }
+            if (form.injury_agents.length === 0 && blank(form.injury_agent_other)) {
+                errors.injury_agents = 'Choose at least one agent of injury, or tick Others and specify it.';
+            }
+            if (form.injury_agents.includes('chemicals') && blank(form.injury_chemical_details)) {
+                errors.injury_chemical_details = 'Say which chemical was involved.';
+            }
+        }
+    }
+
+    if (step === 4) {
+        form.individuals.forEach((person, i) => {
+            if (blank(person.name)) errors[`individuals.${i}.name`] = `Enter the full name of person ${i + 1}.`;
+        });
+    }
+
+    if (step === 5) {
+        form.witnesses.forEach((witness, i) => {
+            if (blank(witness.name)) errors[`witnesses.${i}.name`] = `Enter the full name of witness ${i + 1}.`;
+        });
+    }
+
+    if (step === 6) {
+        if (blank(form.summary)) errors.summary = 'Describe what happened.';
+        form.narrative_events.forEach((event, i) => {
+            if (blank(event.description)) errors[`narrative_events.${i}.description`] = `Describe what happened in event ${i + 1}, or remove it.`;
+        });
+    }
+
+    return errors;
+}
+
+function belongsToStep(errorField, step) {
+    return (STEP_FIELDS[step] ?? []).some((field) => errorField === field || errorField.startsWith(field + '.'));
+}
+
+/** Re-checks a step; shows its problems and returns false if it is not complete. */
+function checkStep(step) {
+    const stale = Object.keys(form.errors).filter((field) => belongsToStep(field, step));
+    if (stale.length) form.clearErrors(...stale);
+
+    const errors = stepErrors(step);
+    if (Object.keys(errors).length === 0) return true;
+
+    form.setError(errors);
+    currentStep.value = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return false;
+}
+
+/** Moving forward checks every step being passed; moving back is always allowed. */
+function goTo(target) {
+    for (let step = currentStep.value; step < target; step++) {
+        if (!checkStep(step)) return;
+    }
+    currentStep.value = target;
+}
+
 function next() {
-    if (currentStep.value < steps.length) currentStep.value += 1;
+    if (currentStep.value < steps.length) goTo(currentStep.value + 1);
 }
 
 function back() {
@@ -132,7 +211,7 @@ function confirmSubmit() {
                 type="button"
                 class="px-3 py-2 rounded-lg font-label-sm text-body-sm whitespace-nowrap"
                 :class="currentStep === index + 1 ? 'bg-primary text-on-primary font-semibold' : 'bg-surface-container text-on-surface-variant'"
-                @click="currentStep = index + 1"
+                @click="goTo(index + 1)"
             >
                 {{ index + 1 }}. {{ step.title }}
             </button>

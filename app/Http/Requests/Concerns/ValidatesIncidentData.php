@@ -95,6 +95,38 @@ trait ValidatesIncidentData
             'injury_causes.required' => 'Choose at least one cause of injury, or tick Others and specify it.',
             'injury_agents.required' => 'Choose at least one agent of injury, or tick Others and specify it.',
             'injury_chemical_details.required' => 'Say which chemical was involved.',
+            'department_id.required' => 'Choose the department or clinical unit.',
+            'occurred_at.required' => 'Enter the date and time of the incident.',
+            'location.required' => 'Enter where the incident happened.',
+            'summary.required' => 'Describe what happened.',
+            'legal_attestation.accepted' => 'Tick the acknowledgment box in Section 1 before submitting.',
+            'individuals.*.person_type.required_with' => 'Choose the person type for person :position.',
+            'individuals.*.name.required_with' => 'Enter the full name of person :position.',
+            'witnesses.*.name.required_with' => 'Enter the full name of witness :position.',
+            'narrative_events.*.description.required_with' => 'Describe what happened in event :position, or remove it.',
+        ];
+    }
+
+    /** Readable field names for any other message, e.g. "The full name of person 1 must not be greater than 255 characters." */
+    protected function incidentAttributes(): array
+    {
+        return [
+            'individuals.*.person_type' => 'person type of person :position',
+            'individuals.*.name' => 'full name of person :position',
+            'individuals.*.identifier' => 'HRN / employee no. of person :position',
+            'individuals.*.role_description' => 'role / designation of person :position',
+            'individuals.*.details' => 'additional details of person :position',
+            'witnesses.*.name' => 'full name of witness :position',
+            'witnesses.*.designation' => 'designation of witness :position',
+            'witnesses.*.address' => 'address of witness :position',
+            'witnesses.*.contact_number' => 'contact number of witness :position',
+            'witnesses.*.statement' => 'statement of witness :position',
+            'narrative_events.*.occurred_at' => 'time of event :position',
+            'narrative_events.*.description' => 'description of event :position',
+            'attachments.*' => 'attachment :position',
+            'department_id' => 'department',
+            'occurred_at' => 'date and time of the incident',
+            'police_notified_at' => 'date and time police were notified',
         ];
     }
 }

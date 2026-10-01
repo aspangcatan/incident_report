@@ -16,6 +16,16 @@ class CompleteAssessmentRequest extends SaveAssessmentRequest
     {
         return array_merge(parent::rules(), [
             'severity' => ['required', new Enum(Severity::class)],
+            'actions_taken' => ['required', 'array', 'min:1'],
         ]);
+    }
+
+    public function messages(): array
+    {
+        return [
+            'actions_taken.required' => 'Add at least one immediate action taken before completing the assessment.',
+            'actions_taken.min' => 'Add at least one immediate action taken before completing the assessment.',
+            'actions_taken.*.description.required_with' => 'Describe what was done in action :position, or remove it.',
+        ];
     }
 }

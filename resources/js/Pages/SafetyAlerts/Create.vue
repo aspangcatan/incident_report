@@ -79,7 +79,8 @@ function submit() {
 
             <fieldset v-if="form.audience === 'departments'" class="flex flex-col gap-1.5">
                 <legend class="font-label-md text-label-md text-on-surface font-semibold">Departments *</legend>
-                <input v-model="filter" type="search" aria-label="Filter departments" placeholder="Type part of a department name" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low mt-1" />
+                <label for="alert_department_filter" class="font-body-sm text-body-sm text-outline mt-1">Filter the list: type part of a department name</label>
+                <input id="alert_department_filter" v-model="filter" type="search" class="w-full md:w-1/2 p-3 rounded-lg bg-surface-container-low" />
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-space-md gap-y-2 max-h-72 overflow-y-auto mt-1">
                     <label v-for="department in shownDepartments" :key="department.id" class="flex items-start gap-2 font-body-md text-body-md text-on-surface">
                         <input v-model="form.department_ids" type="checkbox" :value="department.id" class="mt-1" />
