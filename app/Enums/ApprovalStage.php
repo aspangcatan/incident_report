@@ -4,7 +4,7 @@ namespace App\Enums;
 
 /**
  * Who decides an approvals row. Every closure goes to the CQI Office first;
- * High/Sentinel incidents then need a second, Committee row before closing.
+ * High-or-above incidents (High, Critical, Sentinel) then need a second, Committee row before closing.
  */
 enum ApprovalStage: string
 {

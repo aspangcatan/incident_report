@@ -28,7 +28,7 @@ function save(leader) {
             <h1 class="font-headline-sm text-headline-sm text-on-surface">Leadership Coverage</h1>
             <p class="font-body-sm text-body-sm text-outline">
                 Choose the departments each Medical/Nursing/Ancillary Leader oversees. They can read incidents from
-                those departments and get alerts when one is High or Sentinel.
+                those departments and get alerts when one is High, Critical or Sentinel.
             </p>
         </div>
 

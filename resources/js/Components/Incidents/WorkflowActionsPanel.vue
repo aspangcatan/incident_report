@@ -181,7 +181,7 @@ function skipInvestigation() {
             </button>
         </div>
         <p v-else class="font-body-sm text-body-sm text-outline pt-space-sm border-t border-outline-variant">
-            High and Sentinel incidents must be investigated.
+            High, Critical and Sentinel incidents must be investigated.
         </p>
     </div>
 

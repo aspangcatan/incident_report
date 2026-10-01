@@ -49,7 +49,7 @@ class ApprovalService
                 $incident->lessons_learned = $data->lessonsLearned;
             }
 
-            // High/Sentinel: the CQI Office's approval hands over to the Committee.
+            // High or above: the CQI Office's approval hands over to the Committee.
             if ($approval->stage === ApprovalStage::CqiOffice && $this->needsCommitteeSignOff($incident)) {
                 $this->approvals->create([
                     'incident_id' => $incident->id,

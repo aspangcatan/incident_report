@@ -139,7 +139,7 @@ class IncidentPolicy
             && $incident->department_id === $user->department_id;
     }
 
-    /** Only the CQI Office, and never for High or Sentinel incidents. */
+    /** Only the CQI Office, and never for High, Critical or Sentinel incidents. */
     public function skipInvestigation(User $user, Incident $incident): bool
     {
         return $incident->status === IncidentStatus::Reviewed
@@ -282,7 +282,7 @@ class IncidentPolicy
     /**
      * Closure approval is the independent check on the department's CAPA
      * work: the CQI Office decides the first stage, the CQI Committee the
-     * second (High/Sentinel only) - never the incident's own department.
+     * second (High, Critical, Sentinel only) - never the incident's own department.
      * The specific user who requested *this* Approval row is excluded even
      * if their role would otherwise qualify, mirroring
      * CorrectiveActionPolicy::verify()'s never-self-verification check.

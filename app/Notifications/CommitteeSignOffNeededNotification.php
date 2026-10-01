@@ -6,7 +6,7 @@ use App\Models\Incident;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-/** A High/Sentinel incident passed CQI Office approval and waits for the Committee. */
+/** A High-or-above incident passed CQI Office approval and waits for the Committee. */
 class CommitteeSignOffNeededNotification extends Notification
 {
     use Queueable;

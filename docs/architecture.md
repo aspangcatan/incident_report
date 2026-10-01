@@ -124,7 +124,7 @@ draft → submitted → for_review → reviewed → assigned → under_investiga
 
 ### 3.2 Corrective action status
 
-`open, in_progress, completed, for_verification, verified` — stored. `overdue` is **never stored**; it's `due_date < now() && status not in (completed, verified)`, exposed as an `isOverdue()` accessor / query scope, per the brief's explicit instruction that overdue must be "determined logically rather than manually entered."
+`open, in_progress, completed, for_verification, verified` — stored. `overdue` is **never stored**; it's `due_date < today && status != verified`, exposed as an `isOverdue()` accessor / query scope, per the brief's explicit instruction that overdue must be "determined logically rather than manually entered."
 
 ### 3.3 Severity
 
@@ -421,7 +421,7 @@ Spec: `docs/superpowers/specs/2026-10-01-severity-levels-and-escalation-matrix-d
   - `forOverdueInvestigation()`: lead investigator + Department Head + CQI.
   - `forOverdueCorrectiveAction()`: responsible person + Department Head + CQI, plus Executives when the CAPA priority is `critical`.
 - **Severity alert:** `SendSeverityAlert` (one listener on `IncidentAssessed` and `IncidentReviewed`) sends `SeverityAlertNotification` as soon as severity is set at department assessment, and at CQI triage only when triage changed it (`IncidentReviewed::$previousSeverity`). The actor is excluded, so a Department Head who completes the assessment is not alerted about their own call; the CQI Committee is not a recipient.
-- **Daily command** (`incidents:check-overdue`) now runs, in order: effectiveness-check notices; **due-soon reminders** for investigations and CAPAs (`DueSoonInvestigationsQuery`, `DueSoonCorrectiveActionsQuery`; `DeadlineReminderNotification` to the lead investigator / responsible person only, stamped once in `reminder_sent_at`); **overdue escalations** for investigations and CAPAs via `EscalationRecipients` (still one-shot `escalated_at`; these run even if no CQI user exists); then the role-config sweeps. A CAPA due tomorrow gets a reminder, one past its due date gets an escalation, never both.
+- **Daily command** (`incidents:check-overdue`) now runs, in order: effectiveness-check notices; **due-soon reminders** for investigations and CAPAs (`DueSoonInvestigationsQuery`, `DueSoonCorrectiveActionsQuery`; `DeadlineReminderNotification` to the lead investigator / responsible person only, stamped once in `reminder_sent_at`); **overdue escalations** for investigations and CAPAs via `EscalationRecipients` (still one-shot `escalated_at`; these run even if no CQI user exists); then the role-config sweeps. A CAPA due tomorrow gets a reminder, one past its due date gets an escalation - never both in the same run. Completed/for-verification CAPAs aren't reminded (the owner's part is done) but are still escalated when overdue.
 - **Migration** `2026_10_01_000002_add_reminder_sent_at_columns.php`: nullable `reminder_sent_at` on `investigations` and `corrective_actions`.
 - **Unchanged:** assessment, review, assignment and approval escalations still go to `config('incident_workflow.escalation_recipient_roles')`.
 - **Not built:** a sentinel-event pathway (distinct workflow for Level V) — waiting on the client's definition. `is_sentinel_event` is still derived from severity.
