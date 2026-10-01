@@ -9,14 +9,18 @@ use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\Investigation;
 use App\Models\User;
+use App\Notifications\DeadlineReminderNotification;
 use App\Notifications\EffectivenessCheckDueNotification;
 use App\Notifications\IncidentEscalationNotification;
+use App\Queries\DueSoonCorrectiveActionsQuery;
+use App\Queries\DueSoonInvestigationsQuery;
 use App\Queries\OverdueApprovalsQuery;
 use App\Queries\OverdueCorrectiveActionsQuery;
 use App\Queries\OverdueInvestigationsQuery;
 use App\Repositories\ApprovalRepository;
 use App\Repositories\CorrectiveActionRepository;
 use App\Repositories\InvestigationRepository;
+use App\Support\EscalationRecipients;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -25,12 +29,14 @@ class CheckOverdueIncidents extends Command
 {
     protected $signature = 'incidents:check-overdue';
 
-    protected $description = 'Escalate incidents that have breached their review or assignment SLA';
+    protected $description = 'Send deadline reminders and escalate incidents that have breached an SLA';
 
     public function __construct(
         private OverdueInvestigationsQuery $overdueInvestigations,
+        private DueSoonInvestigationsQuery $dueSoonInvestigations,
         private InvestigationRepository $investigations,
         private OverdueCorrectiveActionsQuery $overdueCorrectiveActions,
+        private DueSoonCorrectiveActionsQuery $dueSoonCorrectiveActions,
         private CorrectiveActionRepository $correctiveActions,
         private OverdueApprovalsQuery $overdueApprovals,
         private ApprovalRepository $approvals,
@@ -42,10 +48,16 @@ class CheckOverdueIncidents extends Command
     {
         $this->notifyDueEffectivenessChecks();
 
+        // RCA and CAPA follow the client's matrix and don't depend on a CQI user existing.
+        $this->remindDueSoonInvestigations();
+        $this->remindDueSoonCorrectiveActions();
+        $this->escalateOverdueInvestigations();
+        $this->escalateOverdueCorrectiveActions();
+
         $recipients = User::active()->withRole(config('incident_workflow.escalation_recipient_roles'))->get();
 
         if ($recipients->isEmpty()) {
-            $this->warn('No escalation recipients configured/found; skipping.');
+            $this->warn('No escalation recipients configured/found; skipping review, assignment and approval escalations.');
 
             return self::SUCCESS;
         }
@@ -53,8 +65,6 @@ class CheckOverdueIncidents extends Command
         $this->escalateOverdueAssessments($recipients);
         $this->escalateOverdueReviews($recipients);
         $this->escalateOverdueAssignments($recipients);
-        $this->escalateOverdueInvestigations($recipients);
-        $this->escalateOverdueCorrectiveActions($recipients);
         $this->escalateOverdueApprovals($recipients);
 
         return self::SUCCESS;
@@ -123,21 +133,50 @@ class CheckOverdueIncidents extends Command
             });
     }
 
-    private function escalateOverdueInvestigations(Collection $recipients): void
+    private function remindDueSoonInvestigations(): void
     {
-        $this->overdueInvestigations->get()->each(function (Investigation $investigation) use ($recipients) {
-            Notification::send($recipients, new IncidentEscalationNotification($investigation->incident, 'Investigation SLA breached'));
+        $this->dueSoonInvestigations->get()->each(function (Investigation $investigation) {
+            $lead = $investigation->leadInvestigator;
+            if ($lead !== null && $lead->is_active) {
+                $due = $investigation->target_completion_at->format('M j, Y g:i A');
+                Notification::send($lead, new DeadlineReminderNotification($investigation->incident, "your investigation is due by {$due}"));
+            }
+            $this->investigations->markReminded($investigation);
+        });
+    }
+
+    private function remindDueSoonCorrectiveActions(): void
+    {
+        $this->dueSoonCorrectiveActions->get()->each(function (CorrectiveAction $correctiveAction) {
+            $owner = $correctiveAction->responsibleUser;
+            if ($owner !== null && $owner->is_active) {
+                Notification::send($owner, new DeadlineReminderNotification($correctiveAction->incident, "corrective action {$correctiveAction->capa_number} is due tomorrow"));
+            }
+            $this->correctiveActions->markReminded($correctiveAction);
+        });
+    }
+
+    private function escalateOverdueInvestigations(): void
+    {
+        $this->overdueInvestigations->get()->each(function (Investigation $investigation) {
+            $recipients = EscalationRecipients::forOverdueInvestigation($investigation);
+            if ($recipients->isNotEmpty()) {
+                Notification::send($recipients, new IncidentEscalationNotification($investigation->incident, 'Investigation SLA breached'));
+            }
             $this->investigations->markEscalated($investigation);
         });
     }
 
-    private function escalateOverdueCorrectiveActions(Collection $recipients): void
+    private function escalateOverdueCorrectiveActions(): void
     {
-        $this->overdueCorrectiveActions->get()->each(function (CorrectiveAction $correctiveAction) use ($recipients) {
-            Notification::send(
-                $recipients,
-                new IncidentEscalationNotification($correctiveAction->incident, "Corrective action {$correctiveAction->capa_number} SLA breached")
-            );
+        $this->overdueCorrectiveActions->get()->each(function (CorrectiveAction $correctiveAction) {
+            $recipients = EscalationRecipients::forOverdueCorrectiveAction($correctiveAction);
+            if ($recipients->isNotEmpty()) {
+                Notification::send(
+                    $recipients,
+                    new IncidentEscalationNotification($correctiveAction->incident, "Corrective action {$correctiveAction->capa_number} SLA breached")
+                );
+            }
             $this->correctiveActions->markEscalated($correctiveAction);
         });
     }

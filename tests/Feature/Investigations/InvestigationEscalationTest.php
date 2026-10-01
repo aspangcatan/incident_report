@@ -8,6 +8,7 @@ use App\Enums\Severity;
 use App\Models\Department;
 use App\Models\IncidentType;
 use App\Models\User;
+use App\Notifications\DeadlineReminderNotification;
 use App\Notifications\IncidentEscalationNotification;
 use App\Services\IncidentService;
 use App\Services\InvestigationService;
@@ -62,5 +63,55 @@ class InvestigationEscalationTest extends TestCase
         Notification::fake();
         Artisan::call('incidents:check-overdue');
         Notification::assertNothingSent();
+    }
+
+    public function test_an_overdue_investigation_goes_to_the_investigator_and_the_department_head_too(): void
+    {
+        Notification::fake();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        app(InvestigationService::class)->start($incident, $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => 'five_whys', 'target_completion_at' => now()->subDay()->toDateTimeString(),
+        ]));
+
+        Artisan::call('incidents:check-overdue');
+
+        Notification::assertSentTo([$investigator, $head, $qso], IncidentEscalationNotification::class);
+    }
+
+    public function test_the_investigator_gets_one_reminder_a_day_before_the_deadline(): void
+    {
+        Notification::fake();
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        $investigation = app(InvestigationService::class)->start($incident, $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => 'five_whys', 'target_completion_at' => now()->addHours(10)->toDateTimeString(),
+        ]));
+
+        Artisan::call('incidents:check-overdue');
+
+        Notification::assertSentTo($investigator, DeadlineReminderNotification::class);
+        Notification::assertNotSentTo($investigator, IncidentEscalationNotification::class);
+        $this->assertNotNull($investigation->fresh()->reminder_sent_at);
+
+        Notification::fake();
+        Artisan::call('incidents:check-overdue');
+        Notification::assertNothingSent();
+    }
+
+    public function test_rca_escalation_still_runs_when_there_is_no_cqi_user(): void
+    {
+        Notification::fake();
+        $investigator = User::factory()->create(['role' => Role::Investigator]);
+        $incident = $this->assignedIncident($investigator);
+        app(InvestigationService::class)->start($incident, $investigator, StartInvestigationData::fromArray([
+            'objective' => 'x', 'methodology' => 'five_whys', 'target_completion_at' => now()->subDay()->toDateTimeString(),
+        ]));
+
+        Artisan::call('incidents:check-overdue');
+
+        Notification::assertSentTo($investigator, IncidentEscalationNotification::class);
     }
 }

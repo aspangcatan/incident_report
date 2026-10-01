@@ -12,6 +12,7 @@ use App\Enums\Severity;
 use App\Models\Department;
 use App\Models\IncidentType;
 use App\Models\User;
+use App\Notifications\DeadlineReminderNotification;
 use App\Notifications\IncidentEscalationNotification;
 use App\Services\CorrectiveActionService;
 use App\Services\IncidentService;
@@ -71,5 +72,59 @@ class CorrectiveActionEscalationTest extends TestCase
         Notification::fake();
         Artisan::call('incidents:check-overdue');
         Notification::assertNothingSent();
+    }
+
+    public function test_an_overdue_capa_goes_to_the_owner_and_the_department_head(): void
+    {
+        Notification::fake();
+        $incident = $this->incidentReadyForCapa();
+        $owner = User::factory()->create(['department_id' => $incident->department_id]);
+        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $executive = User::factory()->create(['role' => Role::Management]);
+        app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
+            'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
+            'due_date' => now()->subDay()->toDateString(), 'responsible_user_id' => $owner->id,
+        ]));
+
+        Artisan::call('incidents:check-overdue');
+
+        Notification::assertSentTo([$owner, $head], IncidentEscalationNotification::class);
+        Notification::assertNotSentTo($executive, IncidentEscalationNotification::class);
+    }
+
+    public function test_an_overdue_critical_capa_also_goes_to_executives(): void
+    {
+        Notification::fake();
+        $incident = $this->incidentReadyForCapa();
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $executive = User::factory()->create(['role' => Role::Management]);
+        app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
+            'description' => 'x', 'action_type' => 'corrective', 'priority' => 'critical',
+            'due_date' => now()->subDay()->toDateString(),
+        ]));
+
+        Artisan::call('incidents:check-overdue');
+
+        Notification::assertSentTo([$qso, $executive], IncidentEscalationNotification::class);
+    }
+
+    public function test_the_owner_gets_one_reminder_the_day_before(): void
+    {
+        Notification::fake();
+        $incident = $this->incidentReadyForCapa();
+        $owner = User::factory()->create(['department_id' => $incident->department_id]);
+        $capa = app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
+            'description' => 'x', 'action_type' => 'corrective', 'priority' => 'medium',
+            'due_date' => now()->addDay()->toDateString(), 'responsible_user_id' => $owner->id,
+        ]));
+
+        Artisan::call('incidents:check-overdue');
+
+        Notification::assertSentTo($owner, DeadlineReminderNotification::class);
+        $this->assertNotNull($capa->fresh()->reminder_sent_at);
+
+        Notification::fake();
+        Artisan::call('incidents:check-overdue');
+        Notification::assertNotSentTo($owner, DeadlineReminderNotification::class);
     }
 }
