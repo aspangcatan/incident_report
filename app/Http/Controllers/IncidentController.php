@@ -135,7 +135,7 @@ class IncidentController extends Controller
         $this->authorize('view', $incident);
 
         $incident->load([
-            'reporter', 'department', 'incidentTypes', 'assignedInvestigator', 'recommendedInvestigator', 'investigationSkippedBy', 'effectivenessCheckedBy',
+            'reporter', 'department', 'incidentTypes', 'assignedInvestigator', 'recommendedInvestigator', 'investigationSkippedBy', 'effectivenessCheckedBy', 'evidencePreservedBy',
             'individuals', 'witnesses', 'actions', 'narrativeEvents', 'contributingFactors', 'attachments.uploadedBy', 'attachments.correctiveAction', 'assessor',
         ]);
 
@@ -229,6 +229,7 @@ class IncidentController extends Controller
                 'createCorrectiveAction' => $canCreateCorrectiveAction,
                 'requestApproval' => $user->can('requestApproval', $incident),
                 'checkEffectiveness' => $user->can('checkEffectiveness', $incident),
+                'confirmEvidencePreserved' => $user->can('confirmEvidencePreserved', $incident),
                 'addEvidence' => $user->can('addEvidence', $incident),
                 'issueSafetyAlert' => $user->can('create', \App\Models\SafetyAlert::class),
                 'markNoCorrectiveActionNeeded' => $user->can('markNoCorrectiveActionNeeded', $incident),

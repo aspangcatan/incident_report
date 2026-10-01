@@ -219,6 +219,17 @@ class IncidentPolicy
             && $user->role === Role::CqiCommittee;
     }
 
+    /** Sentinel Event Pathway: the department's Head or Focal Person confirms records/equipment/evidence were preserved. */
+    public function confirmEvidencePreserved(User $user, Incident $incident): bool
+    {
+        return $incident->is_sentinel_event
+            && $incident->evidence_preserved_at === null
+            && $incident->status !== IncidentStatus::Closed
+            && in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)
+            && $incident->department_id !== null
+            && $incident->department_id === $user->department_id;
+    }
+
     public function markNoCorrectiveActionNeeded(User $user, Incident $incident): bool
     {
         if ($incident->status !== IncidentStatus::CorrectiveAction) {

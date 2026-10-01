@@ -78,6 +78,8 @@ class Incident extends Model
         'effectiveness_checked_by' => 'integer',
         'effectiveness_checked_at' => 'datetime',
         'effectiveness_notified_at' => 'datetime',
+        'evidence_preserved_at' => 'datetime',
+        'evidence_preserved_by' => 'integer',
         'lessons_published_at' => 'datetime',
         'assessment_escalated_at' => 'datetime',
     ];
@@ -127,6 +129,11 @@ class Incident extends Model
     public function effectivenessCheckedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'effectiveness_checked_by');
+    }
+
+    public function evidencePreservedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'evidence_preserved_by');
     }
 
     public function assessor(): BelongsTo

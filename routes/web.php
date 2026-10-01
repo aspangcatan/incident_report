@@ -46,6 +46,7 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::post('/incidents/{incident}/return-to-department', [IncidentWorkflowController::class, 'returnToDepartment'])->name('incidents.return-to-department');
     Route::post('/incidents/{incident}/assign', [IncidentWorkflowController::class, 'assign'])->name('incidents.assign');
     Route::post('/incidents/{incident}/effectiveness', [IncidentWorkflowController::class, 'recordEffectiveness'])->name('incidents.effectiveness');
+    Route::post('/incidents/{incident}/evidence-preserved', [IncidentWorkflowController::class, 'confirmEvidencePreserved'])->name('incidents.evidence-preserved');
     Route::post('/incidents/{incident}/skip-investigation', [IncidentWorkflowController::class, 'skipInvestigation'])->name('incidents.skip-investigation');
     Route::post('/incidents/{incident}/investigation', [InvestigationController::class, 'start'])->name('incidents.investigation.start');
     Route::post('/investigations/{investigation}/team-members', [InvestigationController::class, 'addTeamMember'])->name('investigations.team-members.store');

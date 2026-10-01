@@ -10,6 +10,7 @@ use App\Events\IncidentReturnedForRevision;
 use App\Events\IncidentReturnedToDepartment;
 use App\Events\IncidentReviewed;
 use App\Events\IncidentSubmitted;
+use App\Models\AuditLog;
 use App\Models\ContributingFactor;
 use App\Models\Incident;
 use App\Models\IncidentType;
@@ -159,6 +160,20 @@ class IncidentService
             }
 
             $incident->save();
+        });
+
+        return $incident;
+    }
+
+    /** Sentinel Event Pathway step 2. Tracking only - it blocks nothing. */
+    public function confirmEvidencePreserved(Incident $incident, User $confirmedBy): Incident
+    {
+        DB::transaction(function () use ($incident, $confirmedBy) {
+            $incident->evidence_preserved_at = now();
+            $incident->evidence_preserved_by = $confirmedBy->id;
+            $incident->save();
+
+            AuditLog::record($incident, 'evidence_preserved', 'Records, equipment and evidence confirmed preserved (Sentinel Event Pathway).');
         });
 
         return $incident;

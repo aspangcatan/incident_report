@@ -15,6 +15,7 @@ use App\Models\Incident;
 use App\Models\User;
 use App\Services\IncidentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class IncidentWorkflowController extends Controller
 {
@@ -37,6 +38,15 @@ class IncidentWorkflowController extends Controller
 
         return redirect()->route('incidents.show', ['incident' => $incident, 'tab' => $effective ? 'approvals' : 'capa'])
             ->with('success', $effective ? 'Recorded as effective - you can now request closure.' : 'Recorded as not effective - add new corrective actions.');
+    }
+
+    public function confirmEvidencePreserved(Request $request, Incident $incident): RedirectResponse
+    {
+        $this->authorize('confirmEvidencePreserved', $incident);
+
+        $this->incidents->confirmEvidencePreserved($incident, $request->user());
+
+        return redirect()->route('incidents.show', $incident)->with('success', 'Recorded: records, equipment and evidence are preserved.');
     }
 
     public function skipInvestigation(SkipInvestigationRequest $request, Incident $incident): RedirectResponse
