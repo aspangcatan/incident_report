@@ -17,7 +17,7 @@ class AlertOversightOfHighRiskIncident
     {
         $incident = $event->incident;
 
-        if (! in_array($incident->severity, [Severity::Level3High, Severity::Level4CriticalSentinel], true)) {
+        if (! ($incident->severity?->isHighOrAbove() ?? false)) {
             return;
         }
 

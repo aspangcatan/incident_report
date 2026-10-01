@@ -588,7 +588,7 @@ class IncidentReportingTest extends TestCase
             'action' => 'draft',
             'department_id' => $department->id,
             'incident_type_ids' => [$type->id],
-            'severity' => Severity::Level4CriticalSentinel->value,
+            'severity' => Severity::Level5Sentinel->value,
             'recommendations' => 'Install rails.',
             'actions_taken' => [['description' => 'Called doctor']],
             'contributing_factor_ids' => [$factor->id],

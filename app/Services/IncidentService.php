@@ -110,7 +110,7 @@ class IncidentService
             if ($severity !== null && $severity !== $incident->severity) {
                 $comments = trim("Severity changed from {$incident->severity?->label()} to {$severity->label()}. " . ($comments ?? ''));
                 $incident->severity = $severity;
-                $incident->is_sentinel_event = $severity === Severity::Level4CriticalSentinel;
+                $incident->is_sentinel_event = $severity->isSentinel();
             }
 
             $incident->auditComment = $comments;
@@ -221,7 +221,7 @@ class IncidentService
             $incident->assessed_by = $assessor->id;
             $incident->assessed_at = now();
             $incident->review_escalated_at = null;
-            $incident->is_sentinel_event = $incident->severity === Severity::Level4CriticalSentinel;
+            $incident->is_sentinel_event = $incident->severity?->isSentinel() ?? false;
             $incident->save();
         });
 

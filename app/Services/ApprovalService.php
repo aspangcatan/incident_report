@@ -101,7 +101,7 @@ class ApprovalService
 
     private function needsCommitteeSignOff(Incident $incident): bool
     {
-        return in_array($incident->severity, [Severity::Level3High, Severity::Level4CriticalSentinel], true);
+        return $incident->severity?->isHighOrAbove() ?? false;
     }
 
     /**

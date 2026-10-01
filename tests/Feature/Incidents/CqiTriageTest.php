@@ -61,12 +61,12 @@ class CqiTriageTest extends TestCase
         $incident = $this->assessed(Severity::Level2Moderate);
 
         $this->actingAs($this->cqi())
-            ->post("/incidents/{$incident->id}/review", ['severity' => Severity::Level4CriticalSentinel->value, 'comments' => 'Patient died.'])
+            ->post("/incidents/{$incident->id}/review", ['severity' => Severity::Level5Sentinel->value, 'comments' => 'Patient died.'])
             ->assertRedirect();
 
         $incident->refresh();
         $this->assertSame(IncidentStatus::Reviewed, $incident->status);
-        $this->assertSame(Severity::Level4CriticalSentinel, $incident->severity);
+        $this->assertSame(Severity::Level5Sentinel, $incident->severity);
         $this->assertTrue($incident->is_sentinel_event);
         $this->assertStringContainsString('Severity changed from', $incident->supervisor_comments);
     }

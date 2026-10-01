@@ -71,7 +71,7 @@ class DepartmentAssessmentTest extends TestCase
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $this->department->id]);
         $cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $incident = $this->submittedIncident();
-        app(IncidentService::class)->saveAssessment($incident, ['severity' => Severity::Level4CriticalSentinel->value]);
+        app(IncidentService::class)->saveAssessment($incident, ['severity' => Severity::Level5Sentinel->value]);
 
         app(IncidentService::class)->completeAssessment($incident->fresh(), $head);
 
@@ -116,7 +116,7 @@ class DepartmentAssessmentTest extends TestCase
 
         $this->actingAs($staff)->get("/incidents/{$incident->id}")->assertOk();
         $this->actingAs($staff)
-            ->post("/incidents/{$incident->id}/assessment", $this->payload(['severity' => Severity::Level4CriticalSentinel->value]))
+            ->post("/incidents/{$incident->id}/assessment", $this->payload(['severity' => Severity::Level5Sentinel->value]))
             ->assertSessionHasNoErrors();
 
         $incident->refresh();

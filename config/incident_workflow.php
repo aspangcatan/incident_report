@@ -18,7 +18,8 @@ return [
         'level_1_low' => 120,
         'level_2_moderate' => 72,
         'level_3_high' => 48,
-        'level_4_critical_sentinel' => 24,
+        'level_4_critical' => 24,
+        'level_5_sentinel' => 24,
     ],
 
     /*
@@ -30,7 +31,8 @@ return [
         'level_1_low' => 240,
         'level_2_moderate' => 168,
         'level_3_high' => 120,
-        'level_4_critical_sentinel' => 72,
+        'level_4_critical' => 72,
+        'level_5_sentinel' => 72,
     ],
 
     /*
@@ -42,7 +44,8 @@ return [
         'level_1_low' => 120,
         'level_2_moderate' => 72,
         'level_3_high' => 48,
-        'level_4_critical_sentinel' => 24,
+        'level_4_critical' => 24,
+        'level_5_sentinel' => 24,
     ],
 
     /*

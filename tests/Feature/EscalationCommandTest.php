@@ -31,7 +31,7 @@ class EscalationCommandTest extends TestCase
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
             'incident_type_ids' => [$incidentType->id],
-            'severity' => Severity::Level4CriticalSentinel->value,
+            'severity' => Severity::Level5Sentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU',
             'summary' => 'Overdue test incident.',
@@ -179,7 +179,7 @@ class EscalationCommandTest extends TestCase
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
             'incident_type_ids' => [$incidentType->id],
-            'severity' => Severity::Level4CriticalSentinel->value,
+            'severity' => Severity::Level5Sentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU',
             'summary' => 'Escalated at review, then again at assignment.',
@@ -225,7 +225,7 @@ class EscalationCommandTest extends TestCase
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
             'incident_type_ids' => [$incidentType->id],
-            'severity' => Severity::Level4CriticalSentinel->value,
+            'severity' => Severity::Level5Sentinel->value,
             'occurred_at' => now(),
             'location' => 'ICU',
             'summary' => 'Escalated, returned, reassessed, escalated again.',
@@ -306,7 +306,7 @@ class EscalationCommandTest extends TestCase
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
             'incident_type_ids' => [$incidentType->id],
-            'severity' => Severity::Level4CriticalSentinel->value, // review SLA 24h
+            'severity' => Severity::Level5Sentinel->value, // review SLA 24h
             'occurred_at' => now(),
             'location' => 'ER',
             'summary' => 'Review SLA counted from assessment completion.',

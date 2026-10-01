@@ -118,7 +118,8 @@ class ApprovalTest extends TestCase
             Severity::Level1Low,
             Severity::Level2Moderate,
             Severity::Level3High,
-            Severity::Level4CriticalSentinel,
+            Severity::Level4Critical,
+            Severity::Level5Sentinel,
         ];
 
         foreach ($cases as $severity) {
@@ -560,7 +561,7 @@ class ApprovalTest extends TestCase
 
     public function test_the_committee_can_return_a_high_risk_closure_to_the_department(): void
     {
-        $incident = $this->incidentReadyForApproval(Severity::Level4CriticalSentinel);
+        $incident = $this->incidentReadyForApproval(Severity::Level5Sentinel);
         $first = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
         app(ApprovalService::class)->approve($first, User::factory()->create(['role' => Role::QualitySafetyOfficer]), DecideApprovalData::fromArray(['comments' => 'OK.']));
         $second = $incident->approvals()->latest('id')->first();
@@ -569,6 +570,16 @@ class ApprovalTest extends TestCase
         $this->actingAs($committee)->post("/approvals/{$second->id}/return", ['comments' => 'Retrain all staff first.'])->assertRedirect();
 
         $this->assertSame(IncidentStatus::CorrectiveAction, $incident->fresh()->status);
+    }
+
+    public function test_a_critical_closure_also_needs_the_committee(): void
+    {
+        $incident = $this->incidentReadyForApproval(Severity::Level4Critical);
+        $first = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
+        app(ApprovalService::class)->approve($first, User::factory()->create(['role' => Role::QualitySafetyOfficer]), DecideApprovalData::fromArray(['comments' => 'OK.']));
+
+        $this->assertSame(IncidentStatus::ForApproval, $incident->fresh()->status);
+        $this->assertSame(2, $incident->approvals()->count());
     }
 
     public function test_a_moderate_closure_closes_on_the_cqi_offices_approval_alone(): void
