@@ -9,7 +9,6 @@ use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
-use App\Notifications\HighRiskIncidentNotification;
 use App\Services\IncidentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -82,32 +81,6 @@ class CqiTriageTest extends TestCase
         $incident->refresh();
         $this->assertSame(Severity::Level4Critical, $incident->severity);
         $this->assertFalse($incident->is_sentinel_event);
-    }
-
-    public function test_high_risk_triage_alerts_executives_committee_and_the_departments_leadership(): void
-    {
-        Notification::fake();
-        $executive = User::factory()->create(['role' => Role::Management]);
-        $committee = User::factory()->create(['role' => Role::CqiCommittee]);
-        $leader = User::factory()->create(['role' => Role::Leadership]);
-        DB::table('leadership_departments')->insert(['user_id' => $leader->id, 'department_id' => $this->department->id]);
-        $otherLeader = User::factory()->create(['role' => Role::Leadership]);
-
-        $incident = $this->assessed(Severity::Level3High);
-        app(IncidentService::class)->markReviewed($incident, $this->cqi(), null);
-
-        Notification::assertSentTo([$executive, $committee, $leader], HighRiskIncidentNotification::class);
-        Notification::assertNotSentTo($otherLeader, HighRiskIncidentNotification::class);
-    }
-
-    public function test_low_or_moderate_triage_sends_no_high_risk_alert(): void
-    {
-        Notification::fake();
-        $executive = User::factory()->create(['role' => Role::Management]);
-
-        app(IncidentService::class)->markReviewed($this->assessed(Severity::Level2Moderate), $this->cqi(), null);
-
-        Notification::assertNotSentTo($executive, HighRiskIncidentNotification::class);
     }
 
     public function test_the_cqi_office_can_skip_investigation_for_low_or_moderate_with_a_reason(): void

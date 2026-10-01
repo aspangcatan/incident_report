@@ -106,6 +106,8 @@ class IncidentService
     /** CQI triage. A new $severity overrides the department's classification. */
     public function markReviewed(Incident $incident, User $reviewer, ?string $comments, ?Severity $severity = null): Incident
     {
+        $previousSeverity = $incident->severity;
+
         DB::transaction(function () use ($incident, $reviewer, $comments, $severity) {
             if ($severity !== null && $severity !== $incident->severity) {
                 $comments = trim("Severity changed from {$incident->severity?->label()} to {$severity->label()}. " . ($comments ?? ''));
@@ -121,7 +123,7 @@ class IncidentService
             $incident->save();
         });
 
-        IncidentReviewed::dispatch($incident);
+        IncidentReviewed::dispatch($incident, $reviewer, $previousSeverity);
 
         return $incident;
     }
@@ -225,7 +227,7 @@ class IncidentService
             $incident->save();
         });
 
-        IncidentAssessed::dispatch($incident);
+        IncidentAssessed::dispatch($incident, $assessor);
 
         return $incident;
     }

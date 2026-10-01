@@ -23,7 +23,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         \App\Events\IncidentReviewed::class => [
             \App\Listeners\NotifyReporterOfReviewOutcome::class,
-            \App\Listeners\AlertOversightOfHighRiskIncident::class,
+            \App\Listeners\SendSeverityAlert::class,
         ],
         \App\Events\IncidentReturnedForRevision::class => [
             \App\Listeners\NotifyReporterOfReturnForRevision::class,
@@ -33,6 +33,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         \App\Events\IncidentAssessed::class => [
             \App\Listeners\NotifyReviewersOfAssessedIncident::class,
+            \App\Listeners\SendSeverityAlert::class,
         ],
         \App\Events\IncidentReturnedToDepartment::class => [
             \App\Listeners\NotifyDepartmentHeadsOfReturn::class,

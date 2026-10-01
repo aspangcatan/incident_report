@@ -6,8 +6,8 @@ use App\Models\Incident;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-/** High/Sentinel alert for Executives, the CQI Committee and the department's Leadership. */
-class HighRiskIncidentNotification extends Notification
+/** Immediate alert for Moderate and above, per the client's Escalation & Notification Matrix. */
+class SeverityAlertNotification extends Notification
 {
     use Queueable;
 
@@ -22,12 +22,14 @@ class HighRiskIncidentNotification extends Notification
 
     public function toDatabase($notifiable): array
     {
+        $severity = $this->incident->severity;
         $department = $this->incident->department?->name ?? 'an unknown department';
+        $number = $this->incident->incident_number ?? "#{$this->incident->id}";
 
         return [
             'incident_id' => $this->incident->id,
             'incident_number' => $this->incident->incident_number,
-            'message' => "High-risk alert: {$this->incident->incident_number} ({$department}) was triaged as {$this->incident->severity->label()}.",
+            'message' => "{$severity->label()} incident: {$number} ({$department}) was rated {$severity->romanNumeral()} – {$severity->label()}.",
         ];
     }
 }
