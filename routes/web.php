@@ -92,4 +92,5 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::put('/admin/leadership/{user}', [LeadershipDepartmentController::class, 'update'])->name('admin.leadership.update');
     Route::get('/admin/incident-types', [IncidentTypeController::class, 'index'])->name('admin.incident-types.index');
     Route::post('/admin/incident-types', [IncidentTypeController::class, 'store'])->name('admin.incident-types.store');
+    Route::put('/admin/incident-types/{incidentType}', [IncidentTypeController::class, 'update'])->name('admin.incident-types.update');
 });

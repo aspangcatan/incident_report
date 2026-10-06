@@ -168,4 +168,88 @@ class IncidentTypeSettingsTest extends TestCase
 
         $this->assertSame(0, IncidentType::count());
     }
+
+    private function editPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'name' => 'Falls',
+            'category' => 'injury',
+            'default_severity' => null,
+            'is_active' => true,
+        ], $overrides);
+    }
+
+    public function test_the_it_admin_edits_a_type(): void
+    {
+        $type = IncidentType::factory()->create(['name' => 'Fall', 'category' => 'injury']);
+
+        $this->actingAs($this->admin())
+            ->put("/admin/incident-types/{$type->id}", $this->editPayload([
+                'name' => 'Falls',
+                'category' => 'clinical',
+                'default_severity' => 'level_4_critical',
+                'is_active' => false,
+            ]))->assertSessionHasNoErrors()->assertRedirect();
+
+        $type->refresh();
+        $this->assertSame('Falls', $type->name);
+        $this->assertSame('clinical', $type->category);
+        $this->assertSame(Severity::Level4Critical, $type->default_severity);
+        $this->assertFalse($type->is_active);
+    }
+
+    public function test_editing_can_clear_the_default_severity_and_keep_the_same_name(): void
+    {
+        $type = IncidentType::factory()->create(['name' => 'Falls', 'category' => 'injury', 'default_severity' => Severity::Level3High]);
+
+        $this->actingAs($this->admin())
+            ->put("/admin/incident-types/{$type->id}", $this->editPayload())
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($type->fresh()->default_severity);
+    }
+
+    public function test_editing_rejects_another_types_name(): void
+    {
+        IncidentType::factory()->create(['name' => 'Spills']);
+        $type = IncidentType::factory()->create(['name' => 'Falls', 'category' => 'injury']);
+
+        $this->actingAs($this->admin())
+            ->put("/admin/incident-types/{$type->id}", $this->editPayload(['name' => 'Spills']))
+            ->assertSessionHasErrors('name');
+
+        $this->assertSame('Falls', $type->fresh()->name);
+    }
+
+    public function test_a_type_in_use_can_still_be_edited_and_switched_off(): void
+    {
+        $type = IncidentType::factory()->create(['name' => 'Falls', 'category' => 'injury']);
+        $this->incidentUsing($type);
+
+        $this->actingAs($this->admin())
+            ->put("/admin/incident-types/{$type->id}", $this->editPayload(['is_active' => false]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse($type->fresh()->is_active);
+    }
+
+    public function test_other_roles_cannot_edit_a_type(): void
+    {
+        $type = IncidentType::factory()->create(['name' => 'Falls', 'category' => 'injury']);
+
+        $this->actingAs(User::factory()->create(['role' => Role::QualitySafetyOfficer]))
+            ->put("/admin/incident-types/{$type->id}", $this->editPayload(['name' => 'Changed']))
+            ->assertForbidden();
+
+        $this->assertSame('Falls', $type->fresh()->name);
+    }
+
+    public function test_an_inactive_type_is_not_offered_in_the_report_wizard(): void
+    {
+        $active = IncidentType::factory()->create(['name' => 'Falls']);
+        $inactive = IncidentType::factory()->create(['name' => 'Spills', 'is_active' => false]);
+
+        $this->actingAs(User::factory()->create(['role' => Role::Staff]))->get('/incidents/create')
+            ->assertInertia(fn ($page) => $page->has('incidentTypes', 1)->where('incidentTypes.0.id', $active->id));
+    }
 }

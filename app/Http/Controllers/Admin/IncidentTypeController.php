@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\IncidentTypes\StoreIncidentTypeRequest;
+use App\Http\Requests\IncidentTypes\UpdateIncidentTypeRequest;
 use App\Http\Resources\IncidentTypeResource;
 use App\Models\IncidentType;
 use App\Services\IncidentTypeService;
@@ -37,5 +38,12 @@ class IncidentTypeController extends Controller
         $type = $this->service->create($request->toDto());
 
         return back()->with('success', "Incident type \"{$type->name}\" added.");
+    }
+
+    public function update(UpdateIncidentTypeRequest $request, IncidentType $incidentType): RedirectResponse
+    {
+        $this->service->update($incidentType, $request->toDto());
+
+        return back()->with('success', "Incident type \"{$incidentType->name}\" saved.");
     }
 }
