@@ -215,6 +215,7 @@ class User extends Authenticatable
     public function headedDepartmentIds(): array
     {
         return $this->headedDepartmentIdsCache ??= Department::where('head', $this->id)
+            ->where('description', '!=', '-') // placeholder rows, same rule as Department::scopeSelectable
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();

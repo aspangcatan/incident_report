@@ -36,6 +36,15 @@ class SectionHeadTest extends TestCase
         $this->assertFalse($user->isDepartmentHead());
     }
 
+    public function test_heading_only_a_placeholder_section_does_not_make_a_department_head(): void
+    {
+        $placeholder = Department::factory()->create(['description' => '-']);
+        $user = User::factory()->headOf($placeholder)->create();
+
+        $this->assertSame([], $user->headedDepartmentIds());
+        $this->assertFalse($user->isDepartmentHead());
+    }
+
     public function test_heading_a_section_keeps_the_ir_level(): void
     {
         $section = Department::factory()->create();
