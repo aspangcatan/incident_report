@@ -84,6 +84,7 @@ const allNavGroups = [
         can: 'administration',
         items: [
             { label: 'Leadership Coverage', icon: 'building', href: '/admin/leadership' },
+            { label: 'Incident Types', icon: 'tags', href: '/admin/incident-types', can: 'manageIncidentTypes' },
             { label: 'Escalation Engine', icon: 'sitemap', href: '#' },
             { label: 'Departments & Units', icon: 'building', href: '#' },
             { label: 'Audit Trail & Custody', icon: 'file-contract', href: '#' },
