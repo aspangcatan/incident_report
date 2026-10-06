@@ -68,8 +68,12 @@ class RecurrenceReview extends Model
         return $query->where(function (Builder $q) use ($user) {
             $q->where('assigned_to', $user->id);
 
-            if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true) && $user->department_id !== null) {
+            if ($user->role === Role::Supervisor && $user->department_id !== null) {
                 $q->orWhere('department_id', $user->department_id);
+            }
+
+            if ($user->isDepartmentHead()) {
+                $q->orWhereIn('department_id', $user->headedDepartmentIds());
             }
 
             if ($user->role === Role::Leadership) {

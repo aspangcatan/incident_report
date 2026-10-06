@@ -28,14 +28,20 @@ final class CorrectiveActionQueueQuery
     /** Also the sidebar's capaOperations flag. */
     public static function allowed(User $user): bool
     {
-        return in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer], true)
+        return self::oversees($user)
             || CorrectiveAction::where('responsible_user_id', $user->id)->exists();
+    }
+
+    /** Focal Persons, Department Heads and the CQI Office oversee CAPAs. */
+    private static function oversees(User $user): bool
+    {
+        return in_array($user->role, [Role::Supervisor, Role::QualitySafetyOfficer], true) || $user->isDepartmentHead();
     }
 
     public static function builder(string $queue, User $user): Builder
     {
         // Focal Persons, Department Heads and the CQI Office oversee CAPAs; everyone else sees only their own.
-        $query = in_array($user->role, [Role::Supervisor, Role::DepartmentHead, Role::QualitySafetyOfficer], true)
+        $query = self::oversees($user)
             ? CorrectiveAction::query()->where(fn (Builder $q) => $q
                 ->whereIn('incident_id', Incident::query()->select('id')->visibleTo($user))
                 ->orWhere('responsible_user_id', $user->id))

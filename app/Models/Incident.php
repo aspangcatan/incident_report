@@ -217,19 +217,22 @@ class Incident extends Model
             $q->where('reporter_id', $user->id)
                 ->orWhere('assigned_investigator_id', $user->id);
 
-            if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+            if ($user->role === Role::Supervisor) {
                 // Without a department they get no department clause, only the shared ones.
                 if ($user->department_id !== null) {
                     $q->orWhere('department_id', $user->department_id);
                 }
             } elseif ($user->role === Role::Leadership) {
                 $q->orWhereIn('department_id', $user->leadershipDepartmentIds());
-            } else {
-                if ($user->department_id !== null) {
-                    $q->orWhere(fn (Builder $q) => $q
-                        ->where('status', IncidentStatus::Submitted)
-                        ->where('department_id', $user->department_id));
-                }
+            } elseif ($user->department_id !== null) {
+                $q->orWhere(fn (Builder $q) => $q
+                    ->where('status', IncidentStatus::Submitted)
+                    ->where('department_id', $user->department_id));
+            }
+
+            // Department/Service Heads see every incident of the sections they head.
+            if ($user->isDepartmentHead()) {
+                $q->orWhereIn('department_id', $user->headedDepartmentIds());
             }
 
             // Investigation team members and CAPA owners can open the incidents they work on.

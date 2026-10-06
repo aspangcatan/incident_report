@@ -13,7 +13,7 @@ use App\Models\User;
 
 class IncidentPolicy
 {
-    /** The IT/System Administrator is technical only: no incident lists beyond their own reports. */
+    /** The IT/System Administrator is technical only: no incident lists beyond their own reports, unless they head a section. */
     public function viewAny(User $user): bool
     {
         return ! in_array($user->role, [Role::Staff, Role::Administrator], true) || $user->isDepartmentHead();

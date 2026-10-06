@@ -90,4 +90,25 @@ class SectionHeadTest extends TestCase
         $this->assertTrue($leader->can('completeAssessment', $this->submittedIncident($headed)));
         $this->assertFalse($leader->can('view', $this->submittedIncident($other)));
     }
+
+    public function test_a_head_lists_incidents_and_gets_queues_for_the_sections_they_head(): void
+    {
+        [$own, $headed, $other] = Department::factory()->count(3)->create();
+        $head = User::factory()->headOf($headed)->create(['department_id' => $own->id]);
+        $visible = $this->submittedIncident($headed);
+        $hidden = $this->submittedIncident($other);
+
+        $ids = Incident::query()->visibleTo($head)->pluck('id')->all();
+        $this->assertContains($visible->id, $ids);
+        $this->assertNotContains($hidden->id, $ids);
+
+        $this->assertTrue(\App\Queries\IncidentQueueQuery::investigationWorkspace($head));
+        $this->assertTrue(\App\Queries\CorrectiveActionQueueQuery::allowed($head));
+
+        $this->actingAs($head)->get('/')->assertInertia(fn ($page) => $page
+            ->where('auth.can.viewAllIncidents', true)
+            ->where('auth.can.viewAnalytics', true)
+            ->where('auth.can.investigationWorkspace', true)
+            ->where('auth.can.capaOperations', true));
+    }
 }
