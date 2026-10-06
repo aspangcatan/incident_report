@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -48,6 +48,11 @@ function closeForm() {
     editing.value = null;
 }
 
+// Escape closes the pop-up wherever focus is (Save disables itself while saving, which drops focus).
+const closeOnEscape = (event) => event.key === 'Escape' && formOpen.value && closeForm();
+onMounted(() => window.addEventListener('keydown', closeOnEscape));
+onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape));
+
 function save() {
     const options = { preserveScroll: true, onSuccess: closeForm };
     if (editing.value) {
@@ -75,7 +80,6 @@ function destroy(type) {
                 </p>
             </div>
             <button
-                v-if="!formOpen"
                 type="button"
                 class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold"
                 @click="openAdd"
@@ -84,68 +88,84 @@ function destroy(type) {
             </button>
         </div>
 
-        <form
+        <div
             v-if="formOpen"
-            class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md max-w-2xl"
-            @submit.prevent="save"
+            class="fixed inset-0 z-[100] flex items-center justify-center p-space-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="type_form_title"
         >
-            <h2 class="font-title-lg text-title-lg text-primary font-bold">
-                {{ editing ? `Edit "${editing.name}"` : 'Add incident type' }}
-            </h2>
+            <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="closeForm" />
+            <form
+                class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-surface-container-lowest shadow-xl p-space-lg flex flex-col gap-space-md"
+                @submit.prevent="save"
+            >
+                <div class="flex items-start justify-between gap-space-md">
+                    <div class="flex flex-col gap-1">
+                        <h2 id="type_form_title" class="font-title-lg text-title-lg text-primary font-bold">
+                            {{ editing ? 'Edit incident type' : 'Add incident type' }}
+                        </h2>
+                        <p class="font-body-sm text-body-sm text-outline">
+                            {{ editing ? `Change the details of "${editing.name}", then press Save.` : 'Fill in the details below, then press Save.' }}
+                        </p>
+                    </div>
+                    <button type="button" class="px-2 rounded-lg text-title-lg leading-none text-outline hover:bg-surface-container" aria-label="Close" @click="closeForm">×</button>
+                </div>
 
-            <div class="flex flex-col gap-1.5">
-                <label for="type_name" class="font-label-md text-label-md text-on-surface font-semibold">Name</label>
-                <input id="type_name" v-model="form.name" type="text" maxlength="255" class="w-full p-3 rounded-lg bg-surface-container-low" />
-                <span class="font-body-sm text-body-sm text-outline">Shown to reporters in the incident form.</span>
-                <span v-if="form.errors.name" class="font-body-sm text-body-sm text-error">{{ form.errors.name }}</span>
-            </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="type_name" class="font-label-md text-label-md text-on-surface font-semibold">Name</label>
+                    <input id="type_name" v-model="form.name" type="text" maxlength="255" class="w-full p-3 rounded-lg bg-surface-container-low" />
+                    <span class="font-body-sm text-body-sm text-outline">Shown to reporters in the incident form.</span>
+                    <span v-if="form.errors.name" class="font-body-sm text-body-sm text-error">{{ form.errors.name }}</span>
+                </div>
 
-            <div class="flex flex-col gap-1.5">
-                <label for="type_category" class="font-label-md text-label-md text-on-surface font-semibold">Category</label>
-                <select id="type_category" v-model="form.category" class="w-full p-3 rounded-lg bg-surface-container-low">
-                    <option value="" disabled>Choose a category</option>
-                    <option v-for="category in categories" :key="category.value" :value="category.value">{{ category.label }}</option>
-                </select>
-                <span class="font-body-sm text-body-sm text-outline">Groups similar types together.</span>
-                <span v-if="form.errors.category" class="font-body-sm text-body-sm text-error">{{ form.errors.category }}</span>
-            </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="type_category" class="font-label-md text-label-md text-on-surface font-semibold">Category</label>
+                    <select id="type_category" v-model="form.category" class="w-full p-3 rounded-lg bg-surface-container-low">
+                        <option value="" disabled>Choose a category</option>
+                        <option v-for="category in categories" :key="category.value" :value="category.value">{{ category.label }}</option>
+                    </select>
+                    <span class="font-body-sm text-body-sm text-outline">Groups similar types together.</span>
+                    <span v-if="form.errors.category" class="font-body-sm text-body-sm text-error">{{ form.errors.category }}</span>
+                </div>
 
-            <div class="flex flex-col gap-1.5">
-                <label for="type_severity" class="font-label-md text-label-md text-on-surface font-semibold">Default severity</label>
-                <select id="type_severity" v-model="form.default_severity" class="w-full p-3 rounded-lg bg-surface-container-low">
-                    <option :value="null">No default</option>
-                    <option v-for="severity in SEVERITIES" :key="severity.value" :value="severity.value">
-                        {{ severity.numeral }} – {{ severity.label }}
-                    </option>
-                </select>
-                <span class="font-body-sm text-body-sm text-outline">
-                    {{ chosenSeverity ? chosenSeverity.meaning : 'Pre-selected level for this type. Leave as No default if it varies.' }}
-                </span>
-                <span v-if="form.errors.default_severity" class="font-body-sm text-body-sm text-error">{{ form.errors.default_severity }}</span>
-            </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="type_severity" class="font-label-md text-label-md text-on-surface font-semibold">Default severity</label>
+                    <select id="type_severity" v-model="form.default_severity" class="w-full p-3 rounded-lg bg-surface-container-low">
+                        <option :value="null">No default</option>
+                        <option v-for="severity in SEVERITIES" :key="severity.value" :value="severity.value">
+                            {{ severity.numeral }} – {{ severity.label }}
+                        </option>
+                    </select>
+                    <span class="font-body-sm text-body-sm text-outline">
+                        {{ chosenSeverity ? chosenSeverity.meaning : 'Pre-selected level for this type. Leave as No default if it varies.' }}
+                    </span>
+                    <span v-if="form.errors.default_severity" class="font-body-sm text-body-sm text-error">{{ form.errors.default_severity }}</span>
+                </div>
 
-            <div class="flex flex-col gap-1.5">
-                <label class="flex items-center gap-2 font-label-md text-label-md text-on-surface font-semibold">
-                    <input v-model="form.is_active" type="checkbox" />
-                    Active
-                </label>
-                <span class="font-body-sm text-body-sm text-outline">Off hides this type from new reports. Past reports keep it.</span>
-                <span v-if="form.errors.is_active" class="font-body-sm text-body-sm text-error">{{ form.errors.is_active }}</span>
-            </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="flex items-center gap-2 font-label-md text-label-md text-on-surface font-semibold">
+                        <input v-model="form.is_active" type="checkbox" />
+                        Active
+                    </label>
+                    <span class="font-body-sm text-body-sm text-outline">Off hides this type from new reports. Past reports keep it.</span>
+                    <span v-if="form.errors.is_active" class="font-body-sm text-body-sm text-error">{{ form.errors.is_active }}</span>
+                </div>
 
-            <div class="flex gap-space-sm">
-                <button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60"
-                >
-                    Save
-                </button>
-                <button type="button" class="px-4 py-2 rounded-lg bg-surface-container font-label-md text-label-md text-on-surface" @click="closeForm">
-                    Cancel
-                </button>
-            </div>
-        </form>
+                <div class="flex justify-end gap-space-sm pt-space-sm">
+                    <button type="button" class="px-4 py-2 rounded-lg bg-surface-container font-label-md text-label-md text-on-surface" @click="closeForm">
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="form.processing"
+                        class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold disabled:opacity-60"
+                    >
+                        {{ form.processing ? 'Saving…' : 'Save' }}
+                    </button>
+                </div>
+            </form>
+        </div>
 
         <div class="rounded-xl bg-surface-container-lowest shadow-sm overflow-x-auto">
             <table class="w-full text-left">
