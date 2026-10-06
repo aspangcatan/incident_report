@@ -39,12 +39,15 @@ class StoreRecurrenceReviewRequest extends FormRequest
         return ['assigned_to' => 'assigned to', 'cqi_notes' => 'what to look into'];
     }
 
-    /** Who can own a review for a department: its active Head(s) and Safety Focal Person(s). */
+    /** Who can own a review for a department: its active Head (section head) and Safety Focal Person(s). */
     public static function assignees(int $departmentId)
     {
+        $headId = Department::whereKey($departmentId)->value('head');
+
         return User::active()
-            ->withRole([\App\Enums\Role::DepartmentHead, \App\Enums\Role::Supervisor])
-            ->where('section', $departmentId)
+            ->where(fn ($q) => $q
+                ->where(fn ($q) => $q->withRole(\App\Enums\Role::Supervisor)->where('section', $departmentId))
+                ->when($headId, fn ($q) => $q->orWhere('id', $headId)))
             ->orderByName()
             ->get();
     }

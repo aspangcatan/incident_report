@@ -111,4 +111,33 @@ class SectionHeadTest extends TestCase
             ->where('auth.can.investigationWorkspace', true)
             ->where('auth.can.capaOperations', true));
     }
+
+    public function test_the_section_head_is_notified_and_a_non_head_colleague_is_not(): void
+    {
+        $section = Department::factory()->create();
+        $head = User::factory()->headOf($section)->create();          // lives in another section
+        $colleague = User::factory()->create(['department_id' => $section->id]);
+        $incident = $this->submittedIncident($section);
+
+        $reviewers = \App\Support\IncidentReviewers::for($incident)->pluck('id')->all();
+        $this->assertContains($head->id, $reviewers);
+        $this->assertNotContains($colleague->id, $reviewers);
+        $this->assertSame([$head->id], \App\Support\IncidentReviewers::departmentHeads($incident)->pluck('id')->all());
+    }
+
+    public function test_an_inactive_head_is_not_notified(): void
+    {
+        $section = Department::factory()->create();
+        User::factory()->inactive()->headOf($section)->create();
+
+        $this->assertCount(0, \App\Support\IncidentReviewers::departmentHeads($this->submittedIncident($section)));
+    }
+
+    public function test_a_recurrence_review_can_be_assigned_to_the_section_head(): void
+    {
+        $section = Department::factory()->create();
+        $head = User::factory()->headOf($section)->create();
+
+        $this->assertContains($head->id, \App\Http\Requests\RecurrenceReviews\StoreRecurrenceReviewRequest::assignees($section->id)->pluck('id')->all());
+    }
 }
