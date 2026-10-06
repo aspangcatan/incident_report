@@ -442,3 +442,18 @@ For incidents rated **Level V – Sentinel** (`is_sentinel_event = true`) the in
 | 6 Learning and prevention documented | `lessons_learned` recorded (published at closure) |
 
 Step 2 is the only manual step: `POST /incidents/{incident}/evidence-preserved` (`IncidentWorkflowController::confirmEvidencePreserved` → `IncidentService::confirmEvidencePreserved`, audit action `evidence_preserved`). `IncidentPolicy::confirmEvidencePreserved`: sentinel, not yet confirmed, not closed, user is the **Focal Person (supervisor) or Department Head of the incident's department**. It is **tracking only** - nothing is blocked by it (clinical response comes first). RCA tools stay optional for sentinel events (the formal investigation is already mandatory for High+).
+
+## 9q. Incident Types settings (2026-10-06)
+
+Spec/plan: `docs/superpowers/specs/2026-10-06-incident-types-settings-design.md`, `docs/superpowers/plans/2026-10-06-incident-types-settings.md`.
+
+The IT Admin (`administrator`) manages the incident type list from a settings page instead of seeding/editing the database.
+
+- **Access:** IT Admin only, via `App\Policies\IncidentTypePolicy` and the shared Inertia prop `auth.can.manageIncidentTypes`. The sidebar link "Incident Types" sits under "Administration & Audit"; the CQI Office still sees that group but not this link.
+- **Routes** (`Admin\IncidentTypeController`): `GET /admin/incident-types` (index), `POST /admin/incident-types` (store), `PUT /admin/incident-types/{incidentType}` (update), `DELETE /admin/incident-types/{incidentType}` (destroy).
+- **Fields:** `name` (unique), `category` (one of `IncidentType::CATEGORIES`: injury, clinical, exposure, security, property, environment, conduct), `default_severity` (optional), `active`.
+- **Delete only when unused:** `IncidentType::isInUse()` checks the `incident_incident_type` pivot, the legacy `incidents.incident_type_id`, and `recurrence_reviews`. An in-use type returns 403 and the UI tells the admin to switch it off instead.
+- **Active flag:** inactive types drop out of the report wizard, the public guest form and the Trends filter. Existing reports keep their type.
+- **`default_severity` is stored only.** Nothing in the workflow reads it yet; a later "suggested severity on submit" feature may.
+- **Pattern (trimmed layered):** FormRequests, `IncidentTypeData` DTO, `IncidentTypeService`, `IncidentTypePolicy`, `IncidentTypeResource`. No Repository, Action or Query classes, and no migration (the table already existed).
+- **Tests:** `tests/Feature/Admin/IncidentTypeSettingsTest.php` (21 tests).
