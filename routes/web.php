@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\IncidentTypeController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
@@ -89,4 +90,6 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
 
     Route::get('/admin/leadership', [LeadershipDepartmentController::class, 'index'])->name('admin.leadership.index');
     Route::put('/admin/leadership/{user}', [LeadershipDepartmentController::class, 'update'])->name('admin.leadership.update');
+    Route::get('/admin/incident-types', [IncidentTypeController::class, 'index'])->name('admin.incident-types.index');
+    Route::post('/admin/incident-types', [IncidentTypeController::class, 'store'])->name('admin.incident-types.store');
 });

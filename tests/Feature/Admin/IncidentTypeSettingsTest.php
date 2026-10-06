@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Enums\RecurrenceReviewStatus;
 use App\Enums\Role;
+use App\Enums\Severity;
 use App\Models\Department;
 use App\Models\Incident;
 use App\Models\IncidentType;
@@ -79,5 +80,92 @@ class IncidentTypeSettingsTest extends TestCase
         $this->recurrenceReviewUsing($type);
 
         $this->assertTrue($type->fresh()->isInUse());
+    }
+
+    public function test_only_the_it_admin_can_open_the_page(): void
+    {
+        $this->actingAs($this->admin())->get('/admin/incident-types')->assertOk();
+
+        foreach ([Role::QualitySafetyOfficer, Role::DepartmentHead, Role::Staff, Role::Management] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))
+                ->get('/admin/incident-types')->assertForbidden();
+        }
+    }
+
+    public function test_the_page_lists_types_with_usage_and_options(): void
+    {
+        $used = IncidentType::factory()->create(['name' => 'Falls', 'category' => 'injury', 'default_severity' => Severity::Level3High]);
+        $this->incidentUsing($used);
+        IncidentType::factory()->create(['name' => 'Spills', 'category' => 'environment', 'is_active' => false]);
+
+        $this->actingAs($this->admin())->get('/admin/incident-types')
+            ->assertInertia(fn ($page) => $page->component('Admin/IncidentTypes')
+                ->has('types', 2)
+                ->where('types.0.name', 'Falls')
+                ->where('types.0.category_label', 'Injury')
+                ->where('types.0.default_severity', 'level_3_high')
+                ->where('types.0.usage_count', 1)
+                ->where('types.0.can_delete', false)
+                ->where('types.1.name', 'Spills')
+                ->where('types.1.is_active', false)
+                ->where('types.1.default_severity', null)
+                ->where('types.1.can_delete', true)
+                ->has('categories', 7)
+                ->where('categories.0', ['value' => 'injury', 'label' => 'Injury']));
+    }
+
+    public function test_the_it_admin_adds_a_type(): void
+    {
+        $this->actingAs($this->admin())->post('/admin/incident-types', [
+            'name' => 'Elopement',
+            'category' => 'security',
+            'default_severity' => 'level_2_moderate',
+            'is_active' => true,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $type = IncidentType::where('name', 'Elopement')->first();
+        $this->assertSame('security', $type->category);
+        $this->assertSame(Severity::Level2Moderate, $type->default_severity);
+        $this->assertTrue($type->is_active);
+    }
+
+    public function test_adding_a_type_without_a_default_severity(): void
+    {
+        $this->actingAs($this->admin())->post('/admin/incident-types', [
+            'name' => 'Elopement',
+            'category' => 'security',
+            'default_severity' => null,
+            'is_active' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertNull(IncidentType::where('name', 'Elopement')->first()->default_severity);
+    }
+
+    public function test_adding_a_type_is_validated(): void
+    {
+        IncidentType::factory()->create(['name' => 'Falls']);
+
+        $this->actingAs($this->admin())->post('/admin/incident-types', [
+            'name' => 'Falls',
+            'category' => 'not-a-category',
+            'default_severity' => 'level_9',
+            'is_active' => true,
+        ])->assertSessionHasErrors(['name', 'category', 'default_severity']);
+
+        $this->actingAs($this->admin())->post('/admin/incident-types', [
+            'name' => '',
+            'category' => '',
+        ])->assertSessionHasErrors(['name', 'category']);
+
+        $this->assertSame(1, IncidentType::count());
+    }
+
+    public function test_other_roles_cannot_add_a_type(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => Role::QualitySafetyOfficer]))
+            ->post('/admin/incident-types', ['name' => 'Elopement', 'category' => 'security', 'is_active' => true])
+            ->assertForbidden();
+
+        $this->assertSame(0, IncidentType::count());
     }
 }
