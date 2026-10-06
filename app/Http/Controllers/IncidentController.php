@@ -108,7 +108,7 @@ class IncidentController extends Controller
 
         return Inertia::render('Incidents/Wizard', [
             'incident' => $incident,
-            'incidentTypes' => IncidentType::where('is_active', true)->get(['id', 'name']),
+            'incidentTypes' => IncidentType::where('is_active', true)->orWhereIn('id', $incident->incidentTypes->pluck('id'))->get(['id', 'name']),
             'departments' => Department::options(),
             'injuryOptions' => self::injuryOptions(),
         ]);

@@ -19,6 +19,11 @@ class UpdateIncidentRequest extends FormRequest
         return $this->incidentRules();
     }
 
+    protected function keptIncidentTypeIds(): array
+    {
+        return $this->route('incident')->incidentTypes()->pluck('incident_types.id')->all();
+    }
+
     public function messages(): array
     {
         return $this->incidentMessages();

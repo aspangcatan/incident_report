@@ -61,9 +61,15 @@ trait ValidatesIncidentData
     {
         return [
             'incident_type_ids' => [$submitting ? 'required_without:incident_type_other' : 'nullable', 'array'],
-            'incident_type_ids.*' => [Rule::exists('incident_types', 'id')->where('is_active', true)],
+            'incident_type_ids.*' => [Rule::exists('incident_types', 'id')->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $this->keptIncidentTypeIds()))],
             'incident_type_other' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    /** Type ids that stay valid even if switched off (a draft keeps the types it already has). */
+    protected function keptIncidentTypeIds(): array
+    {
+        return [];
     }
 
     /** "Was anyone injured?" — if yes, at least one cause and one agent (a listed choice or Others). */
@@ -91,6 +97,7 @@ trait ValidatesIncidentData
     {
         return [
             'incident_type_ids.required_without' => 'Choose at least one incident type, or tick Others and specify it.',
+            'incident_type_ids.*.exists' => 'This incident type is no longer available. Untick it and choose another.',
             'has_injury.required' => 'Answer whether anyone was injured.',
             'injury_causes.required' => 'Choose at least one cause of injury, or tick Others and specify it.',
             'injury_agents.required' => 'Choose at least one agent of injury, or tick Others and specify it.',
