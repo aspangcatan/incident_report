@@ -46,4 +46,13 @@ class IncidentTypeController extends Controller
 
         return back()->with('success', "Incident type \"{$incidentType->name}\" saved.");
     }
+
+    public function destroy(IncidentType $incidentType): RedirectResponse
+    {
+        $this->authorize('delete', $incidentType);
+
+        $this->service->delete($incidentType);
+
+        return back()->with('success', "Incident type \"{$incidentType->name}\" deleted.");
+    }
 }

@@ -252,4 +252,55 @@ class IncidentTypeSettingsTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => Role::Staff]))->get('/incidents/create')
             ->assertInertia(fn ($page) => $page->has('incidentTypes', 1)->where('incidentTypes.0.id', $active->id));
     }
+
+    public function test_the_it_admin_deletes_an_unused_type(): void
+    {
+        $type = IncidentType::factory()->create();
+
+        $this->actingAs($this->admin())->delete("/admin/incident-types/{$type->id}")->assertRedirect();
+
+        $this->assertModelMissing($type);
+    }
+
+    public function test_a_type_used_by_an_incident_cannot_be_deleted(): void
+    {
+        $type = IncidentType::factory()->create();
+        $incident = $this->incidentUsing($type);
+
+        $this->actingAs($this->admin())->delete("/admin/incident-types/{$type->id}")->assertForbidden();
+
+        $this->assertModelExists($type);
+        $this->assertSame([$type->id], $incident->fresh()->incidentTypes->pluck('id')->all());
+    }
+
+    public function test_a_type_on_the_legacy_column_cannot_be_deleted(): void
+    {
+        $type = IncidentType::factory()->create();
+        $incident = $this->incidentUsing(IncidentType::factory()->create());
+        DB::table('incidents')->where('id', $incident->id)->update(['incident_type_id' => $type->id]);
+
+        $this->actingAs($this->admin())->delete("/admin/incident-types/{$type->id}")->assertForbidden();
+
+        $this->assertModelExists($type);
+    }
+
+    public function test_a_type_used_by_a_recurrence_review_cannot_be_deleted(): void
+    {
+        $type = IncidentType::factory()->create();
+        $this->recurrenceReviewUsing($type);
+
+        $this->actingAs($this->admin())->delete("/admin/incident-types/{$type->id}")->assertForbidden();
+
+        $this->assertModelExists($type);
+    }
+
+    public function test_other_roles_cannot_delete_a_type(): void
+    {
+        $type = IncidentType::factory()->create();
+
+        $this->actingAs(User::factory()->create(['role' => Role::QualitySafetyOfficer]))
+            ->delete("/admin/incident-types/{$type->id}")->assertForbidden();
+
+        $this->assertModelExists($type);
+    }
 }
