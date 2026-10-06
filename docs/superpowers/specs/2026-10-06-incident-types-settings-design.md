@@ -69,7 +69,8 @@ used by both FormRequests and passed to the page.
 - `IncidentType::isInUse(): bool` and a `usageCount` (number of incidents) used by
   the policy and the resource.
 - `App\Http\Resources\IncidentTypeResource`: `id, name, category, category_label,
-  default_severity, default_severity_label, is_active, usage_count, can_delete`
+  default_severity, is_active, usage_count, can_delete` (the page builds severity
+  labels with `SeverityBadge` / `resources/js/Utils/severities.js`)
 - `App\Http\Controllers\Admin\IncidentTypeController` (thin: authorize →
   request → DTO → service → redirect)
 - `resources/js/Pages/Admin/IncidentTypes.vue`
