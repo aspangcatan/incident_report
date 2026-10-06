@@ -14,6 +14,7 @@ use App\Models\Incident;
 use App\Models\User;
 use App\Notifications\CommitteeSignOffNeededNotification;
 use App\Repositories\ApprovalRepository;
+use App\Support\WorkflowDurations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
@@ -56,7 +57,7 @@ class ApprovalService
                     'stage' => ApprovalStage::Committee,
                     'requested_by' => $approver->id,
                     'status' => ApprovalStatus::Pending,
-                    'due_at' => now()->addHours(config('incident_workflow.approval_sla_hours.' . $incident->severity->value, 72)),
+                    'due_at' => now()->addHours(WorkflowDurations::forLevel('approval_sla_hours', $incident->severity)),
                 ]);
                 $incident->auditComment = "Approved by the CQI Office: {$data->comments}. Awaiting CQI Committee sign-off.";
                 $incident->save();
@@ -127,7 +128,7 @@ class ApprovalService
                 'request_comments' => $justification,
                 'status' => ApprovalStatus::Pending,
                 'due_at' => now()->addHours(
-                    config('incident_workflow.approval_sla_hours.' . $incident->severity->value, 72)
+                    WorkflowDurations::forLevel('approval_sla_hours', $incident->severity)
                 ),
             ]);
 

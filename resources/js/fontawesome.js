@@ -45,6 +45,7 @@ import {
     faCloudArrowUp,
     faCircleInfo,
     faTags,
+    faClock,
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -93,4 +94,5 @@ library.add(
     faCloudArrowUp,
     faCircleInfo,
     faTags,
+    faClock,
 );

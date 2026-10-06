@@ -15,6 +15,7 @@ use App\Models\ContributingFactor;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
+use App\Support\WorkflowDurations;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -201,7 +202,7 @@ class IncidentService
             $incident->status = IncidentStatus::Assigned;
             $incident->target_closure_date = $targetClosureDate
                 ?? now()->addHours(
-                    config('incident_workflow.investigation_sla_hours.' . $incident->severity->value, 168)
+                    WorkflowDurations::forLevel('investigation_sla_hours', $incident->severity)
                 );
             $incident->assignment_escalated_at = null;
             $incident->save();

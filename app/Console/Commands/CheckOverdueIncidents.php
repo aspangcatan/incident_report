@@ -21,6 +21,7 @@ use App\Repositories\ApprovalRepository;
 use App\Repositories\CorrectiveActionRepository;
 use App\Repositories\InvestigationRepository;
 use App\Support\EscalationRecipients;
+use App\Support\WorkflowDurations;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -89,7 +90,7 @@ class CheckOverdueIncidents extends Command
 
     private function escalateOverdueAssessments(Collection $recipients): void
     {
-        $hours = (int) config('incident_workflow.assessment_sla_hours', 72);
+        $hours = WorkflowDurations::get('assessment_sla_hours');
 
         Incident::whereNull('assessment_escalated_at')
             ->where('status', IncidentStatus::Submitted)
@@ -109,7 +110,7 @@ class CheckOverdueIncidents extends Command
             ->whereNotNull('assessed_at')
             ->get()
             ->each(function (Incident $incident) use ($recipients) {
-                $slaHours = config('incident_workflow.review_sla_hours.' . $incident->severity?->value);
+                $slaHours = $incident->severity ? WorkflowDurations::forLevel('review_sla_hours', $incident->severity) : null;
 
                 if ($slaHours === null || $incident->assessed_at->addHours($slaHours)->isFuture()) {
                     return;

@@ -7,8 +7,8 @@ use App\DataTransferObjects\Investigations\FindingData;
 use App\DataTransferObjects\Investigations\StartInvestigationData;
 use App\Enums\IncidentStatus;
 use App\Enums\InvestigationMethodology;
-use App\Enums\RcaTool;
 use App\Enums\InvestigationStatus;
+use App\Enums\RcaTool;
 use App\Models\AuditLog;
 use App\Models\Incident;
 use App\Models\Investigation;
@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Repositories\InvestigationFindingRepository;
 use App\Repositories\InvestigationRepository;
 use App\Repositories\InvestigationTeamMemberRepository;
+use App\Support\WorkflowDurations;
 use Illuminate\Support\Facades\DB;
 
 class InvestigationService
@@ -39,7 +40,7 @@ class InvestigationService
                 'methodology' => $data->methodology,
                 'started_at' => now(),
                 'target_completion_at' => $data->targetCompletionAt ?? now()->addHours(
-                    config('incident_workflow.investigation_sla_hours.' . $incident->severity->value, 168)
+                    WorkflowDurations::forLevel('investigation_sla_hours', $incident->severity)
                 ),
                 'status' => InvestigationStatus::InProgress,
             ]);

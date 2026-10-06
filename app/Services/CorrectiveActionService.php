@@ -12,6 +12,7 @@ use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\User;
 use App\Repositories\CorrectiveActionRepository;
+use App\Support\WorkflowDurations;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -148,7 +149,7 @@ class CorrectiveActionService
         if (! $unverified && $incident->correctiveActions()->exists()) {
             $incident->status = IncidentStatus::Verified;
             // Effectiveness check: wait, then the CQI Committee confirms the actions worked.
-            $incident->effectiveness_due_at = now()->addDays((int) config('incident_workflow.effectiveness_wait_days', 30));
+            $incident->effectiveness_due_at = now()->addDays(WorkflowDurations::get('effectiveness_wait_days'));
             $incident->effectiveness_result = null;
             $incident->effectiveness_notes = null;
             $incident->effectiveness_checked_by = null;

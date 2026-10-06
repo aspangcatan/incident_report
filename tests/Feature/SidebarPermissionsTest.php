@@ -31,18 +31,20 @@ class SidebarPermissionsTest extends TestCase
             'viewAnalytics' => true,
             'administration' => false,
             'manageIncidentTypes' => false,
+            'manageWorkflowDurations' => false,
         ]));
     }
 
     public static function roles(): array
     {
-        $flags = fn (bool $all, bool $inv, bool $capa, bool $analytics, bool $admin, bool $types = false) => [
+        $flags = fn (bool $all, bool $inv, bool $capa, bool $analytics, bool $admin, bool $itAdmin = false) => [
             'viewAllIncidents' => $all,
             'investigationWorkspace' => $inv,
             'capaOperations' => $capa,
             'viewAnalytics' => $analytics,
             'administration' => $admin,
-            'manageIncidentTypes' => $types,
+            'manageIncidentTypes' => $itAdmin,
+            'manageWorkflowDurations' => $itAdmin,
         ];
 
         return [

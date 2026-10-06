@@ -33,6 +33,8 @@ class AuthServiceProvider extends ServiceProvider
         $this->registerPolicies();
 
         // Technical setup: which departments each Leadership user oversees.
+        // Workflow time limits are technical configuration: IT/System Admin only.
+        Gate::define('manageWorkflowDurations', fn (User $user) => $user->role === Role::Administrator);
         Gate::define('manageLeadership', fn (User $user) => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true));
     }
 }
