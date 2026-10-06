@@ -181,6 +181,11 @@ class IncidentController extends Controller
         return Inertia::render('Incidents/Show', [
             'injuryOptions' => self::injuryOptions(),
             'similarIncidents' => $this->similarIncidents($incident),
+            'suggestedSeverity' => ($suggestion = $incident->suggestedSeverity()) ? [
+                'value' => $suggestion['severity']->value,
+                'label' => $suggestion['severity']->label(),
+                'type' => $suggestion['type'],
+            ] : null,
             'evidenceStage' => app(\App\Policies\IncidentPolicy::class)->evidenceStage($user, $incident)?->label(),
             'incident' => $incident,
             'tab' => $request->string('tab', 'overview')->toString(),

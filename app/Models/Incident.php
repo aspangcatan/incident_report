@@ -105,6 +105,26 @@ class Incident extends Model
         return $this->belongsToMany(IncidentType::class)->orderBy('incident_types.id');
     }
 
+    /**
+     * Until a severity is set: the highest default severity among the chosen types,
+     * as ['severity' => Severity, 'type' => name]. Only shown as a starting point;
+     * the Department Head's choice is what gets saved.
+     */
+    public function suggestedSeverity(): ?array
+    {
+        if ($this->severity !== null) {
+            return null;
+        }
+
+        $levels = Severity::cases();
+        $type = $this->incidentTypes
+            ->filter(fn (IncidentType $type) => $type->default_severity !== null)
+            ->sortByDesc(fn (IncidentType $type) => array_search($type->default_severity, $levels, true))
+            ->first();
+
+        return $type ? ['severity' => $type->default_severity, 'type' => $type->name] : null;
+    }
+
     public function assignedInvestigator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_investigator_id');

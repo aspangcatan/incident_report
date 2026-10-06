@@ -11,6 +11,8 @@ const props = defineProps({
     can: { type: Object, required: true },
     departments: { type: Array, default: () => [] },
     investigators: { type: Array, default: () => [] },
+    // { value, label, type } from the incident type's default, only while no severity is set.
+    suggestedSeverity: { type: Object, default: null },
 });
 
 const actionStatuses = [
@@ -32,7 +34,7 @@ const editable = computed(() => props.incident.status === 'submitted' && props.c
 const form = useForm({
     actions_taken: (props.incident.actions ?? []).map(toRow),
     recommendations: props.incident.recommendations ?? '',
-    severity: props.incident.severity ?? null,
+    severity: props.incident.severity ?? props.suggestedSeverity?.value ?? null,
     department_id: props.incident.department_id ?? null,
     recommended_investigator_id: props.incident.recommended_investigator_id ?? null,
 });
@@ -92,6 +94,9 @@ function returnToReporter() {
         <div class="flex flex-col gap-1.5">
             <span class="font-label-md text-label-md text-on-surface font-semibold">Severity</span>
             <span v-if="editable && can.completeAssessment" class="font-body-sm text-body-sm text-outline">Choose the level that best matches the harm.</span>
+            <span v-if="editable && suggestedSeverity" class="font-body-sm text-body-sm text-amber-900">
+                Suggested from the incident type: {{ suggestedSeverity.label }} ({{ suggestedSeverity.type }}).<template v-if="can.completeAssessment"> Change it if the harm was different.</template>
+            </span>
             <div v-if="editable && can.completeAssessment" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <label
                     v-for="option in severities"

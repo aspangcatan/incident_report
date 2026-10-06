@@ -28,6 +28,7 @@ const props = defineProps({
     injuryOptions: { type: Object, required: true },
     similarIncidents: { type: Array, default: () => [] },
     evidenceStage: { type: String, default: null },
+    suggestedSeverity: { type: Object, default: null },
 });
 
 const stageLabels = { report: 'Report', assessment: 'Department Assessment', investigation: 'Investigation', capa: 'Corrective Action proof' };
@@ -248,7 +249,7 @@ function switchTab(value) {
             </section>
 
             <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-lg">
-                <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" />
+                <AssessmentPanel :incident="incident" :can="can" :departments="departments" :investigators="investigators" :suggested-severity="suggestedSeverity" />
 
                 <div v-if="incident.contributing_factors?.length" class="flex flex-col gap-2">
                     <span class="font-label-sm text-body-sm uppercase text-outline font-semibold">Contributing Factors</span>
