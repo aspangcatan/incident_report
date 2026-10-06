@@ -40,10 +40,12 @@ class SafetyAlert extends Model
         return $this->hasMany(SafetyAlertAcknowledgement::class);
     }
 
+    /** 'all', or a chosen department the user works in or heads (tdh section head). */
     public function isAddressedTo(User $user): bool
     {
         return $this->audience === 'all'
-            || ($user->department_id !== null && $this->departments->contains('department_id', $user->department_id));
+            || ($user->department_id !== null && $this->departments->contains('department_id', $user->department_id))
+            || $this->departments->contains(fn ($department) => $user->isHeadOf((int) $department->department_id));
     }
 
     public function isAcknowledgedBy(User $user): bool
@@ -63,11 +65,13 @@ class SafetyAlert extends Model
 
     public function scopeAddressedTo(Builder $query, User $user): Builder
     {
+        $departmentIds = array_values(array_unique(array_filter([$user->department_id, ...$user->headedDepartmentIds()])));
+
         return $query->where(fn (Builder $q) => $q
             ->where('audience', 'all')
-            ->when($user->department_id !== null, fn (Builder $q) => $q->orWhereHas(
+            ->when($departmentIds !== [], fn (Builder $q) => $q->orWhereHas(
                 'departments',
-                fn (Builder $d) => $d->where('department_id', $user->department_id)
+                fn (Builder $d) => $d->whereIn('department_id', $departmentIds)
             )));
     }
 
@@ -76,13 +80,18 @@ class SafetyAlert extends Model
         return $query->whereDoesntHave('acknowledgements', fn (Builder $q) => $q->where('user_id', $user->id));
     }
 
-    /** Active users this alert is addressed to. */
+    /** Active users this alert is addressed to: everyone, or the chosen departments' staff and heads. */
     public function recipients(): Builder
     {
         $query = User::active();
 
-        return $this->audience === 'all'
-            ? $query
-            : $query->whereIn('section', $this->departments->pluck('department_id'));
+        if ($this->audience === 'all') {
+            return $query;
+        }
+
+        $departmentIds = $this->departments->pluck('department_id');
+        $headIds = Department::whereIn('id', $departmentIds)->where('head', '>', 0)->pluck('head');
+
+        return $query->where(fn (Builder $q) => $q->whereIn('section', $departmentIds)->orWhereIn('id', $headIds));
     }
 }

@@ -69,6 +69,21 @@ class SafetyAlertTest extends TestCase
         $this->actingAs($inIcu)->get("/safety-alerts/{$alert->id}")->assertOk();
     }
 
+    public function test_a_department_alert_also_reaches_its_head_who_works_in_another_section(): void
+    {
+        Notification::fake();
+        $icu = Department::factory()->create();
+        $head = User::factory()->headOf($icu)->create(['department_id' => Department::factory()->create()->id]);
+
+        $alert = $this->issue(['audience' => 'departments', 'department_ids' => [$icu->id]]);
+
+        Notification::assertSentTo($head, SafetyAlertNotification::class);
+        $this->actingAs($head)->get("/safety-alerts/{$alert->id}")->assertOk();
+        $this->actingAs($head)->get('/')->assertInertia(fn ($page) => $page->where('pendingSafetyAlert.id', $alert->id));
+        $this->actingAs($head)->post("/safety-alerts/{$alert->id}/acknowledge");
+        $this->assertTrue($alert->fresh()->isAcknowledgedBy($head));
+    }
+
     public function test_departments_are_required_when_sending_to_departments(): void
     {
         $this->actingAs($this->cqi())
