@@ -209,6 +209,27 @@ class User extends Authenticatable
             ->all();
     }
 
+    private ?array $headedDepartmentIdsCache = null;
+
+    /** Sections whose tdh_user.section.head is this user — they are its Department/Service Head. */
+    public function headedDepartmentIds(): array
+    {
+        return $this->headedDepartmentIdsCache ??= Department::where('head', $this->id)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    public function isDepartmentHead(): bool
+    {
+        return $this->headedDepartmentIds() !== [];
+    }
+
+    public function isHeadOf(?int $departmentId): bool
+    {
+        return $departmentId !== null && in_array($departmentId, $this->headedDepartmentIds(), true);
+    }
+
     /** Who can be assigned to investigate an incident: an active IR investigator, or active staff of its department. */
     public function canInvestigate(Incident $incident): bool
     {

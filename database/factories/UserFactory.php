@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\Role;
+use App\Models\Department;
 use App\Models\User;
 use App\Models\UserPrivilege;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -34,6 +35,17 @@ class UserFactory extends Factory
             'section' => 0,
             'status' => '1',
         ];
+    }
+
+    /** Make the user the head (tdh_user.section.head) of these sections. */
+    public function headOf(Department|int ...$departments): static
+    {
+        return $this->afterCreating(function (User $user) use ($departments) {
+            foreach ($departments as $department) {
+                Department::whereKey($department instanceof Department ? $department->id : $department)
+                    ->update(['head' => $user->id]);
+            }
+        });
     }
 
     public function inactive(): static
@@ -79,6 +91,11 @@ class UserFactory extends Factory
                 'syscode' => config('tdh.syscode'),
                 'level' => $role->value,
             ]);
+
+            // TEMPORARY (removed in Task 5): old tests make heads via 'role' => DepartmentHead.
+            if ($role === Role::DepartmentHead && $user->department_id !== null) {
+                Department::whereKey($user->department_id)->update(['head' => $user->id]);
+            }
 
             $user->unsetRelation('privilege');
         });
