@@ -490,3 +490,7 @@ The Department/Service Head is no longer an IR privilege level. It now comes fro
 **Tests:** `UserFactory::headOf(Department|int ...$departments)` sets `section.head` for those sections after creating the user; every former `Role::DepartmentHead` test uses it. New coverage in `tests/Feature/Tdh/SectionHeadTest.php`.
 
 **Live data (2026-10-06):** 60 heads over 101 sections. User 1 was changed from `department_head` to `leadership` on 2026-10-06 and heads 5 sections.
+
+**Analytics scope:** analytics aggregates only incidents the viewer can see. Every `AnalyticsService` metric goes through `baseQuery()`/`visibleTo()`, including the inner lookups (`departmentSafety()` builds its incident-to-department map from the scoped query, and `sentinelRecurrence` checks earlier sentinels through `visibleTo()`), because section heads at any IR level - and reporters, investigators, team members and CAPA owners - can see only part of a department.
+
+**Live data note (2026-10-06):** 27 of 101 sections have an inactive head (e.g. ER/IER 54, OR 47, OPD 46, wards, NICU/PICU/AICU/CCU), so head-only steps (create/edit CAPA, "no corrective action needed", request closure) have nobody there until `tdh_user` is fixed. Section 76's head (1199) is a deleted user. Placeholder sections (`description = '-'`) are ignored (`headedDepartmentIds()` skips them). Head 1142 (kromero) has a duplicate account 1853 (ksromero) without head powers.

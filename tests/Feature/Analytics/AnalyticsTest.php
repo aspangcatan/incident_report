@@ -265,6 +265,74 @@ class AnalyticsTest extends TestCase
         $this->assertNotContains('Surgery', $departmentNames);
     }
 
+    /** A Staff-level head of another section who works in $section: sees only its Submitted incidents there. */
+    private function staffHeadWorkingIn(Department $section): User
+    {
+        return User::factory()->headOf(Department::factory()->create())->create(['department_id' => $section->id]);
+    }
+
+    private function submittedIncidentIn(Department $section, IncidentType $type): Incident
+    {
+        $incident = app(IncidentService::class)->createDraft(User::factory()->create(), [
+            'department_id' => $section->id,
+            'incident_type_ids' => [$type->id],
+            'occurred_at' => now(),
+            'location' => 'Ward 3',
+            'summary' => 'Test incident.',
+        ]);
+        app(IncidentService::class)->submit($incident);
+
+        return $incident->fresh();
+    }
+
+    public function test_department_safety_does_not_count_capas_on_incidents_the_viewer_cannot_open(): void
+    {
+        $section = Department::factory()->create(['name' => 'Ward S']);
+        $type = IncidentType::factory()->create();
+        $this->submittedIncidentIn($section, $type);
+
+        $hidden = $this->incidentThroughReview($section, $type);
+        $investigation = $this->investigationFor($hidden);
+        app(InvestigationService::class)->addFinding($investigation, FindingData::fromArray(['question' => 'Q', 'finding' => 'F', 'is_root_cause' => true]));
+        app(InvestigationService::class)->complete($investigation->fresh(), CompleteInvestigationData::fromArray(['conclusion' => 'Done.']));
+        $capa = app(CorrectiveActionService::class)->create($hidden->fresh(), CorrectiveActionData::fromArray([
+            'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
+        ]));
+        $this->actingAs(User::factory()->create());
+        app(CorrectiveActionService::class)->complete($capa, CompleteCorrectiveActionData::fromArray(['completion_notes' => 'Done.']));
+        app(CorrectiveActionService::class)->verify($capa->fresh(), User::factory()->create(['role' => Role::QualitySafetyOfficer]), VerifyCorrectiveActionData::fromArray(['verification_comments' => 'Confirmed.']));
+
+        $qsoRow = collect(app(AnalyticsService::class)->overview(User::factory()->create(['role' => Role::QualitySafetyOfficer]))['departmentSafety'])->firstWhere('departmentName', 'Ward S');
+        $this->assertSame(1, $qsoRow['capasTotal']);
+
+        $head = $this->staffHeadWorkingIn($section);
+        $row = collect(app(AnalyticsService::class)->overview($head)['departmentSafety'])->firstWhere('departmentName', 'Ward S');
+
+        $this->assertNotNull($row);
+        $this->assertSame(0, $row['capasTotal']);
+        $this->assertSame(0, $row['capasVerified']);
+    }
+
+    public function test_sentinel_recurrence_ignores_earlier_sentinels_the_viewer_cannot_open(): void
+    {
+        $section = Department::factory()->create();
+        $type = IncidentType::factory()->create();
+
+        $earlier = $this->incidentThroughReview($section, $type);
+        $earlier->forceFill(['is_sentinel_event' => true, 'reported_at' => now()->subDays(20)])->save();
+        $visible = $this->submittedIncidentIn($section, $type);
+        $visible->forceFill(['is_sentinel_event' => true, 'reported_at' => now()->subDays(10)])->save();
+
+        $qso = app(AnalyticsService::class)->overview(User::factory()->create(['role' => Role::QualitySafetyOfficer]))['kpis']['sentinelRecurrence'];
+        $this->assertSame(1, $qso['recurrences']);
+
+        $head = $this->staffHeadWorkingIn($section);
+        $kpi = app(AnalyticsService::class)->overview($head)['kpis']['sentinelRecurrence'];
+
+        $this->assertSame(1, $kpi['total']);
+        $this->assertSame(0, $kpi['recurrences']);
+    }
+
     public function test_an_incident_with_two_types_counts_toward_each_recurring_pattern(): void
     {
         $department = Department::factory()->create();
@@ -351,17 +419,10 @@ class AnalyticsTest extends TestCase
     }
 
     /**
-     * Task 9 holistic-review regression (item 1): scopeVisibleTo() treats a
-     * null department_id Supervisor/DepartmentHead as seeing nothing at all
-     * (Incident::scopeVisibleTo() has its own explicit whereRaw('1 = 0')
-     * guard for this - the exact bug Phase 3's holistic review once caught).
-     * This proves every AnalyticsService method inherits that guard
-     * end-to-end, rather than any of them falling back to a hospital-wide
-     * result when department_id is null. Seeds real, varied data (a
-     * qualifying recurring pattern, a sentinel recurrence, contributing
-     * factors, a verified CAPA) and proves a hospital-wide QSO really does
-     * see it, so the null-department emptiness below is scoping, not just
-     * "there's no data".
+     * A Department Head whose headed section has no incidents gets empty
+     * analytics, not hospital-wide numbers: every AnalyticsService metric is
+     * scoped through visibleTo(). Seeds real data in another department and
+     * proves a QSO sees it, so the head's emptiness is scoping, not missing data.
      */
     public function test_department_head_of_a_department_with_no_data_gets_empty_analytics_not_hospital_wide(): void
     {
@@ -395,8 +456,8 @@ class AnalyticsTest extends TestCase
         $this->assertNotEmpty($qsoOverview['departmentSafety']);
         $this->assertNotEmpty($qsoOverview['rootCauseDistribution']);
 
-        $deptHeadNoDept = User::factory()->headOf(Department::factory()->create())->create();
-        $overview = app(AnalyticsService::class)->overview($deptHeadNoDept);
+        $headOfEmptySection = User::factory()->headOf(Department::factory()->create())->create();
+        $overview = app(AnalyticsService::class)->overview($headOfEmptySection);
 
         $this->assertNull($overview['kpis']['meanHoursToReview']);
         $this->assertNull($overview['kpis']['meanDaysToInvestigate']);

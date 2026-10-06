@@ -144,17 +144,13 @@ class AnalyticsService
             return ['recurrences' => 0, 'total' => 0, 'rate' => 0.0];
         }
 
-        // Deliberately not re-scoped by visibleTo($user): safe only because
-        // every $sentinel here already passed the outer baseQuery($user)
-        // scope, so its own department_id is always one this caller can
-        // already see in full (either they're unrestricted, or visibleTo()
-        // already grants them full visibility into that exact department -
-        // never a partial-visibility case, since IncidentPolicy::viewAnalytics()
-        // never lets a partial-visibility role reach this Service at all).
-        // If that policy gate is ever loosened, this inner query would need
-        // its own explicit department/visibility check.
-        $recurrences = $sentinels->filter(function (Incident $sentinel) {
+        // The earlier sentinel is looked up through visibleTo($user) too: a
+        // viewer may see only part of a department (e.g. a Staff-level section
+        // head who works in another section), so a repeat they can't open
+        // must not be counted.
+        $recurrences = $sentinels->filter(function (Incident $sentinel) use ($user) {
             return Incident::query()
+                ->visibleTo($user)
                 ->where('is_sentinel_event', true)
                 // An incident can have several types; sharing any one counts as a repeat.
                 ->whereHas('incidentTypes', fn (Builder $q) => $q->whereIn('incident_types.id', $sentinel->incidentTypes->pluck('id')))
@@ -237,7 +233,12 @@ class AnalyticsService
      */
     private function departmentSafety(User $user): array
     {
-        $departmentIds = $this->baseQuery($user)->whereNotNull('department_id')->distinct()->pluck('department_id');
+        // incident id -> department id, from the scoped query only: a viewer
+        // may see just some incidents of a department, and CAPAs/approvals on
+        // the rest must not be counted. (Drafts never have CAPAs or approvals,
+        // so excluding them changes nothing below.)
+        $incidentDepartmentIds = $this->baseQuery($user)->whereNotNull('department_id')->pluck('department_id', 'id');
+        $departmentIds = $incidentDepartmentIds->unique()->values();
 
         $departments = Department::query()->whereIn('id', $departmentIds)->orderBy('description')->get();
 
@@ -245,15 +246,7 @@ class AnalyticsService
             return [];
         }
 
-        // Not routed through baseQuery()/visibleTo() here: $departmentIds
-        // was itself derived from baseQuery($user) above, so this can never
-        // reach a department the caller isn't allowed to see. Draft incidents
-        // are also safe to leave in this particular id set (unlike
-        // hourlyVolume()) since a draft can never have a
-        // CorrectiveAction/Approval row pointing at it - the counts below
-        // would be identical either way.
-        //
-        // Fetched as one incident_id -> department_id lookup plus one query
+        // One incident_id -> department_id lookup (above) plus one query
         // each for CorrectiveAction/Approval, then aggregated in PHP using
         // the models' own isOverdue() - rather than N queries per department
         // (which scaled linearly with department count) or a raw SQL
@@ -261,8 +254,6 @@ class AnalyticsService
         // rule as a second, driver-specific copy: this project's tests run
         // against SQLite while production runs MySQL, and NOW() isn't
         // portable between them).
-        $incidentDepartmentIds = Incident::query()->whereIn('department_id', $departmentIds)->pluck('department_id', 'id');
-
         $stats = $departments->mapWithKeys(fn (Department $d) => [$d->id => [
             'capasTotal' => 0, 'capasVerified' => 0, 'capasOverdue' => 0,
             'approvalsTotal' => 0, 'approvalsOverdue' => 0,
