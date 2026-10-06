@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\RecurrenceReviewStatus;
 use App\Enums\Role;
 use App\Models\Incident;
+use App\Models\IncidentType;
 use App\Models\RecurrenceReview;
 use App\Models\SafetyAlert;
 use App\Models\User;
@@ -53,6 +54,7 @@ class HandleInertiaRequests extends Middleware
                     'capaOperations' => CorrectiveActionQueueQuery::allowed($user),
                     'viewAnalytics' => $user->can('viewAnalytics', Incident::class),
                     'administration' => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true),
+                    'manageIncidentTypes' => $user->can('viewAny', IncidentType::class),
                 ] : [],
             ],
             'flash' => [

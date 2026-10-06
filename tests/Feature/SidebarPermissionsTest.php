@@ -21,12 +21,13 @@ class SidebarPermissionsTest extends TestCase
 
     public static function roles(): array
     {
-        $flags = fn (bool $all, bool $inv, bool $capa, bool $analytics, bool $admin) => [
+        $flags = fn (bool $all, bool $inv, bool $capa, bool $analytics, bool $admin, bool $types = false) => [
             'viewAllIncidents' => $all,
             'investigationWorkspace' => $inv,
             'capaOperations' => $capa,
             'viewAnalytics' => $analytics,
             'administration' => $admin,
+            'manageIncidentTypes' => $types,
         ];
 
         return [
@@ -35,7 +36,7 @@ class SidebarPermissionsTest extends TestCase
             'supervisor' => [Role::Supervisor, $flags(true, true, true, true, false)],
             'department head' => [Role::DepartmentHead, $flags(true, true, true, true, false)],
             'qso' => [Role::QualitySafetyOfficer, $flags(true, true, true, true, true)],
-            'administrator' => [Role::Administrator, $flags(false, false, false, false, true)],
+            'administrator' => [Role::Administrator, $flags(false, false, false, false, true, true)],
             'management' => [Role::Management, $flags(true, false, false, true, false)],
             'leadership' => [Role::Leadership, $flags(true, false, false, true, false)],
             'cqi committee' => [Role::CqiCommittee, $flags(true, false, false, true, false)],

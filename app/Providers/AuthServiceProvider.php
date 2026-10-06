@@ -20,6 +20,7 @@ class AuthServiceProvider extends ServiceProvider
         \App\Models\CorrectiveAction::class => \App\Policies\CorrectiveActionPolicy::class,
         \App\Models\SafetyAlert::class => \App\Policies\SafetyAlertPolicy::class,
         \App\Models\RecurrenceReview::class => \App\Policies\RecurrenceReviewPolicy::class,
+        \App\Models\IncidentType::class => \App\Policies\IncidentTypePolicy::class,
     ];
 
     /**
