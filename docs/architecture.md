@@ -451,9 +451,9 @@ The IT Admin (`administrator`) manages the incident type list from a settings pa
 
 - **Access:** IT Admin only, via `App\Policies\IncidentTypePolicy` and the shared Inertia prop `auth.can.manageIncidentTypes`. The sidebar link "Incident Types" sits under "Administration & Audit"; the CQI Office still sees that group but not this link.
 - **Routes** (`Admin\IncidentTypeController`): `GET /admin/incident-types` (index), `POST /admin/incident-types` (store), `PUT /admin/incident-types/{incidentType}` (update), `DELETE /admin/incident-types/{incidentType}` (destroy).
-- **Fields:** `name` (unique), `category` (one of `IncidentType::CATEGORIES`: injury, clinical, exposure, security, property, environment, conduct), `default_severity` (optional), `active`.
+- **Fields:** `name` (unique), `category` (one of `IncidentType::CATEGORIES`: injury, clinical, exposure, security, property, environment, conduct), `default_severity` (optional), `is_active` (shown as "Active").
 - **Delete only when unused:** `IncidentType::isInUse()` checks the `incident_incident_type` pivot, the legacy `incidents.incident_type_id`, and `recurrence_reviews`. An in-use type returns 403 and the UI tells the admin to switch it off instead.
-- **Active flag:** inactive types drop out of the report wizard, the public guest form and the Trends filter. Existing reports keep their type.
+- **Active flag:** inactive types drop out of the report wizard, the public guest form and the Trends filter. Existing reports keep their type. A draft also keeps an inactive type it already had: the wizard still lists it and validation accepts it, but a type the draft did not already have must be active.
 - **`default_severity` is stored only.** Nothing in the workflow reads it yet; a later "suggested severity on submit" feature may.
 - **Pattern (trimmed layered):** FormRequests, `IncidentTypeData` DTO, `IncidentTypeService`, `IncidentTypePolicy`, `IncidentTypeResource`. No Repository, Action or Query classes, and no migration (the table already existed).
-- **Tests:** `tests/Feature/Admin/IncidentTypeSettingsTest.php` (21 tests).
+- **Tests:** `tests/Feature/Admin/IncidentTypeSettingsTest.php` (25 tests).

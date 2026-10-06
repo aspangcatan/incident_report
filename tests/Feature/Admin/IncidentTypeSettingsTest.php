@@ -86,10 +86,19 @@ class IncidentTypeSettingsTest extends TestCase
     {
         $this->actingAs($this->admin())->get('/admin/incident-types')->assertOk();
 
-        foreach ([Role::QualitySafetyOfficer, Role::DepartmentHead, Role::Staff, Role::Management] as $role) {
+        foreach (Role::cases() as $role) {
+            if ($role === Role::Administrator) {
+                continue;
+            }
+
             $this->actingAs(User::factory()->create(['role' => $role]))
                 ->get('/admin/incident-types')->assertForbidden();
         }
+    }
+
+    public function test_a_guest_is_sent_to_login(): void
+    {
+        $this->get('/admin/incident-types')->assertRedirect('/login');
     }
 
     public function test_the_page_lists_types_with_usage_and_options(): void
@@ -251,6 +260,48 @@ class IncidentTypeSettingsTest extends TestCase
 
         $this->actingAs(User::factory()->create(['role' => Role::Staff]))->get('/incidents/create')
             ->assertInertia(fn ($page) => $page->has('incidentTypes', 1)->where('incidentTypes.0.id', $active->id));
+    }
+
+    public function test_a_draft_keeps_a_type_that_was_switched_off_after_it_was_chosen(): void
+    {
+        $off = IncidentType::factory()->create(['name' => 'Spills']);
+        $other = IncidentType::factory()->create(['name' => 'Falls']);
+        $draft = $this->incidentUsing($off);
+        $off->update(['is_active' => false]);
+        $owner = $draft->reporter;
+
+        $this->actingAs($owner)->get("/incidents/{$draft->id}/edit")
+            ->assertInertia(fn ($page) => $page->has('incidentTypes', 2)
+                ->where('incidentTypes', fn ($types) => collect($types)->pluck('id')->sort()->values()->all() === collect([$off->id, $other->id])->sort()->values()->all()));
+
+        $this->actingAs($owner)->patch("/incidents/{$draft->id}", [
+            'action' => 'draft',
+            'incident_type_ids' => [$off->id],
+            'location' => 'Ward 4',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $this->assertSame([$off->id], $draft->fresh()->incidentTypes->pluck('id')->all());
+    }
+
+    public function test_a_new_draft_cannot_use_an_inactive_type(): void
+    {
+        $off = IncidentType::factory()->create(['is_active' => false]);
+
+        $this->actingAs(User::factory()->create(['role' => Role::Staff]))
+            ->post('/incidents', ['action' => 'draft', 'incident_type_ids' => [$off->id]])
+            ->assertSessionHasErrors(['incident_type_ids.0' => 'This incident type is no longer available. Untick it and choose another.']);
+    }
+
+    public function test_a_draft_cannot_add_an_inactive_type_it_did_not_already_have(): void
+    {
+        $kept = IncidentType::factory()->create();
+        $off = IncidentType::factory()->create(['is_active' => false]);
+        $draft = $this->incidentUsing($kept);
+
+        $this->actingAs($draft->reporter)->patch("/incidents/{$draft->id}", [
+            'action' => 'draft',
+            'incident_type_ids' => [$kept->id, $off->id],
+        ])->assertSessionHasErrors(['incident_type_ids.1' => 'This incident type is no longer available. Untick it and choose another.']);
     }
 
     public function test_the_it_admin_deletes_an_unused_type(): void
