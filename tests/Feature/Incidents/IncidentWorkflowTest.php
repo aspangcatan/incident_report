@@ -178,7 +178,7 @@ class IncidentWorkflowTest extends TestCase
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
         $supervisor = User::factory()->create(['role' => \App\Enums\Role::Supervisor, 'department_id' => $department->id]);
-        $head = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $department->id]);
+        $head = User::factory()->headOf($department->id)->create(['department_id' => $department->id]);
         $qso = User::factory()->create(['role' => \App\Enums\Role::QualitySafetyOfficer]);
         $incident = $this->assessedIncident($reporter, $department);
 
@@ -334,7 +334,7 @@ class IncidentWorkflowTest extends TestCase
     {
         $reporter = $this->makeReporter();
         $department = Department::factory()->create();
-        $departmentHead = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $department->id]);
+        $departmentHead = User::factory()->headOf($department->id)->create(['department_id' => $department->id]);
         $incident = $this->submittedIncident($reporter, $department);
 
         $this->actingAs($departmentHead)
@@ -489,7 +489,7 @@ class IncidentWorkflowTest extends TestCase
     {
         $reporter = $this->makeReporter();
         $incident = $this->submittedIncident($reporter);
-        $head = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
 
         app(IncidentService::class)->returnForRevision($incident->fresh(), $head, 'Please add the exact time.');
 
@@ -503,7 +503,7 @@ class IncidentWorkflowTest extends TestCase
     {
         $reporter = $this->makeReporter();
         $returned = $this->submittedIncident($reporter);
-        $head = User::factory()->create(['role' => \App\Enums\Role::DepartmentHead, 'department_id' => $returned->department_id]);
+        $head = User::factory()->headOf($returned->department_id)->create(['department_id' => $returned->department_id]);
         app(IncidentService::class)->returnForRevision($returned->fresh(), $head, 'Add the time.');
         $plainDraft = app(IncidentService::class)->createDraft($reporter, ['location' => 'Ward 1']);
 

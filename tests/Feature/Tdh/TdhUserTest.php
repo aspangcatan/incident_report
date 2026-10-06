@@ -36,7 +36,7 @@ class TdhUserTest extends TestCase
         UserPrivilege::create(['user_id' => $user->id, 'syscode' => 'hris', 'level' => 'administrator']);
         UserPrivilege::create(['user_id' => $user->id, 'syscode' => 'IR', 'level' => 'department_head']);
 
-        $this->assertSame(Role::DepartmentHead, $user->fresh()->role);
+        $this->assertSame(Role::Staff, $user->fresh()->role);
     }
 
     public function test_an_unrecognised_level_falls_back_to_staff_and_logs_a_warning(): void

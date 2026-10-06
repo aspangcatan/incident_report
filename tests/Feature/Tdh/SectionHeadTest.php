@@ -133,6 +133,15 @@ class SectionHeadTest extends TestCase
         $this->assertCount(0, \App\Support\IncidentReviewers::departmentHeads($this->submittedIncident($section)));
     }
 
+    public function test_the_retired_department_head_level_resolves_to_staff(): void
+    {
+        $user = User::factory()->create();
+        \App\Models\UserPrivilege::create(['user_id' => $user->id, 'syscode' => config('tdh.syscode'), 'level' => 'department_head']);
+        $user->unsetRelation('privilege');
+
+        $this->assertSame(Role::Staff, $user->role);
+    }
+
     public function test_a_recurrence_review_can_be_assigned_to_the_section_head(): void
     {
         $section = Department::factory()->create();

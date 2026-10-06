@@ -51,7 +51,7 @@ class RecurrenceReviewController extends Controller
             'incidentType' => ['id' => $type->id, 'name' => $type->name],
             'incidents' => $this->incidentList($request->user(), $department->id, $type->id),
             'assignees' => StoreRecurrenceReviewRequest::assignees($department->id)
-                ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'role' => $u->role->label()])->values(),
+                ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'role' => $u->isHeadOf($department->id) ? 'Department/Service Head' : $u->role->label()])->values(),
             'windowDays' => RecurrenceReviewService::WINDOW_DAYS,
         ]);
     }

@@ -30,7 +30,7 @@ class SeverityAlertTest extends TestCase
     {
         parent::setUp();
         $this->department = Department::factory()->create();
-        $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $this->head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $this->cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $this->leader = User::factory()->create(['role' => Role::Leadership]);
         DB::table('leadership_departments')->insert(['user_id' => $this->leader->id, 'department_id' => $this->department->id]);
@@ -66,7 +66,7 @@ class SeverityAlertTest extends TestCase
     public function test_a_department_head_who_did_not_set_the_level_is_alerted(): void
     {
         Notification::fake();
-        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $otherHead = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
 
         $this->assessedBy($this->head, Severity::Level2Moderate);
 

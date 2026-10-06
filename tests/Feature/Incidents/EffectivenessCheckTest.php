@@ -35,7 +35,7 @@ class EffectivenessCheckTest extends TestCase
         // Independent of the local setting (it may be 0 while someone tests by hand).
         config(['incident_workflow.effectiveness_wait_days' => 30]);
         $this->department = Department::factory()->create();
-        $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $this->head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $this->committee = User::factory()->create(['role' => Role::CqiCommittee]);
     }
 

@@ -100,7 +100,7 @@ class TrendsTest extends TestCase
         $this->incident($mine, $type, Severity::Level1Low, '2026-09-02');
         $this->incident(Department::factory()->create(), $type, Severity::Level1Low, '2026-09-02');
 
-        $this->actingAs(User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $mine->id]))
+        $this->actingAs(User::factory()->headOf($mine->id)->create(['department_id' => $mine->id]))
             ->get('/analytics/trends?from=2026-09&to=2026-09')
             ->assertInertia(fn ($page) => $page->where('total', 1));
     }

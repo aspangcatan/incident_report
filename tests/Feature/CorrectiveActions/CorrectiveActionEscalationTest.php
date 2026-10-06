@@ -79,7 +79,7 @@ class CorrectiveActionEscalationTest extends TestCase
         Notification::fake();
         $incident = $this->incidentReadyForCapa();
         $owner = User::factory()->create(['department_id' => $incident->department_id]);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
         $executive = User::factory()->create(['role' => Role::Management]);
         app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
             'description' => 'x', 'action_type' => 'corrective', 'priority' => 'high',
@@ -113,7 +113,7 @@ class CorrectiveActionEscalationTest extends TestCase
         Notification::fake();
         $incident = $this->incidentReadyForCapa();
         $owner = User::factory()->create(['department_id' => $incident->department_id]);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $capa = app(CorrectiveActionService::class)->create($incident, CorrectiveActionData::fromArray([
             'description' => 'x', 'action_type' => 'corrective', 'priority' => 'medium',

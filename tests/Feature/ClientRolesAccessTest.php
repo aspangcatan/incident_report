@@ -29,7 +29,7 @@ class ClientRolesAccessTest extends TestCase
             'summary' => 'Test incident.',
         ]);
         $service->submit($incident);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $department->id]);
+        $head = User::factory()->headOf($department->id)->create(['department_id' => $department->id]);
         $service->completeAssessment($incident->fresh(), $head);
 
         return $incident->fresh();
@@ -108,7 +108,7 @@ class ClientRolesAccessTest extends TestCase
     {
         $leader = $this->leaderOver();
 
-        $this->actingAs(User::factory()->create(['role' => Role::DepartmentHead]))
+        $this->actingAs(User::factory()->headOf(Department::factory()->create())->create())
             ->get('/admin/leadership')->assertForbidden();
         $this->actingAs(User::factory()->create(['role' => Role::Management]))
             ->put("/admin/leadership/{$leader->id}", ['department_ids' => []])->assertForbidden();

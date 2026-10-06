@@ -34,7 +34,7 @@ class SafetyAlertTest extends TestCase
 
     public function test_only_the_cqi_office_can_issue_an_alert(): void
     {
-        foreach ([Role::Staff, Role::DepartmentHead, Role::Management, Role::Administrator, Role::CqiCommittee] as $role) {
+        foreach ([Role::Staff, Role::Management, Role::Administrator, Role::CqiCommittee] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]))
                 ->post('/safety-alerts', ['title' => 'x', 'message' => 'x', 'urgency' => 'information', 'audience' => 'all'])
                 ->assertForbidden();

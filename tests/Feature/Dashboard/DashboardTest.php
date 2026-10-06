@@ -67,7 +67,7 @@ class DashboardTest extends TestCase
         $this->submittedIncident($mine);
         $this->submittedIncident($other);
 
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $mine->id]);
+        $head = User::factory()->headOf($mine->id)->create(['department_id' => $mine->id]);
 
         $this->actingAs($head)->get('/')->assertInertia(fn (Assert $page) => $page
             ->where('stages.reported', 1)

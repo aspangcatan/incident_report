@@ -39,7 +39,7 @@ class AnalyticsTest extends TestCase
     public function test_supervisor_and_department_head_can_view_analytics(): void
     {
         $this->assertTrue(User::factory()->create(['role' => Role::Supervisor])->can('viewAnalytics', Incident::class));
-        $this->assertTrue(User::factory()->create(['role' => Role::DepartmentHead])->can('viewAnalytics', Incident::class));
+        $this->assertTrue(User::factory()->headOf(Department::factory()->create())->create()->can('viewAnalytics', Incident::class));
     }
 
     public function test_staff_and_investigator_cannot_view_analytics(): void
@@ -164,7 +164,7 @@ class AnalyticsTest extends TestCase
         $incidentB = $this->incidentThroughReview($deptB);
         $incidentB->forceFill(['assessed_at' => now()->subHours(40), 'supervisor_reviewed_at' => now()])->save();
 
-        $deptHeadA = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $deptA->id]);
+        $deptHeadA = User::factory()->headOf($deptA->id)->create(['department_id' => $deptA->id]);
         $kpis = app(AnalyticsService::class)->overview($deptHeadA)['kpis'];
 
         $this->assertSame(4.0, $kpis['meanHoursToReview']);
@@ -253,7 +253,7 @@ class AnalyticsTest extends TestCase
             'description' => 'Fix.', 'action_type' => 'corrective', 'priority' => 'high', 'due_date' => now()->addDays(7)->toDateString(),
         ]));
 
-        $deptHeadA = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $deptA->id]);
+        $deptHeadA = User::factory()->headOf($deptA->id)->create(['department_id' => $deptA->id]);
         $overview = app(AnalyticsService::class)->overview($deptHeadA);
 
         $categories = collect($overview['rootCauseDistribution'])->pluck('category')->all();
@@ -363,7 +363,7 @@ class AnalyticsTest extends TestCase
      * see it, so the null-department emptiness below is scoping, not just
      * "there's no data".
      */
-    public function test_department_head_with_null_department_id_gets_empty_analytics_not_hospital_wide(): void
+    public function test_department_head_of_a_department_with_no_data_gets_empty_analytics_not_hospital_wide(): void
     {
         $department = Department::factory()->create();
         $incidentType = IncidentType::factory()->create();
@@ -395,7 +395,7 @@ class AnalyticsTest extends TestCase
         $this->assertNotEmpty($qsoOverview['departmentSafety']);
         $this->assertNotEmpty($qsoOverview['rootCauseDistribution']);
 
-        $deptHeadNoDept = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
+        $deptHeadNoDept = User::factory()->headOf(Department::factory()->create())->create();
         $overview = app(AnalyticsService::class)->overview($deptHeadNoDept);
 
         $this->assertNull($overview['kpis']['meanHoursToReview']);

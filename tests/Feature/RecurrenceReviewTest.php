@@ -35,7 +35,7 @@ class RecurrenceReviewTest extends TestCase
         parent::setUp();
         $this->department = Department::factory()->create();
         $this->type = IncidentType::factory()->create(['name' => 'Falls']);
-        $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $this->head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $this->cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
     }
 
@@ -84,7 +84,7 @@ class RecurrenceReviewTest extends TestCase
     {
         $this->actingAs($this->head)->get("/recurrence-reviews/create?department_id={$this->department->id}&incident_type_id={$this->type->id}")->assertForbidden();
 
-        $outsider = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+        $outsider = User::factory()->headOf($headDept = Department::factory()->create())->create(['department_id' => $headDept->id]);
         $this->actingAs($this->cqi)->post('/recurrence-reviews', [
             'department_id' => $this->department->id,
             'incident_type_id' => $this->type->id,
@@ -92,6 +92,16 @@ class RecurrenceReviewTest extends TestCase
             'due_date' => now()->addDays(14)->toDateString(),
             'cqi_notes' => 'x',
         ])->assertSessionHasErrors('assigned_to');
+    }
+
+    public function test_the_assignee_list_labels_the_section_head_as_department_service_head(): void
+    {
+        $this->actingAs($this->cqi)
+            ->get("/recurrence-reviews/create?department_id={$this->department->id}&incident_type_id={$this->type->id}")
+            ->assertInertia(fn ($page) => $page->where(
+                'assignees',
+                fn ($assignees) => collect($assignees)->firstWhere('id', $this->head->id)['role'] === 'Department/Service Head'
+            ));
     }
 
     public function test_the_assignee_submits_a_fix_and_the_cqi_office_closes_it(): void
@@ -140,7 +150,7 @@ class RecurrenceReviewTest extends TestCase
     public function test_reviews_are_visible_to_the_department_and_oversight_but_not_other_departments(): void
     {
         $review = $this->open();
-        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+        $otherHead = User::factory()->headOf($headDept = Department::factory()->create())->create(['department_id' => $headDept->id]);
 
         $this->actingAs($this->head)->get("/recurrence-reviews/{$review->id}")->assertOk();
         $this->actingAs(User::factory()->create(['role' => Role::CqiCommittee]))->get("/recurrence-reviews/{$review->id}")->assertOk();

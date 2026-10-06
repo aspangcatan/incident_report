@@ -12,7 +12,6 @@ enum Role: string
     case Staff = 'staff';
     case Supervisor = 'supervisor';
     case Investigator = 'investigator';
-    case DepartmentHead = 'department_head';
     case QualitySafetyOfficer = 'quality_safety_officer';
     case Administrator = 'administrator';
     case Management = 'management';
@@ -25,7 +24,6 @@ enum Role: string
             self::Staff => 'Staff',
             self::Supervisor => 'Department Safety Focal Person',
             self::Investigator => 'Investigator',
-            self::DepartmentHead => 'Department/Service Head',
             self::QualitySafetyOfficer => 'Patient Safety/CQI Office',
             self::Administrator => 'IT/System Administrator',
             self::Management => 'Hospital Executive',

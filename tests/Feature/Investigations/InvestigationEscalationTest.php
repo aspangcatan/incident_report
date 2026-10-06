@@ -71,7 +71,7 @@ class InvestigationEscalationTest extends TestCase
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
         app(InvestigationService::class)->start($incident, $investigator, StartInvestigationData::fromArray([
             'objective' => 'x', 'methodology' => 'five_whys', 'target_completion_at' => now()->subDay()->toDateTimeString(),
         ]));
@@ -86,7 +86,7 @@ class InvestigationEscalationTest extends TestCase
         Notification::fake();
         $investigator = User::factory()->create(['role' => Role::Investigator]);
         $incident = $this->assignedIncident($investigator);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $investigation = app(InvestigationService::class)->start($incident, $investigator, StartInvestigationData::fromArray([
             'objective' => 'x', 'methodology' => 'five_whys', 'target_completion_at' => now()->addHours(10)->toDateTimeString(),

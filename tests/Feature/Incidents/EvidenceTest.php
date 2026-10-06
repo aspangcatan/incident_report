@@ -73,7 +73,7 @@ class EvidenceTest extends TestCase
         $outsider = User::factory()->create(['department_id' => Department::factory()->create()->id]);
         $this->actingAs($outsider)->post("/incidents/{$incident->id}/evidence", ['files' => [$this->photo()]])->assertForbidden();
 
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         app(IncidentService::class)->saveAssessment($incident, ['severity' => Severity::Level2Moderate->value]);
         app(IncidentService::class)->completeAssessment($incident->fresh(), $head);
 

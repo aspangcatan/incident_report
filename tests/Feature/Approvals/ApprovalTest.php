@@ -69,7 +69,7 @@ class ApprovalTest extends TestCase
 
     private function headOf(Incident $incident): User
     {
-        return User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        return User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
     }
 
     /** An incident with one verified CAPA, sitting at IncidentStatus::Verified. */
@@ -236,7 +236,7 @@ class ApprovalTest extends TestCase
     public function test_quality_staff_management_and_other_department_heads_cannot_request_approval(): void
     {
         $incident = $this->incidentReadyForApproval();
-        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+        $otherHead = User::factory()->headOf($headDept = Department::factory()->create())->create(['department_id' => $headDept->id]);
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
 
         foreach ([Role::QualitySafetyOfficer, Role::Administrator, Role::Management] as $role) {
@@ -274,7 +274,7 @@ class ApprovalTest extends TestCase
         $incident = $this->incidentThroughInvestigation();
         $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $admin = User::factory()->create(['role' => Role::Administrator]);
-        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+        $otherHead = User::factory()->headOf($headDept = Department::factory()->create())->create(['department_id' => $headDept->id]);
 
         $this->assertFalse($qso->can('markNoCorrectiveActionNeeded', $incident));
         $this->assertFalse($admin->can('markNoCorrectiveActionNeeded', $incident));
@@ -355,7 +355,7 @@ class ApprovalTest extends TestCase
         $requester = $this->headOf($incident);
         $approval = app(ApprovalService::class)->requestApproval($incident, $requester);
         $sameDeptHead = $this->headOf($incident);
-        $otherDeptHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => null]);
+        $otherDeptHead = User::factory()->headOf($otherDept = Department::factory()->create())->create(['department_id' => $otherDept->id]);
 
         foreach ([$requester, $sameDeptHead, $otherDeptHead] as $head) {
             $this->assertFalse($head->can('approveClosure', [$incident->fresh(), $approval]));

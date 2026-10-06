@@ -35,13 +35,13 @@ class EscalationRecipientsTest extends TestCase
         parent::setUp();
         $this->department = Department::factory()->create();
         $other = Department::factory()->create();
-        $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $this->head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $this->cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
         $this->leader = User::factory()->create(['role' => Role::Leadership]);
         DB::table('leadership_departments')->insert(['user_id' => $this->leader->id, 'department_id' => $this->department->id]);
         $this->executive = User::factory()->create(['role' => Role::Management]);
         $this->committee = User::factory()->create(['role' => Role::CqiCommittee]);
-        $this->otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $other->id]);
+        $this->otherHead = User::factory()->headOf($other->id)->create(['department_id' => $other->id]);
         $this->otherLeader = User::factory()->create(['role' => Role::Leadership]);
     }
 

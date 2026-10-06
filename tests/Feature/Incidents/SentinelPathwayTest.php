@@ -47,7 +47,7 @@ class SentinelPathwayTest extends TestCase
 
     private function departmentHead(): User
     {
-        return User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        return User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
     }
 
     private function focalPerson(): User
@@ -82,7 +82,7 @@ class SentinelPathwayTest extends TestCase
         $incident = $this->assessed(Severity::Level5Sentinel);
         $others = [
             User::factory()->create(['department_id' => $this->department->id]), // staff
-            User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]),
+            User::factory()->headOf($headDept = Department::factory()->create())->create(['department_id' => $headDept->id]),
             User::factory()->create(['role' => Role::QualitySafetyOfficer]),
         ];
 

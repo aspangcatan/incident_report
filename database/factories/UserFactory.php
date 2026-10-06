@@ -92,11 +92,6 @@ class UserFactory extends Factory
                 'level' => $role->value,
             ]);
 
-            // TEMPORARY (removed in Task 5): old tests make heads via 'role' => DepartmentHead.
-            if ($role === Role::DepartmentHead && $user->department_id !== null) {
-                Department::whereKey($user->department_id)->update(['head' => $user->id]);
-            }
-
             $user->unsetRelation('privilege');
         });
     }

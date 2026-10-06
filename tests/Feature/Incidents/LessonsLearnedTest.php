@@ -28,7 +28,7 @@ class LessonsLearnedTest extends TestCase
     private function readyForClosure(Severity $severity = Severity::Level2Moderate): Incident
     {
         $department = Department::factory()->create();
-        $this->head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $department->id]);
+        $this->head = User::factory()->headOf($department->id)->create(['department_id' => $department->id]);
         $this->reporter = User::factory()->create(['fname' => 'Secretreporter', 'lname' => 'Hiddenname']);
         $service = app(IncidentService::class);
         $incident = $service->createDraft($this->reporter, [

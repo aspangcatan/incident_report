@@ -121,7 +121,7 @@ class GuestReportTest extends TestCase
 
     public function test_guest_reports_cannot_be_returned_to_a_reporter(): void
     {
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => ($dept = Department::factory()->create())->id]);
+        $head = User::factory()->headOf($dept = Department::factory()->create())->create(['department_id' => $dept->id]);
         $incident = app(IncidentService::class)->submitGuestReport($this->data(['department_id' => $dept->id]));
 
         $this->assertFalse($head->can('returnToReporter', $incident));

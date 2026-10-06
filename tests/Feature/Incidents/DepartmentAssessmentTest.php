@@ -44,7 +44,7 @@ class DepartmentAssessmentTest extends TestCase
 
     private function departmentHead(): User
     {
-        return User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        return User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
     }
 
     public function test_save_assessment_stores_actions_recommendations_and_severity(): void

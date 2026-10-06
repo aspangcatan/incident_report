@@ -63,7 +63,7 @@ class CorrectiveActionTest extends TestCase
 
     private function headOf(Incident $incident): User
     {
-        return User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        return User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
     }
 
     private function capaData(array $extra = []): CorrectiveActionData
@@ -297,7 +297,7 @@ class CorrectiveActionTest extends TestCase
         $reporter = User::factory()->create();
         $department = Department::factory()->create();
         $incidentType = IncidentType::factory()->create();
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $department->id]);
+        $head = User::factory()->headOf($department->id)->create(['department_id' => $department->id]);
 
         $incident = app(IncidentService::class)->createDraft($reporter, [
             'department_id' => $department->id,
@@ -690,7 +690,7 @@ class CorrectiveActionTest extends TestCase
     public function test_the_department_head_of_the_incidents_department_can_create_and_edit_a_corrective_action_via_http(): void
     {
         $incident = $this->incidentReadyForCapa();
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
 
         $this->actingAs($head)->post("/incidents/{$incident->id}/corrective-actions", $this->capaPayload())
             ->assertSessionHasNoErrors()->assertRedirect();
@@ -705,7 +705,7 @@ class CorrectiveActionTest extends TestCase
     {
         $incident = $this->incidentReadyForCapa();
         $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData());
-        $otherHead = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => Department::factory()->create()->id]);
+        $otherHead = User::factory()->headOf($headDept = Department::factory()->create())->create(['department_id' => $headDept->id]);
 
         $this->actingAs($otherHead)->post("/incidents/{$incident->id}/corrective-actions", $this->capaPayload())
             ->assertForbidden();
@@ -759,7 +759,7 @@ class CorrectiveActionTest extends TestCase
         $incident = $this->incidentReadyForCapa();
         $capa = $this->completedCapa($incident);
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $incident->department_id]);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
 
         $this->assertTrue($supervisor->can('verify', $capa));
         $this->assertTrue($head->can('verify', $capa));
@@ -775,7 +775,7 @@ class CorrectiveActionTest extends TestCase
         $capa = $this->completedCapa($incident);
         $otherDepartment = Department::factory()->create()->id;
         $supervisor = User::factory()->create(['role' => Role::Supervisor, 'department_id' => $otherDepartment]);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $otherDepartment]);
+        $head = User::factory()->headOf($otherDepartment)->create(['department_id' => $otherDepartment]);
 
         $this->assertFalse($supervisor->can('verify', $capa));
         $this->assertFalse($head->can('verify', $capa));
@@ -818,7 +818,7 @@ class CorrectiveActionTest extends TestCase
     public function test_the_completer_cannot_verify_even_as_department_head_of_the_incidents_department(): void
     {
         $incident = $this->incidentReadyForCapa();
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $incident->department_id]);
+        $head = User::factory()->headOf($incident->department_id)->create(['department_id' => $incident->department_id]);
         $capa = app(CorrectiveActionService::class)->create($incident, $this->capaData(['responsible_user_id' => $head->id]));
         $this->actingAs($head)->post("/corrective-actions/{$capa->id}/complete", ['completion_notes' => 'Done.']);
 

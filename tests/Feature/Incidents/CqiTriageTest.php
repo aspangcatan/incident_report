@@ -43,7 +43,7 @@ class CqiTriageTest extends TestCase
     {
         $incident = $this->submitted();
         app(IncidentService::class)->saveAssessment($incident, ['severity' => $severity->value]);
-        app(IncidentService::class)->completeAssessment($incident->fresh(), User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]));
+        app(IncidentService::class)->completeAssessment($incident->fresh(), User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]));
 
         return $incident->fresh();
     }
@@ -115,7 +115,7 @@ class CqiTriageTest extends TestCase
     {
         $incident = $this->assessed(Severity::Level1Low);
         app(IncidentService::class)->markReviewed($incident, $this->cqi(), null);
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
 
         $this->assertFalse($head->can('skipInvestigation', $incident->fresh()));
     }
@@ -126,7 +126,7 @@ class CqiTriageTest extends TestCase
         $cqi = $this->cqi();
         app(IncidentService::class)->markReviewed($incident, $cqi, null);
         app(IncidentService::class)->skipInvestigation($incident->fresh(), $cqi, 'Minor.');
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
 
         $this->assertTrue($head->can('markNoCorrectiveActionNeeded', $incident->fresh()));
         $this->actingAs($head)->get("/incidents/{$incident->id}")->assertInertia(fn ($page) => $page

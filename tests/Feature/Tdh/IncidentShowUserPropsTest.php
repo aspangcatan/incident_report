@@ -83,7 +83,7 @@ class IncidentShowUserPropsTest extends TestCase
 
     public function test_a_department_head_who_can_create_corrective_actions_gets_responsible_users_as_id_name_and_label_only(): void
     {
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $incident = $this->submittedIncident();
         $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
 
@@ -174,7 +174,7 @@ class IncidentShowUserPropsTest extends TestCase
 
     public function test_responsible_users_are_only_active_staff_of_the_incidents_department(): void
     {
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $colleague = User::factory()->create(['department_id' => $this->department->id]);
         $retired = User::factory()->inactive()->create(['department_id' => $this->department->id]);
         $outsider = User::factory()->create(['department_id' => Department::factory()->create()->id]);
@@ -193,7 +193,7 @@ class IncidentShowUserPropsTest extends TestCase
 
     public function test_a_department_head_of_the_incidents_department_gets_responsible_users(): void
     {
-        $head = User::factory()->create(['role' => Role::DepartmentHead, 'department_id' => $this->department->id]);
+        $head = User::factory()->headOf($this->department->id)->create(['department_id' => $this->department->id]);
         $incident = $this->submittedIncident();
         $incident->forceFill(['status' => IncidentStatus::CorrectiveAction])->save();
 
