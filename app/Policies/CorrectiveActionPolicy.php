@@ -10,10 +10,10 @@ use App\Models\Incident;
 use App\Models\User;
 
 /**
- * The incident's department runs the CAPA stage: its Department Head creates
- * and edits CAPAs (assigning each to a staff member), the assigned
- * responsible person does the work, and a Supervisor/Department Head of the
- * incident's department verifies it - never the person who completed it.
+ * The incident's department runs the CAPA stage: its Department Head (tdh section head)
+ * creates and edits CAPAs (assigning each to a staff member), the assigned
+ * responsible person does the work, and a Supervisor of the incident's
+ * department or its Department Head verifies it - never the person who completed it.
  * The Quality office (QSO/Admin) does not act here; it comes in at closure
  * approval (IncidentPolicy::approveClosure()).
  */
@@ -66,13 +66,15 @@ class CorrectiveActionPolicy
             return false;
         }
 
-        return in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)
-            && $this->belongsToIncidentDepartment($user, $correctiveAction->incident);
+        $incident = $correctiveAction->incident;
+
+        return ($user->role === Role::Supervisor && $this->belongsToIncidentDepartment($user, $incident))
+            || $user->isHeadOf($incident->department_id);
     }
 
     private function isHeadOfIncidentDepartment(User $user, Incident $incident): bool
     {
-        return $user->role === Role::DepartmentHead && $this->belongsToIncidentDepartment($user, $incident);
+        return $user->isHeadOf($incident->department_id);
     }
 
     private function belongsToIncidentDepartment(User $user, Incident $incident): bool

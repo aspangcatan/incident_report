@@ -16,7 +16,7 @@ class IncidentPolicy
     /** The IT/System Administrator is technical only: no incident lists beyond their own reports. */
     public function viewAny(User $user): bool
     {
-        return ! in_array($user->role, [Role::Staff, Role::Administrator], true);
+        return ! in_array($user->role, [Role::Staff, Role::Administrator], true) || $user->isDepartmentHead();
     }
 
     public function viewAnalytics(User $user): bool
@@ -27,8 +27,7 @@ class IncidentPolicy
             Role::CqiCommittee,
             Role::Leadership,
             Role::Supervisor,
-            Role::DepartmentHead,
-        ], true);
+        ], true) || $user->isDepartmentHead();
     }
 
     public function view(User $user, Incident $incident): bool
@@ -65,7 +64,11 @@ class IncidentPolicy
             return true;
         }
 
-        if (in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)) {
+        if ($user->isHeadOf($incident->department_id)) {
+            return true;
+        }
+
+        if ($user->role === Role::Supervisor) {
             return $incident->department_id !== null && $incident->department_id === $user->department_id;
         }
 
@@ -134,9 +137,8 @@ class IncidentPolicy
             return true;
         }
 
-        return in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)
-            && $user->department_id !== null
-            && $incident->department_id === $user->department_id;
+        return ($user->role === Role::Supervisor && $user->department_id !== null && $incident->department_id === $user->department_id)
+            || $user->isHeadOf($incident->department_id);
     }
 
     /** Only the CQI Office, and never for High, Critical or Sentinel incidents. */
@@ -157,7 +159,7 @@ class IncidentPolicy
             return true;
         }
 
-        return $user->department_id !== null && $incident->department_id === $user->department_id;
+        return ($user->department_id !== null && $incident->department_id === $user->department_id) || $user->isHeadOf($incident->department_id);
     }
 
     /** Set severity, complete the assessment, or return the report to the reporter. */
@@ -171,9 +173,7 @@ class IncidentPolicy
             return true;
         }
 
-        return $user->role === Role::DepartmentHead
-            && $user->department_id !== null
-            && $incident->department_id === $user->department_id;
+        return $user->isHeadOf($incident->department_id);
     }
 
     /** Guests have no account, so their reports can't go back to them as a draft. */
@@ -225,9 +225,7 @@ class IncidentPolicy
         return $incident->is_sentinel_event
             && $incident->evidence_preserved_at === null
             && $incident->status !== IncidentStatus::Closed
-            && in_array($user->role, [Role::Supervisor, Role::DepartmentHead], true)
-            && $incident->department_id !== null
-            && $incident->department_id === $user->department_id;
+            && (($user->role === Role::Supervisor && $incident->department_id !== null && $incident->department_id === $user->department_id) || $user->isHeadOf($incident->department_id));
     }
 
     public function markNoCorrectiveActionNeeded(User $user, Incident $incident): bool
@@ -285,9 +283,7 @@ class IncidentPolicy
 
     private function isHeadOfIncidentDepartment(User $user, Incident $incident): bool
     {
-        return $user->role === Role::DepartmentHead
-            && $incident->department_id !== null
-            && $incident->department_id === $user->department_id;
+        return $user->isHeadOf($incident->department_id);
     }
 
     /**

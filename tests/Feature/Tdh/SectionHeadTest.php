@@ -4,7 +4,10 @@ namespace Tests\Feature\Tdh;
 
 use App\Enums\Role;
 use App\Models\Department;
+use App\Models\Incident;
+use App\Models\IncidentType;
 use App\Models\User;
+use App\Services\IncidentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -40,5 +43,51 @@ class SectionHeadTest extends TestCase
 
         $this->assertSame(Role::Leadership, $user->role);
         $this->assertTrue($user->isHeadOf($section->id));
+    }
+
+    /** A submitted incident in $department. */
+    private function submittedIncident(Department $department): Incident
+    {
+        $service = app(IncidentService::class);
+        $incident = $service->createDraft(User::factory()->create(), [
+            'department_id' => $department->id,
+            'incident_type_ids' => [IncidentType::factory()->create()->id],
+            'occurred_at' => now(),
+            'location' => 'Ward 3',
+            'summary' => 'Test incident.',
+        ]);
+        $service->submit($incident);
+
+        return $incident->fresh();
+    }
+
+    public function test_a_staff_level_head_assesses_incidents_of_the_section_they_head_only(): void
+    {
+        [$own, $headed] = Department::factory()->count(2)->create();
+        $head = User::factory()->headOf($headed)->create(['department_id' => $own->id]);
+
+        $inHeaded = $this->submittedIncident($headed);
+        $inOwn = $this->submittedIncident($own);
+
+        $this->assertTrue($head->can('viewAny', Incident::class));
+        $this->assertTrue($head->can('viewAnalytics', Incident::class));
+        $this->assertTrue($head->can('view', $inHeaded));
+        $this->assertTrue($head->can('completeAssessment', $inHeaded));
+        $this->assertTrue($head->can('recommendInvestigator', $inHeaded));
+        $this->assertFalse($head->can('completeAssessment', $inOwn));
+    }
+
+    public function test_a_leadership_user_who_heads_a_section_gets_both_scopes(): void
+    {
+        [$mapped, $headed, $other] = Department::factory()->count(3)->create();
+        $leader = User::factory()->headOf($headed)->create(['role' => Role::Leadership]);
+        \Illuminate\Support\Facades\DB::table('leadership_departments')->insert([
+            'user_id' => $leader->id, 'department_id' => $mapped->id, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->assertTrue($leader->can('view', $this->submittedIncident($mapped)));
+        $this->assertFalse($leader->can('completeAssessment', $this->submittedIncident($mapped)));
+        $this->assertTrue($leader->can('completeAssessment', $this->submittedIncident($headed)));
+        $this->assertFalse($leader->can('view', $this->submittedIncident($other)));
     }
 }
