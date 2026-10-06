@@ -505,6 +505,7 @@ use App\Models\IncidentType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rules\Unique;
 
 class StoreIncidentTypeRequest extends FormRequest
 {
@@ -534,7 +535,7 @@ class StoreIncidentTypeRequest extends FormRequest
         ];
     }
 
-    protected function uniqueName(): \Illuminate\Validation\Rules\Unique
+    protected function uniqueName(): Unique
     {
         return Rule::unique('incident_types', 'name');
     }
@@ -668,7 +669,7 @@ and, right after the two `/admin/leadership` routes inside the `auth` group, add
     Route::post('/admin/incident-types', [IncidentTypeController::class, 'store'])->name('admin.incident-types.store');
 ```
 
-Inertia's `assertInertia` will fail with "page component file does not exist" if the testing config checks for Vue files. If that happens, create a minimal placeholder `resources/js/Pages/Admin/IncidentTypes.vue` containing `<template><div /></template>` (Task 6 replaces it). Check `config/inertia.php` → `testing.ensure_pages_exist` first.
+Inertia's testing config has `ensure_pages_exist = true` (vendor default; the app has no `config/inertia.php`), so `assertInertia` fails unless the Vue file exists. Create a placeholder `resources/js/Pages/Admin/IncidentTypes.vue` containing only `<template><div /></template>` (Task 6 replaces it).
 
 - [ ] **Step 4: Run to verify they pass**
 
@@ -679,7 +680,7 @@ Expected: 10 passed.
 
 ```bash
 git add app/DataTransferObjects/IncidentTypes app/Http/Requests/IncidentTypes app/Services/IncidentTypeService.php app/Http/Resources/IncidentTypeResource.php app/Http/Controllers/Admin routes/web.php tests/Feature/Admin/IncidentTypeSettingsTest.php
-# plus resources/js/Pages/Admin/IncidentTypes.vue if a placeholder was created
+git add resources/js/Pages/Admin/IncidentTypes.vue
 git commit -m "feat: IT Admin lists and adds incident types
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
@@ -815,8 +816,6 @@ class UpdateIncidentTypeRequest extends StoreIncidentTypeRequest
     }
 }
 ```
-
-In `StoreIncidentTypeRequest`, change the `uniqueName()` return type to the imported short name: add `use Illuminate\Validation\Rules\Unique;` and write `protected function uniqueName(): Unique`.
 
 In `IncidentTypeController` add the import `use App\Http\Requests\IncidentTypes\UpdateIncidentTypeRequest;` and the method:
 
@@ -960,7 +959,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 6: The page and the sidebar link
 
 **Files:**
-- Create/replace: `resources/js/Pages/Admin/IncidentTypes.vue`
+- Replace: `resources/js/Pages/Admin/IncidentTypes.vue` (placeholder from Task 3)
+- Maybe modify: `resources/js/fontawesome.js`
 - Modify: `resources/js/Layouts/AuthenticatedLayout.vue` (the "Administration & Audit" group, ~line 83-91)
 
 UI rules (user's standing preference): every field has a visible label, a plain hint, and its own error message. Match the look of `resources/js/Pages/Admin/Leadership.vue` (same Tailwind tokens).
@@ -1178,7 +1178,7 @@ In `resources/js/Layouts/AuthenticatedLayout.vue`, in the "Administration & Audi
             { label: 'Incident Types', icon: 'tags', href: '/admin/incident-types', can: 'manageIncidentTypes' },
 ```
 
-Check how the layout maps `icon` strings to Font Awesome icons (search the file for `icon` / `library.add` / an icon map, and `resources/js/app.js`). If `tags` isn't registered, register `faTags` from `@fortawesome/free-solid-svg-icons` the same way the other sidebar icons are registered.
+Icons are registered in `resources/js/fontawesome.js` (`faBuilding` appears in its import list and its `library.add(...)` list). If `faTags` isn't there, add it to both lists the same way.
 
 - [ ] **Step 3: Build**
 
@@ -1194,7 +1194,7 @@ Expected: all tests pass (previous total + 21 new).
 
 ```bash
 git add resources/js/Pages/Admin/IncidentTypes.vue resources/js/Layouts/AuthenticatedLayout.vue
-# plus resources/js/app.js (or wherever icons are registered) if changed
+# plus resources/js/fontawesome.js if faTags was added
 git commit -m "feat: Incident Types settings page and sidebar link for the IT Admin
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
