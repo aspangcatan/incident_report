@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -17,12 +17,17 @@ const formOpen = ref(false);
 
 const chosenSeverity = computed(() => findSeverity(form.default_severity));
 
+function showForm() {
+    formOpen.value = true;
+    nextTick(() => document.getElementById('type_name')?.focus());
+}
+
 function openAdd() {
     editing.value = null;
     form.defaults({ ...blank });
     form.reset();
     form.clearErrors();
-    formOpen.value = true;
+    showForm();
 }
 
 function openEdit(type) {
@@ -35,7 +40,7 @@ function openEdit(type) {
     });
     form.reset();
     form.clearErrors();
-    formOpen.value = true;
+    showForm();
 }
 
 function closeForm() {
