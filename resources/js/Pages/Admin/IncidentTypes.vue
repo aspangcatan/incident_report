@@ -178,7 +178,7 @@ function destroy(type) {
                                 {{ type.is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </td>
-                        <td class="px-space-md py-3">{{ type.usage_count }} {{ type.usage_count === 1 ? 'incident' : 'incidents' }}</td>
+                        <td class="px-space-md py-3 whitespace-nowrap">{{ type.usage_count }} {{ type.usage_count === 1 ? 'incident' : 'incidents' }}</td>
                         <td class="px-space-md py-3">
                             <div class="flex items-center justify-end gap-space-sm">
                                 <button type="button" class="px-3 py-1.5 rounded-lg bg-surface-container font-label-md text-label-md text-on-surface" @click="openEdit(type)">
@@ -192,7 +192,7 @@ function destroy(type) {
                                 >
                                     Delete
                                 </button>
-                                <span v-else class="font-body-sm text-body-sm text-outline max-w-[14rem]">In use — can't be deleted. Switch it off to hide it instead.</span>
+                                <span v-else class="font-body-sm text-body-sm text-outline max-w-[14rem]">In use by reports or recurrence reviews — can't be deleted. Switch it off to hide it instead.</span>
                             </div>
                         </td>
                     </tr>
