@@ -54,7 +54,7 @@ return [
     | Department Head can confirm the actions worked (and request closure)
     |--------------------------------------------------------------------------
     */
-    'effectiveness_wait_days' => 30,
+    'effectiveness_wait_days' => 0,
 
     /*
     |--------------------------------------------------------------------------
