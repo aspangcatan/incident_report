@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Enums\CorrectiveActionPriority;
 use App\Enums\Role;
-use App\Enums\Severity;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\Investigation;
@@ -14,18 +13,42 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The client's Escalation & Notification Matrix (2026-10-01): who is told for
- * each severity and for overdue RCA/CAPA. Callers exclude the actor themselves.
+ * each severity (editable, see SeverityAlertSettings) and for overdue RCA/CAPA.
+ * Callers exclude the actor themselves.
  */
 final class EscalationRecipients
 {
+    /** The groups the IT Admin set for this level (Admin → Severity Alerts). */
     public static function forSeverity(Incident $incident): Collection
     {
-        return self::merge(match ($incident->severity) {
-            Severity::Level2Moderate => [IncidentReviewers::departmentHeads($incident), self::cqiOffice()],
-            Severity::Level3High => [IncidentReviewers::departmentHeads($incident), self::cqiOffice(), self::leadership($incident)],
-            Severity::Level4Critical, Severity::Level5Sentinel => [self::cqiOffice(), self::leadership($incident), self::executives()],
-            default => [],
-        });
+        if ($incident->severity === null) {
+            return new Collection();
+        }
+
+        return self::merge(array_map(
+            fn (string $recipient) => self::severityGroup($recipient, $incident),
+            SeverityAlertSettings::recipientsFor($incident->severity)
+        ));
+    }
+
+    /** One SeverityAlertSettings::options() key as people; department groups use the incident's department. */
+    private static function severityGroup(string $recipient, Incident $incident): Collection
+    {
+        return match ($recipient) {
+            SeverityAlertSettings::DEPARTMENT_HEAD => IncidentReviewers::departmentHeads($incident),
+            Role::Leadership->value => self::leadership($incident),
+            Role::Supervisor->value, Role::Staff->value => self::departmentMembers(Role::from($recipient), $incident),
+            default => User::active()->withRole(Role::from($recipient))->get(),
+        };
+    }
+
+    private static function departmentMembers(Role $role, Incident $incident): Collection
+    {
+        if ($incident->department_id === null) {
+            return new Collection();
+        }
+
+        return User::active()->withRole($role)->where('section', $incident->department_id)->get();
     }
 
     public static function forOverdueInvestigation(Investigation $investigation): Collection

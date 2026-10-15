@@ -32,6 +32,7 @@ class SidebarPermissionsTest extends TestCase
             'administration' => false,
             'manageIncidentTypes' => false,
             'manageWorkflowDurations' => false,
+            'manageSeverityAlerts' => false,
         ]));
     }
 
@@ -45,6 +46,7 @@ class SidebarPermissionsTest extends TestCase
             'administration' => $admin,
             'manageIncidentTypes' => $itAdmin,
             'manageWorkflowDurations' => $itAdmin,
+            'manageSeverityAlerts' => $itAdmin,
         ];
 
         return [

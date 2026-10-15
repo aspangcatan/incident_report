@@ -496,3 +496,12 @@ The Department/Service Head is no longer an IR privilege level. It now comes fro
 **Safety alerts:** an alert sent to selected departments also reaches each department's head, even when the head works in another section (`SafetyAlert::isAddressedTo`, `scopeAddressedTo`, `recipients()`). Decided by the user 2026-10-06.
 
 **Live data note (2026-10-06):** 27 of 101 sections have an inactive head (e.g. ER/IER 54, OR 47, OPD 46, wards, NICU/PICU/AICU/CCU), so head-only steps (create/edit CAPA, "no corrective action needed", request closure) have nobody there until `tdh_user` is fixed. Section 76's head (1199) is a deleted user. Placeholder sections (`description = '-'`) are ignored (`headedDepartmentIds()` skips them). Head 1142 (kromero) has a duplicate account 1853 (ksromero) without head powers.
+
+## 9s. Severity alert recipients settings (2026-10-15)
+
+The IT Admin (`administrator`) chooses who receives the severity alert (§9o) at each of the five fixed levels, from **Administration & Audit → Severity Alerts** (`GET/PUT /admin/severity-alerts`, `Admin\SeverityAlertRecipientController`, gate `manageSeverityAlerts`, shared flag `auth.can.manageSeverityAlerts`).
+
+- **Storage:** `severity_alert_settings` (`severity` unique, `recipients` json list), read through `App\Support\SeverityAlertSettings`. No row for a level → the default in `config/incident_workflow.php` `severity_alert_recipients` (the client's 2026-10-01 matrix, so nothing changed on deploy). A saved empty list → nobody is alerted at that level. Unknown keys in a saved row are ignored.
+- **Recipient groups** (`SeverityAlertSettings::options()`): every IR role plus `department_head` (tdh `section.head`, not a role). Scoped to the incident's department: Department/Service Head, Focal Person (`supervisor`), Staff (no IR level), Leadership (via `leadership_departments`). Hospital-wide: CQI Office, CQI Committee, Hospital Executive, Investigator, IT Admin. An incident with no department skips the department-scoped groups.
+- **Unchanged:** `EscalationRecipients::forSeverity()` still feeds `SendSeverityAlert`, the actor is still excluded, inactive users are skipped, and the overdue escalation recipients (`forOverdueInvestigation`, `forOverdueCorrectiveAction`, `escalation_recipient_roles`) are not editable here.
+- **Tests:** `tests/Feature/Admin/SeverityAlertRecipientsTest.php`.

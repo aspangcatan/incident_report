@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\IncidentTypeController;
+use App\Http\Controllers\Admin\SeverityAlertRecipientController;
 use App\Http\Controllers\Admin\WorkflowDurationController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApprovalController;
@@ -97,4 +98,6 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::delete('/admin/incident-types/{incidentType}', [IncidentTypeController::class, 'destroy'])->name('admin.incident-types.destroy');
     Route::get('/admin/workflow-durations', [WorkflowDurationController::class, 'index'])->name('admin.workflow-durations.index');
     Route::put('/admin/workflow-durations', [WorkflowDurationController::class, 'update'])->name('admin.workflow-durations.update');
+    Route::get('/admin/severity-alerts', [SeverityAlertRecipientController::class, 'index'])->name('admin.severity-alerts.index');
+    Route::put('/admin/severity-alerts', [SeverityAlertRecipientController::class, 'update'])->name('admin.severity-alerts.update');
 });

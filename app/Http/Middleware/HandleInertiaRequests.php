@@ -56,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                     'administration' => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true),
                     'manageIncidentTypes' => $user->can('viewAny', IncidentType::class),
                     'manageWorkflowDurations' => $user->can('manageWorkflowDurations'),
+                    'manageSeverityAlerts' => $user->can('manageSeverityAlerts'),
                 ] : [],
             ],
             'flash' => [
