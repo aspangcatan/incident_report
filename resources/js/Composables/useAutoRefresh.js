@@ -7,7 +7,8 @@ const IDLE_LIMIT_MS = 10 * 60 * 1000;
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
 
 // Shared props behind the bell, the sidebar badges and the safety alert banner.
-const SHARED_PROPS = ['unreadNotificationsCount', 'queueCounts', 'pendingSafetyAlert'];
+// realtime: a fresh WebSocket token, so a long session can reconnect.
+const SHARED_PROPS = ['unreadNotificationsCount', 'queueCounts', 'pendingSafetyAlert', 'realtime'];
 
 /**
  * Quietly reloads the badge counts every 30 seconds, plus any of the current
@@ -51,4 +52,7 @@ export function useAutoRefresh(pageProps = () => []) {
         document.removeEventListener('visibilitychange', onVisibilityChange);
         window.clearInterval(timer);
     });
+
+    // A real-time push calls this to update the badges and lists at once.
+    return { refresh };
 }

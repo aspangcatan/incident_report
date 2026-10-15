@@ -5,20 +5,6 @@ defineProps({
 </script>
 
 <template>
-    <svg :class="class" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="48" height="48" rx="12" fill="#1E3A8A" />
-        <path
-            d="M24 8L37 14V24C37 32 31.5 39.5 24 42C16.5 39.5 11 32 11 24V14L24 8Z"
-            stroke="#0D9488"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            fill="#1E293B"
-            fill-opacity="0.5"
-        />
-        <path d="M24 16V32" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
-        <path d="M16 24H32" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
-        <circle cx="24" cy="24" r="3" fill="#14B8A6" />
-        <circle cx="34" cy="14" r="3.5" fill="#F59E0B" stroke="#1E3A8A" stroke-width="1.5" />
-    </svg>
+    <!-- Cebu South Medical Center seal; source: resources/images/csmc_logo.png -->
+    <img src="/images/csmc-logo.png" alt="Cebu South Medical Center" :class="[$props.class, 'object-contain']" />
 </template>

@@ -1,16 +1,39 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLogo from '@/Components/AppLogo.vue';
 import FlashBanner from '@/Components/FlashBanner.vue';
+import RealtimeToasts from '@/Components/RealtimeToasts.vue';
 import { useAutoRefresh } from '@/Composables/useAutoRefresh';
+import { useRealtime } from '@/Composables/useRealtime';
+import { isUrgentNotification } from '@/Utils/notificationLinks';
+import { isVoiceMuted, prepareNotificationVoice, setVoiceMuted, speak, spokenText } from '@/Utils/notificationVoice';
 
 const props = defineProps({
     // The page's own props to reload with the badges every 30 seconds, e.g. ['incidents'].
     refresh: { type: Array, default: () => [] },
 });
 
-useAutoRefresh(() => props.refresh);
+const { refresh: refreshNow } = useAutoRefresh(() => props.refresh);
+
+// Instant notifications (realtime/server.js): read aloud, a toast, and badges and lists updated at once.
+const toasts = ref(null);
+prepareNotificationVoice();
+const voiceMuted = ref(isVoiceMuted());
+
+function toggleVoice() {
+    voiceMuted.value = !voiceMuted.value;
+    setVoiceMuted(voiceMuted.value);
+    if (!voiceMuted.value) speak('Notifications will be read aloud.'); // let them hear the voice
+}
+
+useRealtime((event, data) => {
+    if (event !== 'notification') return;
+    const urgent = isUrgentNotification(data.type);
+    speak(spokenText(data), urgent);
+    toasts.value?.show(data);
+    refreshNow();
+});
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -35,8 +58,36 @@ function handleOutsideClick(event) {
     }
 }
 
-onMounted(() => document.addEventListener('click', handleOutsideClick));
-onBeforeUnmount(() => document.removeEventListener('click', handleOutsideClick));
+// Below the lg breakpoint the sidebar slides in over the page; any visit closes it.
+const sidebarOpen = ref(false);
+const removeNavigateListener = router.on('navigate', () => {
+    sidebarOpen.value = false;
+});
+
+function onKeydown(event) {
+    if (event.key === 'Escape') {
+        sidebarOpen.value = false;
+        showUserMenu.value = false;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('keydown', onKeydown);
+});
+onBeforeUnmount(() => {
+    document.removeEventListener('click', handleOutsideClick);
+    document.removeEventListener('keydown', onKeydown);
+    removeNavigateListener();
+});
+
+// Header search: incident number or location, across every incident this user can see.
+const search = ref(new URL(page.url, window.location.origin).searchParams.get('search') ?? '');
+
+function submitSearch() {
+    const scope = page.props.auth?.can?.viewAllIncidents ? 'all' : 'my-reports';
+    router.get('/incidents', { scope, search: search.value.trim() || undefined });
+}
 
 const allNavGroups = [
     {
@@ -98,9 +149,7 @@ const allNavGroups = [
             { label: 'Incident Types', icon: 'tags', href: '/admin/incident-types', can: 'manageIncidentTypes' },
             { label: 'Workflow Durations', icon: 'clock', href: '/admin/workflow-durations', can: 'manageWorkflowDurations' },
             { label: 'Severity Alerts', icon: 'bell', href: '/admin/severity-alerts', can: 'manageSeverityAlerts' },
-            { label: 'Escalation Engine', icon: 'sitemap', href: '#' },
-            { label: 'Departments & Units', icon: 'building', href: '#' },
-            { label: 'Audit Trail & Custody', icon: 'file-contract', href: '#' },
+            { label: 'Escalation Engine', icon: 'sitemap', href: '/admin/escalation-engine' },
         ],
     },
 ];
@@ -119,8 +168,8 @@ const queueCounts = computed(() => page.props.queueCounts ?? {});
 const pendingSafetyAlert = computed(() => page.props.pendingSafetyAlert ?? null);
 const badgeCount = (item) => (item.queue ? queueCounts.value[item.queue] : null);
 
-const activeLinkClasses = 'bg-primary-container text-on-primary font-semibold shadow-[0_1px_3px_rgba(0,35,111,0.1)]';
-const inactiveLinkClasses = 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface';
+const activeLinkClasses = 'bg-white text-primary font-semibold shadow-sm';
+const inactiveLinkClasses = 'text-white/75 hover:bg-white/10 hover:text-white';
 
 function queryParam(url) {
     const params = new URL(url, window.location.origin);
@@ -151,37 +200,129 @@ function isActive(href) {
 
 <template>
     <div class="min-h-screen bg-background font-body-md text-on-surface">
-        <header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-            <div class="h-16 w-full px-margin flex items-center justify-between gap-space-md">
-                <div class="flex items-center gap-space-md min-w-[280px]">
-                    <AppLogo class="h-8 w-8" />
-                    <div class="flex flex-col">
-                        <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">
-                            Philippine National Health System
-                        </span>
-                        <span class="font-title-sm text-title-sm text-on-surface font-semibold tracking-tight">
-                            HOPSS e-Incident
-                        </span>
-                    </div>
-                </div>
+        <!-- Sidebar: fixed on lg+, slides in below that -->
+        <div
+            v-if="sidebarOpen"
+            class="fixed inset-0 z-40 bg-on-background/50 lg:hidden"
+            aria-hidden="true"
+            @click="sidebarOpen = false"
+        />
+        <aside
+            class="fixed inset-y-0 left-0 z-50 w-72 bg-primary text-white flex flex-col transition-transform duration-200 lg:translate-x-0"
+            :class="sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'"
+            aria-label="Main navigation"
+        >
+            <div class="h-16 shrink-0 px-4 flex items-center gap-3 border-b border-white/10">
+                <span class="h-10 w-10 shrink-0 rounded-full bg-white p-0.5 shadow-sm"><AppLogo class="h-full w-full" /></span>
+                <span class="flex flex-col leading-tight min-w-0">
+                    <span class="font-label-sm text-[0.625rem] uppercase tracking-wider text-secondary-fixed-dim font-bold">Cebu South Medical Center</span>
+                    <span class="font-headline-sm text-[0.8125rem] font-bold">CSMC Incident/Accident Reporting System</span>
+                </span>
+            </div>
 
-                <div class="flex-1 max-w-xl hidden xl:flex items-center gap-space-sm">
-                    <div class="relative w-full flex items-center bg-surface-container-low rounded-lg px-space-md py-1.5 focus-within:ring-2 focus-within:ring-primary">
-                        <FontAwesomeIcon icon="magnifying-glass" class="text-outline text-title-md mr-2" />
+            <div class="pt-3 md:pt-1">
+                <form class="md:hidden px-4 pb-2" role="search" @submit.prevent="submitSearch">
+                    <label class="flex items-center rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/20 focus-within:ring-2 focus-within:ring-white">
+                        <span class="sr-only">Search incidents</span>
+                        <FontAwesomeIcon icon="magnifying-glass" class="text-white/60 mr-2" />
                         <input
-                            type="text"
-                            placeholder="Search incident ID, patient, reporter, clinical unit..."
-                            class="w-full bg-transparent border-none outline-none font-body-sm text-body-sm text-on-surface placeholder:text-outline"
+                            v-model="search"
+                            type="search"
+                            placeholder="Incident number or location…"
+                            class="w-full bg-transparent border-none outline-none p-0 font-body-md text-body-md text-white placeholder:text-white/50 focus:ring-0"
                         />
-                    </div>
-                </div>
+                    </label>
+                </form>
+            </div>
 
-                <div class="flex items-center gap-space-md">
-                    <Link href="/notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors">
+            <nav class="flex-1 overflow-y-auto px-3 pb-6 flex flex-col gap-0.5 sidebar-scroll">
+                <Link
+                    href="/"
+                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors"
+                    :class="isActive('/') ? activeLinkClasses : inactiveLinkClasses"
+                >
+                    <FontAwesomeIcon icon="gauge-high" class="text-title-md w-5" />
+                    <span class="font-body-md text-body-md">Dashboard</span>
+                </Link>
+
+                <template v-for="group in navGroups" :key="group.label">
+                    <div class="pt-4 pb-1 px-3">
+                        <span class="font-label-sm text-[0.6875rem] text-white/50 uppercase tracking-wider font-semibold">
+                            {{ group.label }}
+                        </span>
+                    </div>
+                    <Link
+                        v-for="item in group.items"
+                        :key="item.label"
+                        :href="item.href"
+                        class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg transition-colors"
+                        :class="isActive(item.href) ? activeLinkClasses : inactiveLinkClasses"
+                    >
+                        <span class="flex items-center gap-2.5 min-w-0">
+                            <FontAwesomeIcon :icon="item.icon" class="text-title-md w-5 shrink-0" />
+                            <span class="font-body-md text-body-md truncate">{{ item.label }}</span>
+                        </span>
+                        <span
+                            v-if="badgeCount(item)"
+                            class="font-code-tabular text-body-sm min-w-[1.5rem] text-center px-1.5 py-0.5 rounded-full font-semibold"
+                            :class="item.badgeClass ?? (isActive(item.href) ? 'bg-primary text-on-primary' : 'bg-white/15 text-white')"
+                        >
+                            {{ badgeCount(item) }}
+                        </span>
+                    </Link>
+                </template>
+            </nav>
+        </aside>
+
+        <!-- Top bar -->
+        <header class="fixed top-0 right-0 left-0 lg:left-72 z-30 h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/40">
+            <div class="h-full px-4 lg:px-margin flex items-center gap-3">
+                <button
+                    type="button"
+                    class="lg:hidden h-10 w-10 -ml-1 rounded-lg text-on-surface-variant hover:bg-surface-container flex items-center justify-center"
+                    aria-label="Open menu"
+                    @click="sidebarOpen = true"
+                >
+                    <FontAwesomeIcon icon="bars" class="text-title-lg" />
+                </button>
+                <span class="lg:hidden flex items-center gap-2 min-w-0">
+                    <AppLogo class="h-8 w-8 shrink-0" />
+                    <span class="font-headline-sm text-title-sm text-primary font-bold truncate hidden sm:inline">CSMC Incident/Accident</span>
+                </span>
+
+                <form class="flex-1 max-w-xl hidden md:flex" role="search" @submit.prevent="submitSearch">
+                    <label class="relative w-full flex items-center bg-surface-container-low rounded-lg px-3 py-2 ring-1 ring-outline-variant/40 focus-within:ring-2 focus-within:ring-primary focus-within:bg-surface-container-lowest">
+                        <span class="sr-only">Search incidents</span>
+                        <FontAwesomeIcon icon="magnifying-glass" class="text-outline mr-2" />
+                        <input
+                            v-model="search"
+                            type="search"
+                            placeholder="Search by incident number or location…"
+                            class="w-full bg-transparent border-none outline-none p-0 font-body-md text-body-md text-on-surface placeholder:text-outline focus:ring-0"
+                        />
+                    </label>
+                </form>
+
+                <div class="ml-auto flex items-center gap-1 sm:gap-2">
+                    <button
+                        v-if="page.props.realtime"
+                        type="button"
+                        class="h-10 w-10 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center justify-center"
+                        :aria-label="voiceMuted ? 'Read notifications aloud' : 'Stop reading notifications aloud'"
+                        :title="voiceMuted ? 'Reading notifications aloud is off' : 'Notifications are read aloud'"
+                        @click="toggleVoice"
+                    >
+                        <FontAwesomeIcon :icon="voiceMuted ? 'volume-xmark' : 'volume-high'" class="text-title-md" />
+                    </button>
+                    <Link
+                        href="/notifications"
+                        class="relative h-10 w-10 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center justify-center"
+                        :aria-label="unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'"
+                    >
                         <FontAwesomeIcon icon="bell" class="text-title-lg" />
                         <span
                             v-if="unreadCount > 0"
-                            class="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-error text-on-error rounded-full font-label-sm text-[10px] leading-4 text-center font-bold"
+                            class="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-error text-on-error rounded-full text-[10px] leading-[18px] text-center font-bold ring-2 ring-surface-container-lowest"
                         >
                             {{ unreadCount > 9 ? '9+' : unreadCount }}
                         </span>
@@ -190,28 +331,34 @@ function isActive(href) {
                     <div ref="userMenuRoot" class="relative">
                         <button
                             type="button"
-                            class="flex items-center gap-space-sm pl-2"
+                            class="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-lg hover:bg-surface-container transition-colors"
+                            :aria-expanded="showUserMenu"
                             @click="showUserMenu = !showUserMenu"
                         >
-                            <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-body-sm font-bold">
+                            <span class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md text-label-md font-bold">
                                 {{ initials }}
-                            </div>
-                            <div class="hidden md:flex flex-col text-left">
+                            </span>
+                            <span class="hidden md:flex flex-col text-left">
                                 <span class="font-title-sm text-title-sm text-on-surface leading-tight">{{ user?.name }}</span>
-                                <span class="font-label-sm text-body-sm text-outline leading-tight">{{ user?.designation }}</span>
-                            </div>
+                                <span class="font-body-sm text-body-sm text-outline leading-tight">{{ user?.role_label }}</span>
+                            </span>
                             <FontAwesomeIcon icon="chevron-down" class="text-outline text-body-sm" />
                         </button>
 
                         <div
                             v-if="showUserMenu"
-                            class="absolute right-0 mt-2 w-48 rounded-lg bg-surface-container-lowest shadow-lg border border-outline-variant/30 py-1 z-50"
+                            class="absolute right-0 mt-2 w-64 rounded-xl bg-surface-container-lowest shadow-lg ring-1 ring-outline-variant/40 p-1.5 z-50"
                         >
+                            <div class="px-3 py-2 border-b border-outline-variant/40 mb-1">
+                                <p class="font-title-sm text-title-sm text-on-surface">{{ user?.name }}</p>
+                                <p class="font-body-sm text-body-sm text-outline">{{ user?.role_label }}</p>
+                                <p v-if="user?.designation" class="font-body-sm text-body-sm text-outline">{{ user.designation }}</p>
+                            </div>
                             <Link
                                 href="/logout"
                                 method="post"
                                 as="button"
-                                class="w-full text-left flex items-center gap-2 px-3 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low"
+                                class="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low"
                             >
                                 <FontAwesomeIcon icon="right-from-bracket" />
                                 Log out
@@ -222,72 +369,21 @@ function isActive(href) {
             </div>
         </header>
 
-        <aside class="fixed left-0 top-0 bottom-0 h-screen w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 overflow-y-auto shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
-            <div class="px-space-md mb-3">
-                <Link
-                    href="/incidents/create"
-                    class="flex items-center justify-center gap-space-xs w-full py-2.5 px-space-md rounded-lg bg-secondary text-on-secondary hover:bg-on-secondary-container font-label-md text-label-md transition-all shadow-[0_1px_3px_rgba(0,106,97,0.2)]"
-                >
-                    <FontAwesomeIcon icon="circle-plus" class="text-title-md" />
-                    <span>Report an Incident</span>
-                </Link>
-            </div>
-
-            <nav class="flex-1 px-space-sm flex flex-col gap-0.5">
-                <Link
-                    href="/"
-                    class="flex items-center justify-between px-3 py-2 rounded-lg transition-colors"
-                    :class="isActive('/') ? activeLinkClasses : inactiveLinkClasses"
-                >
-                    <div class="flex items-center gap-2.5">
-                        <FontAwesomeIcon icon="gauge-high" class="text-title-md" />
-                        <span class="font-body-md text-body-md">Dashboard</span>
-                    </div>
-                </Link>
-
-                <template v-for="group in navGroups" :key="group.label">
-                    <div class="pt-3 pb-1 px-3">
-                        <span class="font-label-sm text-body-sm text-outline uppercase tracking-wider font-semibold">
-                            {{ group.label }}
-                        </span>
-                    </div>
-                    <Link
-                        v-for="item in group.items"
-                        :key="item.label"
-                        :href="item.href"
-                        class="flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors"
-                        :class="isActive(item.href) ? activeLinkClasses : inactiveLinkClasses"
-                    >
-                        <div class="flex items-center gap-2.5">
-                            <FontAwesomeIcon :icon="item.icon" class="text-title-md w-5" />
-                            <span class="font-body-md text-body-md">{{ item.label }}</span>
-                        </div>
-                        <span
-                            v-if="badgeCount(item)"
-                            class="font-code-tabular text-body-sm px-2 py-0.5 rounded-full font-semibold"
-                            :class="item.badgeClass ?? 'bg-surface-container text-on-surface'"
-                        >
-                            {{ badgeCount(item) }}
-                        </span>
-                    </Link>
-                </template>
-            </nav>
-        </aside>
-
-        <div class="pl-72">
+        <div class="lg:pl-72">
             <FlashBanner />
-            <main class="w-full pt-16 pb-12 px-margin min-h-screen">
-                <div class="flex flex-col w-full gap-space-lg py-space-lg">
+            <RealtimeToasts ref="toasts" />
+            <main class="w-full pt-16 pb-12 px-4 lg:px-margin min-h-screen">
+                <div class="flex flex-col w-full max-w-[90rem] mx-auto gap-space-lg py-space-lg">
                     <Link
                         v-if="pendingSafetyAlert && !page.url.startsWith(`/safety-alerts/${pendingSafetyAlert.id}`)"
                         :href="`/safety-alerts/${pendingSafetyAlert.id}`"
                         role="alert"
-                        class="rounded-lg p-space-md flex items-center gap-3 border-l-4"
+                        class="rounded-xl p-space-md flex flex-wrap items-center gap-3 border-l-4"
                         :class="pendingSafetyAlert.urgency === 'critical' ? 'bg-error-container text-on-error-container border-error' : 'bg-amber-50 text-amber-900 border-amber-500'"
                     >
                         <FontAwesomeIcon icon="bullhorn" />
                         <span class="font-title-sm text-title-sm font-semibold">Safety alert:</span>
-                        <span class="font-body-md text-body-md flex-1">{{ pendingSafetyAlert.title }}</span>
+                        <span class="font-body-md text-body-md flex-1 min-w-[12rem]">{{ pendingSafetyAlert.title }}</span>
                         <span class="font-label-md text-label-md font-semibold underline whitespace-nowrap">Read and acknowledge</span>
                     </Link>
                     <slot />
@@ -296,3 +392,10 @@ function isActive(href) {
         </div>
     </div>
 </template>
+
+<style scoped>
+.sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+}
+</style>

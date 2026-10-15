@@ -7,7 +7,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-const appName = import.meta.env.VITE_APP_NAME || 'HOPSS e-Incident';
+const appName = import.meta.env.VITE_APP_NAME || 'CSMC Incident/Accident Reporting System';
 
 createInertiaApp({
     title: (title) => (title ? `${title} — ${appName}` : appName),

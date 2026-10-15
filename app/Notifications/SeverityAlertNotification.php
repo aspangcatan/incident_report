@@ -29,6 +29,7 @@ class SeverityAlertNotification extends Notification
         return [
             'incident_id' => $this->incident->id,
             'incident_number' => $this->incident->incident_number,
+            'severity' => $severity->value,
             'message' => "{$severity->label()} incident: {$number} ({$department}) was rated {$severity->romanNumeral()} – {$severity->label()}.",
         ];
     }

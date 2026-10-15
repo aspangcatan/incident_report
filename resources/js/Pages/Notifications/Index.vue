@@ -1,22 +1,32 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import EmptyState from '@/Components/EmptyState.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { formatDate } from '@/Utils/formatDate';
+import { isUrgentNotification, notificationUrl } from '@/Utils/notificationLinks';
 
 defineProps({
     notifications: { type: Object, required: true },
 });
 
-function targetUrl(notification) {
-    if (notification.data.safety_alert_id) return `/safety-alerts/${notification.data.safety_alert_id}`;
-    if (notification.data.recurrence_review_id) return `/recurrence-reviews/${notification.data.recurrence_review_id}`;
-    if (notification.data.incident_id) {
-        const tab = notification.data.tab ? `?tab=${notification.data.tab}` : '';
-        return `/incidents/${notification.data.incident_id}${tab}`;
-    }
-    return null;
+const targetUrl = (notification) => notificationUrl(notification.data);
+
+// Icon from what the notification is about: escalations and reminders stand out.
+function iconFor(notification) {
+    const type = notification.type ?? '';
+    if (type.includes('Escalation')) return 'triangle-exclamation';
+    if (type.includes('Reminder')) return 'clock';
+    if (type.includes('SafetyAlert')) return 'bullhorn';
+    if (type.includes('Severity') || type.includes('HighRisk')) return 'circle-exclamation';
+    if (type.includes('Recurrence')) return 'arrows-rotate';
+    if (type.includes('Closure') || type.includes('SignOff')) return 'stamp';
+    if (type.includes('Effectiveness')) return 'clipboard-check';
+    return 'bell';
 }
+
+const urgent = (notification) => isUrgentNotification(notification.type ?? '');
 
 function markRead(notification) {
     router.post(`/notifications/${notification.id}/read`, {}, { preserveScroll: true });
@@ -27,43 +37,50 @@ function markRead(notification) {
     <Head title="Notifications" />
 
     <AuthenticatedLayout :refresh="['notifications']">
-        <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
-            <h1 class="font-headline-sm text-headline-sm text-on-surface">Notifications</h1>
+        <PageHeader title="Notifications" description="Assignments, reminders, escalations and alerts sent to you. New ones arrive here automatically." icon="bell" />
 
-            <div v-if="notifications.data.length === 0" class="p-space-lg text-center font-body-sm text-body-sm text-outline">
-                No notifications yet.
-            </div>
+        <section class="rounded-2xl bg-surface-container-lowest shadow-sm ring-1 ring-outline-variant/40 overflow-hidden">
+            <EmptyState v-if="notifications.data.length === 0" icon="bell" title="No notifications yet" text="When something needs your attention, it will show up here." />
 
-            <div
-                v-for="notification in notifications.data"
-                :key="notification.id"
-                class="p-3 rounded-lg flex items-start justify-between gap-3"
-                :class="notification.read_at ? 'bg-surface-container-low' : 'bg-primary-container/10 border border-primary/20'"
-            >
-                <div class="flex flex-col">
-                    <span class="font-body-md text-body-md text-on-surface">{{ notification.data.message }}</span>
-                    <span class="font-code-tabular text-body-sm text-outline">{{ formatDate(notification.created_at) }}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                <Link
-                    v-if="targetUrl(notification)"
-                    :href="targetUrl(notification)"
-                    class="font-label-sm text-body-sm text-primary font-semibold whitespace-nowrap"
+            <ul v-else class="divide-y divide-outline-variant/30">
+                <li
+                    v-for="notification in notifications.data"
+                    :key="notification.id"
+                    class="flex items-start gap-4 px-4 sm:px-5 py-4"
+                    :class="notification.read_at ? '' : 'bg-primary-fixed/30'"
                 >
-                    Open
-                </Link>
-                <button
-                    v-if="!notification.read_at"
-                    type="button"
-                    class="font-label-sm text-body-sm text-primary font-semibold whitespace-nowrap"
-                    @click="markRead(notification)"
-                >
-                    Mark as read
-                </button>
-                </div>
-            </div>
+                    <span
+                        class="h-10 w-10 shrink-0 rounded-full flex items-center justify-center"
+                        :class="urgent(notification) ? 'bg-error-container text-error' : 'bg-primary-fixed text-primary'"
+                    >
+                        <FontAwesomeIcon :icon="iconFor(notification)" />
+                    </span>
+                    <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <span class="font-body-md text-body-md text-on-surface" :class="notification.read_at ? '' : 'font-semibold'">{{ notification.data.message }}</span>
+                        <span class="font-body-sm text-body-sm text-outline">{{ formatDate(notification.created_at) }}</span>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-end gap-1 shrink-0">
+                        <span v-if="!notification.read_at" class="h-2.5 w-2.5 rounded-full bg-primary mr-1" aria-label="Unread" />
+                        <button
+                            v-if="!notification.read_at"
+                            type="button"
+                            class="px-3 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container whitespace-nowrap"
+                            @click="markRead(notification)"
+                        >
+                            Mark as read
+                        </button>
+                        <Link
+                            v-if="targetUrl(notification)"
+                            :href="targetUrl(notification)"
+                            class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold whitespace-nowrap hover:bg-primary-container"
+                        >
+                            Open
+                        </Link>
+                    </div>
+                </li>
+            </ul>
+        </section>
 
-            <Pagination :paginator="notifications" />
-        </div>
+        <Pagination :paginator="notifications" />
     </AuthenticatedLayout>
 </template>

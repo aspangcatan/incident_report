@@ -20,6 +20,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         \App\Events\IncidentSubmitted::class => [
             \App\Listeners\NotifyReviewersOfSubmittedIncident::class,
+            \App\Listeners\SendProvisionalSeverityAlert::class,
         ],
         \App\Events\IncidentReviewed::class => [
             \App\Listeners\NotifyReporterOfReviewOutcome::class,

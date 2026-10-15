@@ -22,11 +22,11 @@ watch(() => props.form.injury_agents.includes('chemicals'), (ticked) => {
         <fieldset class="flex flex-col gap-1.5">
             <legend class="font-label-md text-label-md text-on-surface font-semibold">Was anyone injured? *</legend>
             <p class="font-body-sm text-body-sm text-outline">If yes, tell us the cause and agent of the injury.</p>
-            <div class="flex items-center gap-space-md mt-1">
-                <label class="flex items-center gap-2 font-body-md text-body-md text-on-surface">
+            <div class="flex items-center gap-2 mt-1">
+                <label class="choice-tile min-w-[6rem]">
                     <input v-model="form.has_injury" type="radio" name="has_injury" :value="true" /> Yes
                 </label>
-                <label class="flex items-center gap-2 font-body-md text-body-md text-on-surface">
+                <label class="choice-tile min-w-[6rem]">
                     <input v-model="form.has_injury" type="radio" name="has_injury" :value="false" /> No
                 </label>
             </div>
@@ -61,7 +61,7 @@ watch(() => props.form.injury_agents.includes('chemicals'), (ticked) => {
                     v-model="form.injury_chemical_details"
                     type="text"
                     maxlength="255"
-                    class="w-full p-3 rounded-lg bg-surface-container-low"
+                    class="form-input"
                 />
                 <span v-if="form.errors.injury_chemical_details" class="font-body-sm text-body-sm text-error">{{ form.errors.injury_chemical_details }}</span>
             </div>

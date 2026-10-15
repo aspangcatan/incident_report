@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\EscalationEngineController;
 use App\Http\Controllers\Admin\IncidentTypeController;
 use App\Http\Controllers\Admin\SeverityAlertRecipientController;
 use App\Http\Controllers\Admin\WorkflowDurationController;
@@ -100,4 +101,6 @@ Route::middleware(['auth', 'tdh.active'])->group(function () {
     Route::put('/admin/workflow-durations', [WorkflowDurationController::class, 'update'])->name('admin.workflow-durations.update');
     Route::get('/admin/severity-alerts', [SeverityAlertRecipientController::class, 'index'])->name('admin.severity-alerts.index');
     Route::put('/admin/severity-alerts', [SeverityAlertRecipientController::class, 'update'])->name('admin.severity-alerts.update');
+    Route::get('/admin/escalation-engine', [EscalationEngineController::class, 'index'])->name('admin.escalation-engine.index');
+    Route::post('/admin/escalation-engine/run', [EscalationEngineController::class, 'run'])->name('admin.escalation-engine.run');
 });

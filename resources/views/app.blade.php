@@ -4,7 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'HOPSS e-Incident') }}</title>
+        <link rel="icon" type="image/png" href="/images/csmc-logo.png">
+        <title inertia>{{ config('app.name', 'CSMC Incident/Accident Reporting System') }}</title>
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

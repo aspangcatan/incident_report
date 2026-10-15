@@ -18,6 +18,7 @@ use App\Models\IncidentType;
 use App\Models\User;
 use App\Queries\IncidentQueueQuery;
 use App\Services\IncidentService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,7 @@ class IncidentController extends Controller
     public function index(Request $request): Response
     {
         $scope = $request->string('scope', 'my-reports')->toString();
+        $search = trim($request->string('search')->toString());
         $user = $request->user();
 
         if (IncidentQueueQuery::exists($scope)) {
@@ -41,11 +43,12 @@ class IncidentController extends Controller
             [$title, $description] = IncidentQueueQuery::QUEUES[$scope];
 
             return Inertia::render('Incidents/Index', [
-                'incidents' => IncidentQueueQuery::builder($scope, $user)
+                'incidents' => $this->applySearch(IncidentQueueQuery::builder($scope, $user), $search)
                     ->with(['incidentTypes', 'department', 'reporter'])
                     ->latest('id')->paginate(15)->withQueryString(),
                 'scope' => $scope,
                 'queue' => ['title' => $title, 'description' => $description],
+                'search' => $search,
             ]);
         }
 
@@ -64,10 +67,23 @@ class IncidentController extends Controller
         }
 
         return Inertia::render('Incidents/Index', [
-            'incidents' => $query->latest('id')->paginate(15)->withQueryString(),
+            'incidents' => $this->applySearch($query, $search)->latest('id')->paginate(15)->withQueryString(),
             'scope' => $scope,
             'queue' => null,
+            'search' => $search,
         ]);
+    }
+
+    /** The header search: incident number or location, within the list's own scope. */
+    private function applySearch(Builder $query, string $search): Builder
+    {
+        if ($search === '') {
+            return $query;
+        }
+
+        $like = '%' . addcslashes($search, '%_\\') . '%';
+
+        return $query->where(fn (Builder $q) => $q->where('incident_number', 'like', $like)->orWhere('location', 'like', $like));
     }
 
     public function create(): Response

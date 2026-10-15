@@ -24,6 +24,11 @@ class SendSeverityAlert
             return;
         }
 
+        // Already alerted at this level on submit (SendProvisionalSeverityAlert); only a different level alerts again.
+        if ($event instanceof IncidentAssessed && $incident->provisional_alert_severity === $incident->severity->value) {
+            return;
+        }
+
         $recipients = EscalationRecipients::forSeverity($incident)
             ->reject(fn (User $user) => $event->actor !== null && $user->id === $event->actor->id);
 

@@ -11,6 +11,7 @@ use App\Models\SafetyAlert;
 use App\Models\User;
 use App\Queries\CorrectiveActionQueueQuery;
 use App\Queries\IncidentQueueQuery;
+use App\Support\Realtime;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -45,6 +46,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'username' => $user->username,
                     'role' => $user->role,
+                    'role_label' => $user->role->label(),
                     'designation' => $user->designation_title,
                     'department_id' => $user->department_id,
                 ] : null,
@@ -66,6 +68,8 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            // WebSocket connection details for realtime/server.js (null when real-time is off).
+            'realtime' => fn () => ($user = $request->user()) ? Realtime::clientConfig($user) : null,
             'unreadNotificationsCount' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'queueCounts' => fn () => ($user = $request->user()) ? $this->queueCounts($user) : [],
             // Newest safety alert this user has not acknowledged yet (banner).

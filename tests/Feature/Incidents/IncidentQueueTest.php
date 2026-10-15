@@ -177,4 +177,23 @@ class IncidentQueueTest extends TestCase
                 ->where('queue.title', 'Pending Review')
                 ->where('queue.description', 'Assessed incidents waiting for review.'));
     }
+
+    public function test_the_header_search_matches_incident_number_or_location_within_the_list(): void
+    {
+        $qso = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $ward = $this->incidentAtStatus(IncidentStatus::ForReview, ['location' => 'Ward 3, bed 12']);
+        $ramp = $this->incidentAtStatus(IncidentStatus::ForReview, ['location' => '6th floor ramp']);
+
+        $listed = fn (string $search) => $this->actingAs($qso)->get('/incidents?scope=all&search=' . urlencode($search))
+            ->assertInertia(fn ($page) => $page->where('search', $search))
+            ->viewData('page')['props']['incidents']['data'];
+
+        $this->assertSame([$ward->id], array_column($listed('ward 3'), 'id'));
+        $this->assertSame([$ramp->id], array_column($listed($ramp->incident_number), 'id'));
+        $this->assertSame([], array_column($listed('100%'), 'id'));
+
+        // The search stays inside the list: a queue only searches its own incidents.
+        $this->actingAs($qso)->get('/incidents?scope=awaiting-assessment&search=ward')
+            ->assertInertia(fn ($page) => $page->where('incidents.data', []));
+    }
 }

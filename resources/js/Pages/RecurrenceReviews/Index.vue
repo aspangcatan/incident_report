@@ -1,6 +1,8 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import EmptyState from '@/Components/EmptyState.vue';
 import Pagination from '@/Components/Pagination.vue';
 
 defineProps({
@@ -18,49 +20,53 @@ const statusClasses = {
     <Head title="Recurrence Reviews" />
 
     <AuthenticatedLayout :refresh="['reviews']">
-        <div class="flex flex-col gap-1">
-            <h1 class="font-headline-sm text-headline-sm text-on-surface">Recurrence Reviews</h1>
-            <p class="font-body-sm text-body-sm text-outline">
-                When the same type of incident keeps happening in a department, the CQI Office opens a review from the
-                Analytics page. The department records a system-level fix; the CQI Office closes it.
-            </p>
-        </div>
+        <PageHeader
+            title="Recurrence Reviews"
+            description="When the same type of incident keeps happening in a department, the CQI Office opens a review from the Analytics page. The department records a system-level fix; the CQI Office closes it."
+            icon="arrows-rotate"
+            eyebrow="Learning & safety"
+        />
 
-        <div v-if="!reviews.data.length" class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm font-body-md text-body-md text-outline text-center">
-            No recurrence reviews yet.
-        </div>
+        <section class="rounded-2xl bg-surface-container-lowest shadow-sm ring-1 ring-outline-variant/40 overflow-hidden">
+            <EmptyState v-if="!reviews.data.length" icon="arrows-rotate" title="No recurrence reviews yet" text="Reviews opened from the Analytics page will appear here." />
 
-        <div v-else class="rounded-xl bg-surface-container-lowest shadow-sm overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="bg-surface-container-low">
-                    <tr class="font-label-sm text-body-sm uppercase text-outline">
-                        <th class="p-3">Pattern</th>
-                        <th class="p-3">Department</th>
-                        <th class="p-3">Assigned to</th>
-                        <th class="p-3">Due</th>
-                        <th class="p-3">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-surface-container">
-                    <tr v-for="review in reviews.data" :key="review.id" class="hover:bg-surface-container-low">
-                        <td class="p-3">
-                            <Link :href="`/recurrence-reviews/${review.id}`" class="font-body-md text-body-md text-primary font-semibold">
-                                {{ review.incident_type }}
-                            </Link>
-                            <span class="block font-body-sm text-body-sm text-outline">{{ review.incident_count }} incidents when opened</span>
-                        </td>
-                        <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ review.department }}</td>
-                        <td class="p-3 font-body-sm text-body-sm text-on-surface">{{ review.assignee ?? '—' }}</td>
-                        <td class="p-3 font-code-tabular text-body-sm" :class="review.is_overdue ? 'text-error font-semibold' : 'text-on-surface'">
-                            {{ review.due_date }}<template v-if="review.is_overdue"> (overdue)</template>
-                        </td>
-                        <td class="p-3">
-                            <span :class="statusClasses[review.status.value]" class="px-2.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold whitespace-nowrap">{{ review.status.label }}</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <div v-else class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-outline-variant/40 text-outline font-label-sm text-label-sm uppercase tracking-wider">
+                            <th class="px-4 py-3">Pattern</th>
+                            <th class="px-4 py-3">Department</th>
+                            <th class="px-4 py-3">Assigned to</th>
+                            <th class="px-4 py-3">Due</th>
+                            <th class="px-4 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/30">
+                        <tr
+                            v-for="review in reviews.data"
+                            :key="review.id"
+                            class="hover:bg-surface-container-low cursor-pointer transition-colors"
+                            @click="router.visit(`/recurrence-reviews/${review.id}`)"
+                        >
+                            <td class="px-4 py-3">
+                                <Link :href="`/recurrence-reviews/${review.id}`" class="font-body-md text-body-md text-primary font-semibold hover:underline" @click.stop>
+                                    {{ review.incident_type }}
+                                </Link>
+                                <span class="block font-body-sm text-body-sm text-outline">{{ review.incident_count }} incidents when opened</span>
+                            </td>
+                            <td class="px-4 py-3 font-body-md text-body-md text-on-surface">{{ review.department }}</td>
+                            <td class="px-4 py-3 font-body-md text-body-md text-on-surface">{{ review.assignee ?? '—' }}</td>
+                            <td class="px-4 py-3 font-code-tabular text-body-md whitespace-nowrap" :class="review.is_overdue ? 'text-error font-semibold' : 'text-on-surface'">
+                                <FontAwesomeIcon v-if="review.is_overdue" icon="triangle-exclamation" class="mr-1" />{{ review.due_date }}<template v-if="review.is_overdue"> (overdue)</template>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span :class="statusClasses[review.status.value]" class="px-2.5 py-0.5 rounded-full font-label-sm text-body-sm font-semibold whitespace-nowrap">{{ review.status.label }}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
         <Pagination :paginator="reviews" />
     </AuthenticatedLayout>

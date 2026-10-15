@@ -37,6 +37,8 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('manageWorkflowDurations', fn (User $user) => $user->role === Role::Administrator);
         // Who receives the severity alert per level: IT/System Admin only.
         Gate::define('manageSeverityAlerts', fn (User $user) => $user->role === Role::Administrator);
+        // The daily escalation job: the IT Admin keeps it running, the CQI Office receives its escalations.
+        Gate::define('manageEscalationEngine', fn (User $user) => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true));
         Gate::define('manageLeadership', fn (User $user) => in_array($user->role, [Role::Administrator, Role::QualitySafetyOfficer], true));
     }
 }

@@ -27,18 +27,17 @@ function removeAttachment(form, index) {
 
 <template>
     <div class="flex flex-col gap-space-lg">
-        <h2 class="font-title-lg text-title-lg text-primary font-bold">Section 6: Description & Evidence</h2>
 
         <div class="flex flex-col gap-1.5">
-            <label for="summary" class="font-label-md text-label-md text-on-surface font-semibold">Complete description of incident *</label>
-            <textarea id="summary" v-model="form.summary" rows="4" class="w-full p-3 rounded-lg bg-surface-container-low" />
-            <span v-if="form.errors.summary" class="font-body-sm text-body-sm text-error">{{ form.errors.summary }}</span>
+            <label for="summary" class="form-label">Complete description of incident *</label>
+            <textarea id="summary" v-model="form.summary" rows="4" class="form-input" />
+            <span v-if="form.errors.summary" class="form-error">{{ form.errors.summary }}</span>
         </div>
 
         <div class="flex flex-col gap-space-sm">
             <div class="flex items-start justify-between gap-space-md">
                 <div class="flex flex-col gap-1">
-                    <span class="font-label-md text-label-md text-on-surface font-semibold">
+                    <span class="form-label">
                         Chronological Sequence of Events <span class="font-normal text-outline">(optional)</span>
                     </span>
                     <span class="font-body-sm text-body-sm text-outline">
@@ -57,31 +56,31 @@ function removeAttachment(form, index) {
                     + Add the first event
                 </button>
             </div>
-            <div v-for="(event, index) in form.narrative_events" :key="event._key ?? index" class="flex flex-col gap-space-sm bg-surface-container-low p-2.5 rounded-lg">
+            <div v-for="(event, index) in form.narrative_events" :key="event._key ?? index" class="flex flex-col gap-3 p-4 rounded-xl bg-surface-container-lowest ring-1 ring-outline-variant/60">
                 <div class="flex justify-between items-center">
-                    <span class="font-label-sm text-label-sm uppercase text-outline">Event {{ index + 1 }}</span>
-                    <button type="button" class="text-error font-label-sm text-body-sm" @click="removeEvent(form, index)">Remove</button>
+                    <span class="inline-flex items-center gap-2 font-title-sm text-title-sm text-primary font-semibold"><FontAwesomeIcon icon="clock" /> Event {{ index + 1 }}</span>
+                    <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-error hover:bg-error-container font-label-md text-label-md" @click="removeEvent(form, index)"><FontAwesomeIcon icon="trash" /> Remove</button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-[10rem_1fr] gap-space-sm">
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'event-occurred-at-' + index">Time</label>
+                        <label class="form-label" :for="'event-occurred-at-' + index">Time</label>
                         <span class="font-body-sm text-body-sm text-outline">e.g. 2:30 PM</span>
-                        <input :id="'event-occurred-at-' + index" v-model="event.occurred_at" type="text" class="p-2 rounded bg-surface-container-lowest" />
-                        <span v-if="form.errors[`narrative_events.${index}.occurred_at`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`narrative_events.${index}.occurred_at`] }}</span>
+                        <input :id="'event-occurred-at-' + index" v-model="event.occurred_at" type="text" class="form-input" />
+                        <span v-if="form.errors[`narrative_events.${index}.occurred_at`]" class="form-error">{{ form.errors[`narrative_events.${index}.occurred_at`] }}</span>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="font-label-md text-label-md text-on-surface font-semibold" :for="'event-description-' + index">What happened *</label>
+                        <label class="form-label" :for="'event-description-' + index">What happened *</label>
                         <span class="font-body-sm text-body-sm text-outline">One step of the incident, in the order it happened.</span>
-                        <input :id="'event-description-' + index" v-model="event.description" type="text" class="p-2 rounded bg-surface-container-lowest" />
-                        <span v-if="form.errors[`narrative_events.${index}.description`]" class="font-body-sm text-body-sm text-error">{{ form.errors[`narrative_events.${index}.description`] }}</span>
+                        <input :id="'event-description-' + index" v-model="event.description" type="text" class="form-input" />
+                        <span v-if="form.errors[`narrative_events.${index}.description`]" class="form-error">{{ form.errors[`narrative_events.${index}.description`] }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="flex flex-col gap-space-sm">
-            <label class="font-label-md text-label-md text-on-surface font-semibold">Evidence & Attachments</label>
-            <label class="p-space-lg rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-center gap-2 cursor-pointer">
+            <label class="form-label">Evidence & Attachments</label>
+            <label class="p-6 rounded-xl bg-surface-container-low border-2 border-dashed border-outline-variant hover:border-primary hover:bg-primary-fixed/40 transition-colors flex flex-col items-center justify-center text-center gap-2 cursor-pointer">
                 <FontAwesomeIcon icon="cloud-arrow-up" class="text-title-lg text-primary" />
                 <span class="font-title-sm text-title-sm text-primary font-bold">Upload photos, documents, or reports</span>
                 <span class="font-body-sm text-body-sm text-outline">PDF, PNG, JPG, DOC — max 25MB per file</span>

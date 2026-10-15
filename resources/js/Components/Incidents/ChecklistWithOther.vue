@@ -29,17 +29,17 @@ function itemError() {
         <legend class="font-label-md text-label-md text-on-surface font-semibold">{{ label }} *</legend>
         <p class="font-body-sm text-body-sm text-outline">{{ hint }}</p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-space-md gap-y-2 mt-1">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
             <label
                 v-for="option in options"
                 :key="option.value"
-                class="flex items-start gap-2 font-body-md text-body-md text-on-surface"
+                class="choice-tile"
             >
-                <input v-model="form[field]" type="checkbox" :value="option.value" class="mt-1" />
+                <input v-model="form[field]" type="checkbox" :value="option.value" />
                 <span>{{ option.label }}</span>
             </label>
-            <label class="flex items-start gap-2 font-body-md text-body-md text-on-surface">
-                <input v-model="otherChecked" type="checkbox" class="mt-1" />
+            <label class="choice-tile">
+                <input v-model="otherChecked" type="checkbox" />
                 <span>Others (Specify)</span>
             </label>
         </div>
@@ -51,7 +51,7 @@ function itemError() {
                 v-model="form[otherField]"
                 type="text"
                 maxlength="255"
-                class="w-full p-3 rounded-lg bg-surface-container-low"
+                class="form-input"
             />
             <span v-if="form.errors[otherField]" class="font-body-sm text-body-sm text-error">{{ form.errors[otherField] }}</span>
         </div>

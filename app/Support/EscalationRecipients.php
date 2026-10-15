@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\CorrectiveActionPriority;
 use App\Enums\Role;
+use App\Enums\Severity;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\Investigation;
@@ -19,15 +20,18 @@ use Illuminate\Support\Facades\DB;
 final class EscalationRecipients
 {
     /** The groups the IT Admin set for this level (Admin → Severity Alerts). */
-    public static function forSeverity(Incident $incident): Collection
+    public static function forSeverity(Incident $incident, ?Severity $level = null): Collection
     {
-        if ($incident->severity === null) {
+        // $level: the system-suggested level, before the department has set one.
+        $level ??= $incident->severity;
+
+        if ($level === null) {
             return new Collection();
         }
 
         return self::merge(array_map(
             fn (string $recipient) => self::severityGroup($recipient, $incident),
-            SeverityAlertSettings::recipientsFor($incident->severity)
+            SeverityAlertSettings::recipientsFor($level)
         ));
     }
 
