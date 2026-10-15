@@ -25,6 +25,7 @@ class CommitteeSignOffNeededNotification extends Notification
         return [
             'incident_id' => $this->incident->id,
             'incident_number' => $this->incident->incident_number,
+            'tab' => 'approvals',
             'message' => "{$this->incident->incident_number} ({$this->incident->severity->label()}) needs the CQI Committee's closure sign-off.",
         ];
     }

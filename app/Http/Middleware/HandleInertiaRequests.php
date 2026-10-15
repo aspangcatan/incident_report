@@ -50,6 +50,9 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
                 'can' => $user ? [
                     'viewAllIncidents' => $user->can('viewAny', Incident::class),
+                    'effectivenessChecks' => IncidentQueueQuery::allowed('effectiveness-checks', $user),
+                    'readyForClosure' => IncidentQueueQuery::allowed('ready-for-closure', $user),
+                    'closureApprovals' => IncidentQueueQuery::allowed('closure-approvals', $user),
                     'investigationWorkspace' => IncidentQueueQuery::investigationWorkspace($user),
                     'capaOperations' => CorrectiveActionQueueQuery::allowed($user),
                     'viewAnalytics' => $user->can('viewAnalytics', Incident::class),

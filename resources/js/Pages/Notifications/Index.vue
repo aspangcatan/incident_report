@@ -11,7 +11,10 @@ defineProps({
 function targetUrl(notification) {
     if (notification.data.safety_alert_id) return `/safety-alerts/${notification.data.safety_alert_id}`;
     if (notification.data.recurrence_review_id) return `/recurrence-reviews/${notification.data.recurrence_review_id}`;
-    if (notification.data.incident_id) return `/incidents/${notification.data.incident_id}`;
+    if (notification.data.incident_id) {
+        const tab = notification.data.tab ? `?tab=${notification.data.tab}` : '';
+        return `/incidents/${notification.data.incident_id}${tab}`;
+    }
     return null;
 }
 
@@ -23,7 +26,7 @@ function markRead(notification) {
 <template>
     <Head title="Notifications" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :refresh="['notifications']">
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <h1 class="font-headline-sm text-headline-sm text-on-surface">Notifications</h1>
 

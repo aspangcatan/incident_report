@@ -30,7 +30,7 @@ const kpiCards = [
 <template>
     <Head title="Dashboard" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :refresh="['stages', 'kpis']">
         <section class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
             <div class="flex flex-col max-w-3xl">
                 <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">

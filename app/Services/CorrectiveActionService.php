@@ -11,6 +11,7 @@ use App\Models\AuditLog;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
 use App\Models\User;
+use App\Notifications\EffectivenessCheckDueNotification;
 use App\Repositories\CorrectiveActionRepository;
 use App\Support\WorkflowDurations;
 use Illuminate\Database\QueryException;
@@ -156,6 +157,11 @@ class CorrectiveActionService
             $incident->effectiveness_checked_at = null;
             $incident->effectiveness_notified_at = null;
             $incident->save();
+
+            // No waiting period: the check is due now, so don't leave it for the daily run.
+            if (! $incident->effectiveness_due_at->isFuture()) {
+                EffectivenessCheckDueNotification::sendFor($incident);
+            }
         }
     }
 

@@ -15,10 +15,13 @@ use App\Models\ContributingFactor;
 use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
+use App\Notifications\ReadyForClosureNotification;
+use App\Support\IncidentReviewers;
 use App\Support\WorkflowDurations;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class IncidentService
 {
@@ -162,6 +165,14 @@ class IncidentService
 
             $incident->save();
         });
+
+        // The Department Head asks for closure next (IncidentPolicy::requestApproval()).
+        if ($effective) {
+            $heads = IncidentReviewers::departmentHeads($incident);
+            if ($heads->isNotEmpty()) {
+                Notification::send($heads, new ReadyForClosureNotification($incident));
+            }
+        }
 
         return $incident;
     }

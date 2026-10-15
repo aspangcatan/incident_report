@@ -12,6 +12,7 @@ use App\Enums\Severity;
 use App\Models\Approval;
 use App\Models\Incident;
 use App\Models\User;
+use App\Notifications\ClosureApprovalNeededNotification;
 use App\Notifications\CommitteeSignOffNeededNotification;
 use App\Repositories\ApprovalRepository;
 use App\Support\WorkflowDurations;
@@ -137,6 +138,12 @@ class ApprovalService
                 : 'Corrective action(s) verified; requesting closure approval.';
             $incident->status = IncidentStatus::ForApproval;
             $incident->save();
+
+            // The CQI Office decides the first stage, reviewing the lessons learned with it.
+            $cqiOffice = User::active()->withRole(Role::QualitySafetyOfficer)->whereKeyNot($requester->id)->get();
+            if ($cqiOffice->isNotEmpty()) {
+                Notification::send($cqiOffice, new ClosureApprovalNeededNotification($incident));
+            }
 
             return $approval;
         });

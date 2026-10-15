@@ -17,6 +17,14 @@ const scopes = [
     { value: 'all', label: 'All Incidents' },
 ];
 
+// The effectiveness check and closure request forms live on the Approvals tab.
+const approvalsTabScopes = ['effectiveness-checks', 'ready-for-closure', 'closure-approvals'];
+
+function incidentUrl(incident) {
+    if (incident.status === 'draft') return `/incidents/${incident.id}/edit`;
+    return approvalsTabScopes.includes(props.scope) ? `/incidents/${incident.id}?tab=approvals` : `/incidents/${incident.id}`;
+}
+
 function switchScope(value) {
     router.get('/incidents', { scope: value }, { preserveState: true });
 }
@@ -25,7 +33,7 @@ function switchScope(value) {
 <template>
     <Head title="Incidents" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :refresh="['incidents']">
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex flex-col gap-0.5">
@@ -68,7 +76,7 @@ function switchScope(value) {
                     <tbody class="divide-y divide-surface-container">
                         <tr v-for="incident in incidents.data" :key="incident.id" class="bg-surface-container-lowest hover:bg-surface-container-low">
                             <td class="p-3">
-                                <Link :href="incident.status === 'draft' ? `/incidents/${incident.id}/edit` : `/incidents/${incident.id}`" class="font-code-tabular text-body-sm text-primary font-semibold">
+                                <Link :href="incidentUrl(incident)" class="font-code-tabular text-body-sm text-primary font-semibold">
                                     {{ incident.incident_number ?? `Draft #${incident.id}` }}
                                 </Link>
                             </td>

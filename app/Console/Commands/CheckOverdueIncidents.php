@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Enums\IncidentStatus;
-use App\Enums\Role;
 use App\Models\Approval;
 use App\Models\CorrectiveAction;
 use App\Models\Incident;
@@ -79,13 +78,7 @@ class CheckOverdueIncidents extends Command
             ->whereNull('effectiveness_notified_at')
             ->where('effectiveness_due_at', '<=', now())
             ->get()
-            ->each(function (Incident $incident) {
-                $committee = User::active()->withRole(Role::CqiCommittee)->get();
-                if ($committee->isNotEmpty()) {
-                    Notification::send($committee, new EffectivenessCheckDueNotification($incident));
-                }
-                $incident->forceFill(['effectiveness_notified_at' => now()])->saveQuietly();
-            });
+            ->each(fn (Incident $incident) => EffectivenessCheckDueNotification::sendFor($incident));
     }
 
     private function escalateOverdueAssessments(Collection $recipients): void

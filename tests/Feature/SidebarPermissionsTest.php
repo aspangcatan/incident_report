@@ -26,6 +26,9 @@ class SidebarPermissionsTest extends TestCase
 
         $this->actingAs($head)->get('/')->assertInertia(fn ($page) => $page->where('auth.can', [
             'viewAllIncidents' => true,
+            'effectivenessChecks' => false,
+            'readyForClosure' => true,
+            'closureApprovals' => false,
             'investigationWorkspace' => true,
             'capaOperations' => true,
             'viewAnalytics' => true,
@@ -38,8 +41,11 @@ class SidebarPermissionsTest extends TestCase
 
     public static function roles(): array
     {
-        $flags = fn (bool $all, bool $inv, bool $capa, bool $analytics, bool $admin, bool $itAdmin = false) => [
+        $flags = fn (bool $all, bool $inv, bool $capa, bool $analytics, bool $admin, bool $itAdmin = false, bool $committee = false, bool $closure = false) => [
             'viewAllIncidents' => $all,
+            'effectivenessChecks' => $committee,
+            'readyForClosure' => false,
+            'closureApprovals' => $closure,
             'investigationWorkspace' => $inv,
             'capaOperations' => $capa,
             'viewAnalytics' => $analytics,
@@ -53,11 +59,11 @@ class SidebarPermissionsTest extends TestCase
             'staff' => [Role::Staff, $flags(false, false, false, false, false)],
             'investigator' => [Role::Investigator, $flags(true, true, false, false, false)],
             'supervisor' => [Role::Supervisor, $flags(true, true, true, true, false)],
-            'qso' => [Role::QualitySafetyOfficer, $flags(true, true, true, true, true)],
+            'qso' => [Role::QualitySafetyOfficer, $flags(true, true, true, true, true, false, false, true)],
             'administrator' => [Role::Administrator, $flags(false, false, false, false, true, true)],
             'management' => [Role::Management, $flags(true, false, false, true, false)],
             'leadership' => [Role::Leadership, $flags(true, false, false, true, false)],
-            'cqi committee' => [Role::CqiCommittee, $flags(true, false, false, true, false)],
+            'cqi committee' => [Role::CqiCommittee, $flags(true, false, false, true, false, false, true, true)],
         ];
     }
 }

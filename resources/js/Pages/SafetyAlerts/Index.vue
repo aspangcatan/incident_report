@@ -19,7 +19,7 @@ const urgencyClasses = {
 <template>
     <Head title="Safety Alerts" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :refresh="['alerts']">
         <div class="flex flex-wrap items-center justify-between gap-space-sm">
             <div class="flex flex-col gap-1">
                 <h1 class="font-headline-sm text-headline-sm text-on-surface">Safety Alerts</h1>

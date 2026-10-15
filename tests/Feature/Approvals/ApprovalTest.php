@@ -24,6 +24,7 @@ use App\Services\ApprovalService;
 use App\Services\CorrectiveActionService;
 use App\Services\IncidentService;
 use App\Services\InvestigationService;
+use App\Notifications\ClosureApprovalNeededNotification;
 use App\Notifications\CommitteeSignOffNeededNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -591,5 +592,50 @@ class ApprovalTest extends TestCase
 
         $this->assertSame(IncidentStatus::Closed, $incident->fresh()->status);
         $this->assertSame(1, $incident->approvals()->count());
+    }
+
+    public function test_requesting_closure_tells_the_cqi_office(): void
+    {
+        Notification::fake();
+        $incident = $this->incidentReadyForApproval();
+        $cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $head = $this->headOf($incident);
+
+        $this->actingAs($head)
+            ->post("/incidents/{$incident->id}/request-approval", ['lessons_learned' => 'Check bed rails each shift.'])
+            ->assertSessionHasNoErrors();
+
+        Notification::assertSentTo($cqi, ClosureApprovalNeededNotification::class);
+        Notification::assertNotSentTo($head, ClosureApprovalNeededNotification::class);
+    }
+
+    public function test_each_stage_sees_its_own_closure_approvals_in_the_queue(): void
+    {
+        $committee = User::factory()->create(['role' => Role::CqiCommittee]);
+        $cqi = User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $incident = $this->incidentReadyForApproval(Severity::Level3High);
+        $first = app(ApprovalService::class)->requestApproval($incident, $this->headOf($incident));
+
+        $this->actingAs($cqi)->get('/incidents?scope=closure-approvals')
+            ->assertInertia(fn ($page) => $page->where('incidents.data.0.id', $incident->id)->where('queueCounts.closure-approvals', 1));
+        $this->actingAs($cqi)->get("/incidents/{$incident->id}")
+            ->assertInertia(fn ($page) => $page->where('can.decideClosure', true));
+        $this->actingAs($committee)->get('/incidents?scope=closure-approvals')
+            ->assertInertia(fn ($page) => $page->where('incidents.total', 0));
+
+        app(ApprovalService::class)->approve($first, $cqi, DecideApprovalData::fromArray(['comments' => 'OK.']));
+
+        $this->actingAs($cqi)->get('/incidents?scope=closure-approvals')
+            ->assertInertia(fn ($page) => $page->where('incidents.total', 0));
+        $this->actingAs($committee)->get('/incidents?scope=closure-approvals')
+            ->assertInertia(fn ($page) => $page->where('incidents.data.0.id', $incident->id)->where('queueCounts.closure-approvals', 1));
+    }
+
+    public function test_only_the_cqi_office_and_committee_can_open_the_closure_approvals_queue(): void
+    {
+        $incident = $this->incidentReadyForApproval();
+
+        $this->actingAs($this->headOf($incident))->get('/incidents?scope=closure-approvals')->assertForbidden();
+        $this->actingAs(User::factory()->create(['role' => Role::Management]))->get('/incidents?scope=closure-approvals')->assertForbidden();
     }
 }

@@ -20,7 +20,7 @@ function truncate(text, length = 80) {
 <template>
     <Head :title="queue.title" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :refresh="['actions']">
         <div class="rounded-xl bg-surface-container-lowest p-space-lg shadow-sm flex flex-col gap-space-md">
             <div class="flex flex-col gap-0.5">
                 <h1 class="font-headline-sm text-headline-sm text-on-surface">{{ queue.title }}</h1>

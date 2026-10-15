@@ -13,6 +13,7 @@ use App\Models\Incident;
 use App\Models\IncidentType;
 use App\Models\User;
 use App\Notifications\EffectivenessCheckDueNotification;
+use App\Notifications\ReadyForClosureNotification;
 use App\Services\CorrectiveActionService;
 use App\Services\IncidentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -140,5 +141,88 @@ class EffectivenessCheckTest extends TestCase
         $this->artisan('incidents:check-overdue');
         Notification::assertSentToTimes($this->committee, EffectivenessCheckDueNotification::class, 1);
         Notification::assertNotSentTo($this->head, EffectivenessCheckDueNotification::class);
+    }
+
+    public function test_with_no_waiting_period_the_committee_is_told_at_once_and_only_once(): void
+    {
+        config(['incident_workflow.effectiveness_wait_days' => 0]);
+        Notification::fake();
+        User::factory()->create(['role' => Role::QualitySafetyOfficer]);
+        $this->verifiedIncident();
+        Notification::assertSentToTimes($this->committee, EffectivenessCheckDueNotification::class, 1);
+
+        $this->artisan('incidents:check-overdue');
+        Notification::assertSentToTimes($this->committee, EffectivenessCheckDueNotification::class, 1);
+    }
+
+    public function test_the_committee_sees_due_checks_in_its_own_queue_with_a_badge(): void
+    {
+        $incident = $this->verifiedIncident();
+
+        // Still waiting: nothing to do yet.
+        $this->actingAs($this->committee)->get('/incidents?scope=effectiveness-checks')
+            ->assertInertia(fn ($page) => $page->where('incidents.total', 0)->missing('queueCounts.effectiveness-checks'));
+
+        $this->travel(31)->days();
+        $this->actingAs($this->committee)->get('/incidents?scope=effectiveness-checks')
+            ->assertInertia(fn ($page) => $page
+                ->where('incidents.data.0.id', $incident->id)
+                ->where('queueCounts.effectiveness-checks', 1));
+
+        $this->actingAs($this->committee)
+            ->post("/incidents/{$incident->id}/effectiveness", ['effective' => true, 'notes' => 'No falls in 30 days.']);
+        $this->actingAs($this->committee)->get('/incidents?scope=effectiveness-checks')
+            ->assertInertia(fn ($page) => $page->where('incidents.total', 0));
+    }
+
+    public function test_an_effective_result_tells_the_department_head_and_fills_their_closure_queue(): void
+    {
+        Notification::fake();
+        $incident = $this->verifiedIncident();
+        $this->travel(31)->days();
+
+        $this->actingAs($this->head)->get('/incidents?scope=ready-for-closure')
+            ->assertInertia(fn ($page) => $page->where('incidents.total', 0)->missing('queueCounts.ready-for-closure'));
+
+        $this->actingAs($this->committee)
+            ->post("/incidents/{$incident->id}/effectiveness", ['effective' => true, 'notes' => 'No falls in 30 days.']);
+        Notification::assertSentToTimes($this->head, ReadyForClosureNotification::class, 1);
+
+        $this->actingAs($this->head)->get('/incidents?scope=ready-for-closure')
+            ->assertInertia(fn ($page) => $page
+                ->where('incidents.data.0.id', $incident->id)
+                ->where('queueCounts.ready-for-closure', 1));
+
+        $this->actingAs($this->head)
+            ->post("/incidents/{$incident->id}/request-approval", ['lessons_learned' => 'Check bed rails each shift.'])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($this->head)->get('/incidents?scope=ready-for-closure')
+            ->assertInertia(fn ($page) => $page->where('incidents.total', 0));
+    }
+
+    public function test_a_not_effective_result_does_not_tell_the_department_head(): void
+    {
+        Notification::fake();
+        $incident = $this->verifiedIncident();
+        $this->travel(31)->days();
+
+        $this->actingAs($this->committee)
+            ->post("/incidents/{$incident->id}/effectiveness", ['effective' => false, 'notes' => 'Two more falls.']);
+
+        Notification::assertNotSentTo($this->head, ReadyForClosureNotification::class);
+    }
+
+    public function test_only_department_heads_can_open_the_closure_queue(): void
+    {
+        $this->actingAs($this->committee)->get('/incidents?scope=ready-for-closure')->assertForbidden();
+        $this->actingAs(User::factory()->create(['role' => Role::Supervisor, 'department_id' => $this->department->id]))
+            ->get('/incidents?scope=ready-for-closure')->assertForbidden();
+    }
+
+    public function test_only_the_cqi_committee_can_open_the_effectiveness_queue(): void
+    {
+        $this->actingAs($this->head)->get('/incidents?scope=effectiveness-checks')->assertForbidden();
+        $this->actingAs(User::factory()->create(['role' => Role::QualitySafetyOfficer]))
+            ->get('/incidents?scope=effectiveness-checks')->assertForbidden();
     }
 }

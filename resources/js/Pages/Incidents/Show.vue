@@ -140,6 +140,54 @@ function switchTab(value) {
             </div>
         </div>
 
+        <div v-if="can.checkEffectiveness" role="status" class="rounded-lg bg-secondary-container text-on-secondary-container p-space-md flex flex-wrap items-center gap-3">
+            <FontAwesomeIcon icon="clipboard-check" />
+            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+                <span class="font-title-sm text-title-sm font-bold">Effectiveness check needed</span>
+                <span class="font-body-md text-body-md">The corrective actions are verified and the waiting period is over. Confirm whether they worked.</span>
+            </div>
+            <button
+                v-if="activeTab !== 'approvals'"
+                type="button"
+                class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-semibold"
+                @click="switchTab('approvals')"
+            >
+                Record result
+            </button>
+        </div>
+
+        <div v-if="can.requestApproval" role="status" class="rounded-lg bg-secondary-container text-on-secondary-container p-space-md flex flex-wrap items-center gap-3">
+            <FontAwesomeIcon icon="flag-checkered" />
+            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+                <span class="font-title-sm text-title-sm font-bold">Ready for closure</span>
+                <span class="font-body-md text-body-md">The CQI Committee confirmed the corrective actions worked. Request closure approval.</span>
+            </div>
+            <button
+                v-if="activeTab !== 'approvals'"
+                type="button"
+                class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-semibold"
+                @click="switchTab('approvals')"
+            >
+                Request closure
+            </button>
+        </div>
+
+        <div v-if="can.decideClosure" role="status" class="rounded-lg bg-secondary-container text-on-secondary-container p-space-md flex flex-wrap items-center gap-3">
+            <FontAwesomeIcon icon="stamp" />
+            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+                <span class="font-title-sm text-title-sm font-bold">Closure approval needed</span>
+                <span class="font-body-md text-body-md">Review the lessons learned, then approve the closure or return it to the department.</span>
+            </div>
+            <button
+                v-if="activeTab !== 'approvals'"
+                type="button"
+                class="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md font-semibold"
+                @click="switchTab('approvals')"
+            >
+                Review closure
+            </button>
+        </div>
+
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-surface-container-low p-space-md rounded-xl">
             <div class="flex flex-col gap-0.5">
                 <span class="font-label-sm text-body-sm text-outline">Incident Time</span>

@@ -3,6 +3,14 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AppLogo from '@/Components/AppLogo.vue';
 import FlashBanner from '@/Components/FlashBanner.vue';
+import { useAutoRefresh } from '@/Composables/useAutoRefresh';
+
+const props = defineProps({
+    // The page's own props to reload with the badges every 30 seconds, e.g. ['incidents'].
+    refresh: { type: Array, default: () => [] },
+});
+
+useAutoRefresh(() => props.refresh);
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -41,6 +49,9 @@ const allNavGroups = [
             { label: 'Pending Review', icon: 'hourglass-half', href: '/incidents?scope=pending-review', queue: 'pending-review', can: 'viewAllIncidents' },
             { label: 'Under Investigation', icon: 'magnifying-glass', href: '/incidents?scope=under-investigation', queue: 'under-investigation', can: 'viewAllIncidents' },
             { label: 'Corrective Actions', icon: 'square-check', href: '/incidents?scope=corrective-actions', queue: 'corrective-actions', can: 'viewAllIncidents' },
+            { label: 'Effectiveness Checks', icon: 'clipboard-check', href: '/incidents?scope=effectiveness-checks', queue: 'effectiveness-checks', can: 'effectivenessChecks' },
+            { label: 'Ready for Closure', icon: 'flag-checkered', href: '/incidents?scope=ready-for-closure', queue: 'ready-for-closure', can: 'readyForClosure' },
+            { label: 'Closure Approvals', icon: 'stamp', href: '/incidents?scope=closure-approvals', queue: 'closure-approvals', can: 'closureApprovals' },
             { label: 'Resolved / Closed', icon: 'circle-check', href: '/incidents?scope=resolved', queue: 'resolved', can: 'viewAllIncidents' },
         ],
     },

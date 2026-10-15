@@ -17,7 +17,7 @@ const statusClasses = {
 <template>
     <Head title="Recurrence Reviews" />
 
-    <AuthenticatedLayout>
+    <AuthenticatedLayout :refresh="['reviews']">
         <div class="flex flex-col gap-1">
             <h1 class="font-headline-sm text-headline-sm text-on-surface">Recurrence Reviews</h1>
             <p class="font-body-sm text-body-sm text-outline">
