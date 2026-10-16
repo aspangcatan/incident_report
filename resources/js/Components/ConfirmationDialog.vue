@@ -12,7 +12,7 @@ const emit = defineEmits(['confirm', 'cancel']);
 
 <template>
     <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center px-space-md">
-        <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="emit('cancel')" />
+        <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" />
         <div class="relative w-full max-w-md rounded-xl bg-surface-container-lowest shadow-xl p-space-lg">
             <h3 class="font-title-lg text-title-lg text-on-surface font-semibold">{{ title }}</h3>
             <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">{{ message }}</p>

@@ -1,3 +1,10 @@
+// Fonts are bundled (not Google Fonts) so the app works on a LAN without internet.
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-700.css';
+import '@fontsource/plus-jakarta-sans/latin-600.css';
+import '@fontsource/plus-jakarta-sans/latin-700.css';
 import '../css/app.css';
 import './bootstrap';
 import './fontawesome';

@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ChecklistWithOther from '@/Components/Incidents/ChecklistWithOther.vue';
 import InjuryDetailsFields from '@/Components/Incidents/InjuryDetailsFields.vue';
@@ -55,6 +55,44 @@ const nextSteps = [
     { title: 'We look into it', text: 'The department involved reviews what happened and why.' },
     { title: 'We act on it', text: 'Changes are made so it does not happen again. We may contact you for details.' },
 ];
+
+// Data Privacy Notice (RA 10173): shown when the page opens, reopenable from the form.
+const showPrivacy = ref(true);
+const privacyCloseButton = ref(null);
+
+const privacyCollected = [
+    { title: 'About you', text: 'Your name, phone number or email, and whether you are a patient, relative, visitor or other.' },
+    { title: 'About the incident', text: 'Date and time, department or unit, exact location, type of incident and your description of what happened.' },
+    { title: 'Injury and health details', text: 'Whether someone was hurt, the cause and agent of injury and any chemical involved. Your description may also mention health information, which the law treats as sensitive personal information.' },
+];
+
+const privacyPurposes = [
+    'Review and investigate the incident through the Patient Safety/CQI Office and the department involved.',
+    'Contact you if we need more details or to follow up on your report.',
+    'Find the root cause and put corrective and preventive actions in place.',
+    'Report patient safety data to regulators when the law requires it.',
+];
+
+const privacyRights = [
+    'Be informed of how your data is processed',
+    'Access your personal data',
+    'Correct inaccurate or outdated data',
+    'Object to processing, or ask for removal or blocking of your data',
+    'Data portability',
+    'File a complaint with the National Privacy Commission',
+];
+
+watch(showPrivacy, async (open) => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) {
+        await nextTick();
+        privacyCloseButton.value?.focus();
+    }
+}, { immediate: true });
+
+onBeforeUnmount(() => {
+    document.body.style.overflow = '';
+});
 
 function submit() {
     form.post('/report', { preserveScroll: (page) => Object.keys(page.props.errors ?? {}).length > 0 });
@@ -225,7 +263,8 @@ function submit() {
                     <label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low cursor-pointer">
                         <input v-model="form.legal_attestation" type="checkbox" class="mt-0.5 h-5 w-5 shrink-0 rounded accent-primary" />
                         <span class="font-body-md text-body-md text-on-surface">
-                            I confirm that, to the best of my knowledge, the information above is true and accurate.
+                            I confirm that, to the best of my knowledge, the information above is true and accurate, and I agree to the processing of my personal data as described in the
+                            <button type="button" class="text-primary font-semibold underline underline-offset-2" @click.prevent="showPrivacy = true">Data Privacy Notice</button>.
                         </span>
                     </label>
                     <span v-if="form.errors.legal_attestation" class="font-body-sm text-body-sm text-error -mt-2">{{ form.errors.legal_attestation }}</span>
@@ -264,6 +303,18 @@ function submit() {
                     </ol>
                 </div>
 
+                <button
+                    type="button"
+                    class="rounded-2xl bg-surface-container-lowest p-5 shadow-sm ring-1 ring-outline-variant/40 flex items-start gap-3 text-left hover:bg-surface-container-low"
+                    @click="showPrivacy = true"
+                >
+                    <FontAwesomeIcon icon="lock" class="mt-1 text-primary" />
+                    <span class="flex flex-col gap-0.5">
+                        <span class="font-label-md text-label-md text-on-surface font-semibold">Your privacy</span>
+                        <span class="font-body-sm text-body-sm text-on-surface-variant">Read how we collect, use and protect your personal data.</span>
+                    </span>
+                </button>
+
                 <p class="px-1 font-body-sm text-body-sm text-outline">
                     Hospital staff?
                     <Link href="/login" class="text-primary font-semibold">Sign in</Link>
@@ -271,5 +322,115 @@ function submit() {
                 </p>
             </aside>
         </div>
+
+        <!-- Data Privacy Notice modal -->
+        <template #overlay>
+            <Transition
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="opacity-0"
+                leave-active-class="transition duration-150 ease-in"
+                leave-to-class="opacity-0"
+            >
+                <div v-if="showPrivacy" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-background/60 backdrop-blur-sm">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="privacy-title"
+                        class="relative w-full max-w-2xl max-h-[calc(100vh-2rem)] flex flex-col bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden"
+                    >
+                        <header class="flex items-start gap-3 p-5 sm:p-6 bg-primary text-on-primary">
+                            <span class="h-10 w-10 shrink-0 rounded-full bg-white/15 flex items-center justify-center"><FontAwesomeIcon icon="shield-halved" /></span>
+                            <div class="flex-1">
+                                <h2 id="privacy-title" class="font-headline-sm text-headline-sm font-bold">Data Privacy Notice</h2>
+                                <p class="font-body-sm text-body-sm text-white/85">Cebu South Medical Center · Data Privacy Act of 2012 (RA 10173)</p>
+                            </div>
+                            <button
+                                type="button"
+                                aria-label="Close privacy notice"
+                                class="h-9 w-9 shrink-0 rounded-full text-white/85 hover:bg-white/15 hover:text-white flex items-center justify-center"
+                                @click="showPrivacy = false"
+                            >
+                                <FontAwesomeIcon icon="xmark" />
+                            </button>
+                        </header>
+
+                        <div class="overflow-y-auto p-5 sm:p-6 flex flex-col gap-5 font-body-md text-body-md text-on-surface-variant">
+                            <p>
+                                Cebu South Medical Center respects your privacy. This notice explains what personal data we collect through this incident report form, why we collect it,
+                                and how we protect it, in line with the Data Privacy Act of 2012 (Republic Act No. 10173).
+                            </p>
+
+                            <section class="flex flex-col gap-2">
+                                <h3 class="font-title-sm text-title-sm text-primary font-bold">What we collect</h3>
+                                <ul class="flex flex-col gap-2">
+                                    <li v-for="item in privacyCollected" :key="item.title" class="rounded-lg bg-surface-container-low p-3">
+                                        <span class="block font-label-md text-label-md text-on-surface font-semibold">{{ item.title }}</span>
+                                        <span class="font-body-sm text-body-sm">{{ item.text }}</span>
+                                    </li>
+                                </ul>
+                                <p class="font-body-sm text-body-sm">
+                                    To prevent misuse, your internet (IP) address is used briefly to limit each person to 3 reports per hour. It is not saved with your report.
+                                </p>
+                            </section>
+
+                            <section class="flex flex-col gap-2">
+                                <h3 class="font-title-sm text-title-sm text-primary font-bold">Why we collect it</h3>
+                                <ul class="list-disc pl-5 flex flex-col gap-1">
+                                    <li v-for="purpose in privacyPurposes" :key="purpose">{{ purpose }}</li>
+                                </ul>
+                            </section>
+
+                            <section class="flex flex-col gap-2">
+                                <h3 class="font-title-sm text-title-sm text-primary font-bold">Who can see it</h3>
+                                <p>
+                                    Only authorized hospital personnel who handle the report: the Patient Safety/CQI Office, the head and assigned staff of the department involved,
+                                    and the hospital officers who are alerted when an incident is serious. We do not sell or share your data with anyone outside the hospital,
+                                    except when the law or a government agency such as the Department of Health requires it.
+                                </p>
+                            </section>
+
+                            <section class="flex flex-col gap-2">
+                                <h3 class="font-title-sm text-title-sm text-primary font-bold">How we protect and keep it</h3>
+                                <p>
+                                    Reports are stored in the hospital's secured incident reporting system. Access is limited by role, requires a hospital account, and actions are logged.
+                                    We keep your report only as long as needed for the investigation and as required by the hospital's records retention policy and applicable regulations,
+                                    then dispose of it securely.
+                                </p>
+                            </section>
+
+                            <section class="flex flex-col gap-2">
+                                <h3 class="font-title-sm text-title-sm text-primary font-bold">Your rights</h3>
+                                <p>Under the Data Privacy Act, you have the right to:</p>
+                                <ul class="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+                                    <li v-for="right in privacyRights" :key="right" class="flex items-start gap-2">
+                                        <FontAwesomeIcon icon="circle-check" class="mt-1 text-primary" />
+                                        <span>{{ right }}</span>
+                                    </li>
+                                </ul>
+                                <p>
+                                    To use any of these rights, or if you have questions about this notice, please contact the hospital's Data Protection Officer
+                                    through the Patient Safety/CQI Office of Cebu South Medical Center.
+                                </p>
+                            </section>
+
+                            <p class="rounded-lg bg-primary-fixed text-primary p-3 font-body-sm text-body-sm">
+                                By ticking the confirmation box and submitting this form, you agree to the collection and processing of your personal data as described above.
+                            </p>
+                        </div>
+
+                        <footer class="p-4 sm:px-6 border-t border-outline-variant/40 flex justify-end">
+                            <button
+                                ref="privacyCloseButton"
+                                type="button"
+                                class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold shadow-sm w-full sm:w-auto"
+                                @click="showPrivacy = false"
+                            >
+                                <FontAwesomeIcon icon="circle-check" /> I understand
+                            </button>
+                        </footer>
+                    </div>
+                </div>
+            </Transition>
+        </template>
     </PublicLayout>
 </template>

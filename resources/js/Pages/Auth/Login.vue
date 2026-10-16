@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLogo from '@/Components/AppLogo.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
@@ -36,13 +36,7 @@ watch(showLogin, async (open) => {
     }
 }, { immediate: true });
 
-function onKeydown(event) {
-    if (event.key === 'Escape' && showLogin.value && !form.processing) showLogin.value = false;
-}
-
-onMounted(() => document.addEventListener('keydown', onKeydown));
 onBeforeUnmount(() => {
-    document.removeEventListener('keydown', onKeydown);
     document.body.style.overflow = '';
 });
 
@@ -173,7 +167,7 @@ const steps = ['Report', 'Assess', 'Triage', 'Investigate', 'Corrective action',
                 leave-active-class="transition duration-150 ease-in"
                 leave-to-class="opacity-0"
             >
-                <div v-if="showLogin" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-background/60 backdrop-blur-sm" @click.self="!form.processing && (showLogin = false)">
+                <div v-if="showLogin" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-background/60 backdrop-blur-sm">
                     <div
                         role="dialog"
                         aria-modal="true"

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SeverityBadge from '@/Components/SeverityBadge.vue';
@@ -48,11 +48,6 @@ function closeForm() {
     editing.value = null;
 }
 
-// Escape closes the pop-up wherever focus is (Save disables itself while saving, which drops focus).
-const closeOnEscape = (event) => event.key === 'Escape' && formOpen.value && closeForm();
-onMounted(() => window.addEventListener('keydown', closeOnEscape));
-onBeforeUnmount(() => window.removeEventListener('keydown', closeOnEscape));
-
 function save() {
     const options = { preserveScroll: true, onSuccess: closeForm };
     if (editing.value) {
@@ -95,7 +90,7 @@ function destroy(type) {
             aria-modal="true"
             aria-labelledby="type_form_title"
         >
-            <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="closeForm" />
+            <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" />
             <form
                 class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-surface-container-lowest shadow-xl p-space-lg flex flex-col gap-space-md"
                 @submit.prevent="save"
